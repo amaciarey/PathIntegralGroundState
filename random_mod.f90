@@ -99,8 +99,8 @@ contains
        end do
 
        do kk=N-M,N-2
-            y=ior(iand(mt(kk),UMASK),iand(mt(kk+1),LMASK))
-            mt(kk)=ieor(ieor(mt(kk+(M-N)),ishft(y,-1)),mag01(iand(y,1)))
+          y=ior(iand(mt(kk),UMASK),iand(mt(kk+1),LMASK))
+          mt(kk)=ieor(ieor(mt(kk+(M-N)),ishft(y,-1)),mag01(iand(y,1)))
        end do
 
        y=ior(iand(mt(N-1),UMASK),iand(mt(0),LMASK))

@@ -319,7 +319,6 @@ contains
     real (kind=8)    :: DeltaS,SumDeltaS
     real (kind=8)    :: rij2,rij
     real (kind=8)    :: Snew,Sold
-    real (kind=8)    :: obdm
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: ibi,ibf
     integer (kind=4) :: half
@@ -330,6 +329,9 @@ contains
     real (kind=8),dimension (0:Nmax+1)      :: LogWF
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
+
+    Snew = 0.d0
+    Sold = 0.d0
 
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
@@ -903,7 +905,6 @@ contains
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
     real (kind=8)    :: rij,rij2
-    real (kind=8)    :: obdm
     real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: j,i
@@ -919,6 +920,9 @@ contains
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
         
     Ls = int((Lmax-1)*grnd())+2
+
+    Sold = 0.d0
+    Snew = 0.d0
 
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
@@ -1210,7 +1214,6 @@ contains
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
     real (kind=8)    :: rij,rij2
-    real (kind=8)    :: obdm
     real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: j,i
@@ -1226,6 +1229,9 @@ contains
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
         
     Ls = int((Lmax-1)*grnd())+2
+
+    Sold = 0.d0
+    Snew = 0.d0
     
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
