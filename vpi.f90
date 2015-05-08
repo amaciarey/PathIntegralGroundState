@@ -44,33 +44,48 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 
 open (unit=1,file='vpi.in',status='old')
 
+read (1,*)
+read (1,*)
 read (1,*) resume
-read (1,*) crystal
-read (1,*) diagonal
+read (1,*)
+read (1,*)
+read (1,*) 
 read (1,*) dim
 read (1,*) Np
 read (1,*) density
 read (1,*) alpha
-read (1,*) Nmax
-read (1,*) Rm
-read (1,*) AK
-read (1,*) N0
+read (1,*) crystal
+read (1,*)
+read (1,*)
+read (1,*)
+read (1,*) diagonal
+read (1,*) dt
+read (1,*) Nb
+read (1,*) seed
 read (1,*) a_1
 read (1,*) t_0
-read (1,*) dt
 read (1,*) delta_cm
 read (1,*) Lstag
-read (1,*) Nb
+read (1,*)
+read (1,*)
+read (1,*) 
+read (1,*) Nmax
+read (1,*) Rm
+read (1,*)
+read (1,*)
+read (1,*) 
+read (1,*) AK
+read (1,*) N0
+read (1,*) Npw
+read (1,*)
+read (1,*)
+read (1,*) 
 read (1,*) Nblock
 read (1,*) Nstep
 read (1,*) Nbin
 read (1,*) Nk
-read (1,*) Npw
-read (1,*) seed
 
 close (unit=1)
-
-!Define the time step
 
 pi = acos(-1.d0)
 V0 = (sin(alpha))**2
