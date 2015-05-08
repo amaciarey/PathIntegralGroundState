@@ -178,6 +178,8 @@ VarNr = 0.d0
 rho  = 0.d0
 nrho = 0.d0
 
+!Begin the main Monte Carlo loop
+
 do iblock=1,Nblock
    
    call cpu_time(begin)
