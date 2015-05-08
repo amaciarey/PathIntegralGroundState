@@ -1,0 +1,23 @@
+.false.         # Resume a previous simulation
+.false.         # Starting from crystalline solid
+.false.         # True if diagonal simulation, False otherwise
+2		# Dimensions
+50      	# Number of particles
+192.d0          # Density
+0.6d0           # Strength of the potential
+10000		# Grid points for the trial function
+0.07d0          # Variational parameter
+450.d0          # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
+0.05d0          # 2nd parameter for the OBDM Guess for importance sampling, \approx n_0
+0.d0    	# Parameter of the propagator
+0.d0            #
+0.3d-4          # Time step
+0.2d0		# Step size for CM
+18              # Length of staging movements
+52       	# Number of beads
+200       	# Number of blocks
+100		# Steps per block
+40		# Grid for g(r) and n(r)
+20 		# Grid for S(k)
+4               # Maximum angular momentum partial wave
+2007		# Random seed
