@@ -5,10 +5,10 @@ contains
   subroutine sgrnd(seed)
 
     implicit integer(a-z)
-
+    
     !Period parameters
     
-    parameter(N     =  624)
+    integer, parameter :: N = 624
 
     dimension mt(0:N-1)
     
@@ -37,8 +37,8 @@ contains
     implicit integer(a-z)
 
     !Period parameters
-    
-    parameter(N     =  624)
+
+    integer, parameter :: N = 624
     parameter(N1    =  N+1)
     parameter(M     =  397)
     parameter(MATA  = -1727483681)
@@ -137,8 +137,14 @@ contains
 
     !NOTE: This subroutine APPENDS to the end of the file "fname".
 
+    implicit integer (a-z)
+    
     character(*), intent(in) :: fname
     character, intent(in)    :: forma
+
+    integer, parameter :: N = 624
+
+    dimension mt(0:N-1)
 
     common /block/mti,mt
     save   /block/
@@ -166,8 +172,14 @@ contains
 
   subroutine mtgetf( fname, forma )
 
+    implicit integer (a-z)
+
     character(*), intent(in) :: fname
     character, intent(in)    :: forma
+
+    integer, parameter :: N = 624
+
+    dimension mt(0:N-1)
 
     common /block/mti,mt
     save   /block/
