@@ -144,7 +144,7 @@ contains
              
              rij = sqrt(rij2)
 
-             if (table) then
+             if (wf_table) then
                 
                 dudr   = Interpolate(1,Nmax,dr,LogWF,rij)
                 d2udr2 = Interpolate(2,Nmax,dr,LogWF,rij)

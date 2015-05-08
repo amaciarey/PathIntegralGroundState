@@ -1468,7 +1468,7 @@ contains
              
              rijold = sqrt(rijold2)
 
-             if (table) then
+             if (wf_table) then
                 urold = Interpolate(0,Nmax,dr,LogWF,rijold)
              else
                 urold = LogPsi(0,Rm,rijold)
@@ -1482,7 +1482,7 @@ contains
              
              rijnew = sqrt(rijnew2)
 
-             if (table) then
+             if (wf_table) then
                 urnew = Interpolate(0,Nmax,dr,LogWF,rijnew)
              else
                 urnew = LogPsi(0,Rm,rijnew)

@@ -13,7 +13,7 @@
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
 .false.         # .true. if diagonal simulation, .false. otherwise
-3.d-5           # Time step
+3.d-5           # Time step 
 60              # Number of beads 
 1982            # Seed of the random number generator
 0.d0            # Parameters of the propagator decomposition
@@ -25,6 +25,7 @@
 
 10000           # Grid points for the tabulation of the wave function
 0.07d0          # Variational parameter
+.false.         # .true. if tabulate the wave function, .false. otherwise
 
 # PARAMETERS FOR THE IMPORTANCE SAMPLING OF THE OBDM
 

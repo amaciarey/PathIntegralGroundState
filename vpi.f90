@@ -23,7 +23,7 @@ real (kind=8)    :: end,begin
 integer (kind=4) :: seed
 integer (kind=4) :: Lstag
 integer (kind=4) :: k,j
-integer (kind=4) :: ip,ib
+integer (kind=4) :: ip
 integer (kind=4) :: attempted
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
@@ -71,6 +71,7 @@ read (1,*)
 read (1,*) 
 read (1,*) Nmax
 read (1,*) Rm
+read (1,*) wf_table
 read (1,*)
 read (1,*)
 read (1,*) 
