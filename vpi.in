@@ -27,7 +27,7 @@
 0.07d0          # Variational parameter
 .false.         # .true. if tabulate the wave function, .false. otherwise
 
-# PARAMETERS FOR THE IMPORTANCE SAMPLING OF THE OBDM
+# PARAMETERS FOR THE SAMPLING OF THE OBDM
 
 450.D0          # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
 0.05d0          # 2nd parameter for the OBDM Guess for importance sampling, \approx n_0
