@@ -21,21 +21,21 @@ functions needed for the calculation.
 
 **List of functions**
   
-  *GreenFunction
-  *OBDMGuess
+    *GreenFunction
+    *OBDMGuess
 
 **List of routines**
 
   Initialization routines:
 
-    *Jastrow_Table
-    *init
-    *CheckPoint
+    * Jastrow_Table
+    * init
+    * CheckPoint
   
   Routines for the movement of the particles of the system
 
-    *TranslateChain
-    *Staging
+    * TranslateChain
+    * Staging
     *MoveHead
     *MoveTail
     *TranslateHalfChain
