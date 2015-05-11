@@ -19,6 +19,36 @@ Module that contains the definition of some global variables used along many fun
 This module contains all the routines concerning the Monte Carlo movements used to sample the path integral and all the
 functions needed for the calculation. 
 
+**List of functions**
+  
+  *GreenFunction
+  *OBDMGuess
+
+**List of routines**
+
+  Initialization routines:
+
+    *Jastrow_Table
+    *init
+    *CheckPoint
+  
+  Routines for the movement of the particles of the system
+
+    *TranslateChain
+    *Staging
+    *MoveHead
+    *MoveTail
+    *TranslateHalfChain
+    *StagingHalfChain
+    *MoveHeadHalfChain
+    *MoveTailHalfChain
+
+  Routines for the evaluation of quantities for Metropolis algorithm
+
+    *UpdateAction
+    *UpdateWf
+    *UpdatePot
+
 **SAMPLE_MOD.F90**
 
 This module contains all the functions required for the evaluation of the different observable quantities.

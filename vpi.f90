@@ -35,7 +35,6 @@ integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 real (kind=8),dimension(:),allocatable     :: LogWF
 real (kind=8),dimension(:,:),allocatable   :: xend
 real (kind=8),dimension(:,:,:),allocatable :: Path
-real (kind=8),dimension(:),allocatable     :: rho
 real (kind=8),dimension(:,:),allocatable   :: nrho,AvNr,AvNr2,VarNr
 real (kind=8),dimension(:,:),allocatable   :: Sk,AvSk,AvSk2,VarSk
 real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
@@ -162,7 +161,6 @@ print *, ''
 
 !Begin of the Monte Carlo sampling
 
-allocate (rho(Nbin))
 allocate (gr(Nbin),AvGr(Nbin),AvGr2(Nbin),VarGr(Nbin))
 allocate (nrho(0:Npw,Nbin),AvNr(0:Npw,Nbin),AvNr2(0:Npw,Nbin),VarNr(0:Npw,Nbin))
 allocate (Sk(dim,Nk),AvSk(dim,Nk),AvSk2(dim,Nk),VarSk(dim,Nk))
@@ -191,7 +189,6 @@ AvNr  = 0.d0
 AvNr2 = 0.d0
 VarNr = 0.d0
  
-rho  = 0.d0
 nrho = 0.d0
 
 !Begin the main Monte Carlo loop
@@ -376,7 +373,7 @@ call NormAvSk(Nblock,Nk,AvSk,AvSk2,VarSk)
 call NormAvNr(Nblock,AvNr,AvNr2,VarNr)
 
 deallocate (Path)
-deallocate (rho,nrho)
+deallocate (nrho)
 deallocate (gr,AvGr,AvGr2,VarGr)
 deallocate (Sk,AvSk,AvSk2,VarSk)
 
