@@ -36,22 +36,51 @@ functions needed for the calculation.
 
     * TranslateChain
     * Staging
-    *MoveHead
-    *MoveTail
-    *TranslateHalfChain
-    *StagingHalfChain
-    *MoveHeadHalfChain
-    *MoveTailHalfChain
+    * MoveHead
+    * MoveTail
+    * TranslateHalfChain
+    * StagingHalfChain
+    * MoveHeadHalfChain
+    * MoveTailHalfChain
 
   Routines for the evaluation of quantities for Metropolis algorithm
 
-    *UpdateAction
-    *UpdateWf
-    *UpdatePot
+    * UpdateAction
+    * UpdateWf
+    * UpdatePot
 
 **SAMPLE_MOD.F90**
 
 This module contains all the functions required for the evaluation of the different observable quantities.
+
+**List of functions**
+    
+    * Var
+
+**List of routines**
+
+  Routines for the evaluation of energies:
+
+    * PotentialEnergy
+    * LocalEnergy
+    * Accumulate
+
+  Routines for the evaluation of structural quantities
+
+    * PairCorrelation
+    * StructureFactor
+    * Normalize
+    * AccumGr
+    * AccumSk
+    * NormAvGr
+    * NormAvSk
+
+  Routines for the evaluation of OBDM
+ 
+    * OBDM
+    * Normalize
+    * AccumNr
+    * NormAvNr 
 
 **PBC_MOD.F90**
 
