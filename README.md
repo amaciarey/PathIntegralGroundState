@@ -87,6 +87,11 @@ This module contains all the functions required for the evaluation of the differ
 Module that contains functions to implement the periodic boundary conditions in a cubic box (independent of 
 dimensionality).
 
+**List of routines**
+
+    * BoundaryConditions
+    * MinimumImage
+
 **RANDOM_MOD.F90**
 
 Module that contains the functions and routines used for the generation of random numbers: uniform and gaussian. The 
