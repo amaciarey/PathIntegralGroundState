@@ -38,25 +38,14 @@ contains
 
     !Period parameters
 
-    integer, parameter :: N = 624
-    parameter(N1    =  N+1)
-    parameter(M     =  397)
-    parameter(MATA  = -1727483681)
-    
-    !constant vector a
-    
-    parameter(UMASK = -2147483648)
-    
-    !most significant w-r bits
-     
-    parameter(LMASK =  2147483647)
-
-    !least significant r bits
-
-    !Tempering parameters
-    
-    parameter(TMASKB= -1658038656)
-    parameter(TMASKC= -272236544)
+    integer, parameter :: N      = 624
+    integer, parameter :: N1     = N+1
+    integer, parameter :: M      = 397
+    integer, parameter :: MATA   = -1727483681
+    integer, parameter :: UMASK  = -2147483648
+    integer, parameter :: LMASK  = 2147483647
+    integer, parameter :: TMASKB = -1658038656
+    integer, parameter :: TMASKC = -272236544
 
     dimension mt(0:N-1)
     
@@ -187,13 +176,13 @@ contains
     select case (forma)
     case('u','U')
        open(unit=10,file=trim(fname),status='OLD',form='UNFORMATTED')
-       read(10)mti
-       read(10)mt
+       read(10) mti
+       read(10) mt
        
     case default
        open(unit=10,file=trim(fname),status='OLD',form='FORMATTED')
-       read(10,*)mti
-       read(10,*)mt
+       read(10,*) mti
+       read(10,*) mt
 
     end select
     close(10)
@@ -207,8 +196,8 @@ contains
 
     implicit none 
 
-    real (kind=8)    :: sigma,mu,x1,x2
-    real (kind=8)    :: u1,u2,w
+    real (kind=8) :: sigma,mu,x1,x2
+    real (kind=8) :: u1,u2,w
 
     do
 

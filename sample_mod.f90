@@ -307,7 +307,7 @@ contains
 
        sintheta  = xij(2)/rij
        costheta  = xij(1)/rij
-       exptheta  = cmplx(costheta,sintheta)
+       exptheta  = cmplx(costheta,sintheta,8)
        exp2theta = exptheta*exptheta
 
        exp2mtheta = 1.d0
