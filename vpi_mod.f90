@@ -748,7 +748,8 @@ contains
     !Pick a random bead that is the starting point of the displaced 
     !piece of chain
     
-    i = 2*int((Nb-2**(Nlev-1)+1)*grnd())
+    !i = 2*int((Nb-2**(Nlev-1)+1)*grnd())
+    i = int((2*Nb-2**(Nlev)+1)*grnd())
 
     !Save the original chain
 
