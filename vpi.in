@@ -37,7 +37,7 @@
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-20              # Number of blocks
-10              # Steps per blocks
+100             # Number of blocks
+50             # Steps per blocks
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

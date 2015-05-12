@@ -164,7 +164,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine Jastrow_Table(rmax,Rm,WF)
+  subroutine JastrowTable(rmax,Rm,WF)
 
     implicit none
     
@@ -192,7 +192,7 @@ contains
     WF(Nmax+1) = WF(Nmax)
 
     return
-  end subroutine Jastrow_Table
+  end subroutine JastrowTable
   
 !-----------------------------------------------------------------------
 
@@ -1688,7 +1688,7 @@ end module vpi_mod
 !!$    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
 !!$    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
 !!$    
-!!$    Nlev  = 4
+!!$    Nlev = 4
 !!$
 !!$    !Pick a random bead that is the starting point of the displaced 
 !!$    !piece of chain

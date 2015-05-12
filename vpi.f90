@@ -21,6 +21,7 @@ real (kind=8)    :: AvE,AvK,AvV
 real (kind=8)    :: AvE2,AvK2,AvV2
 real (kind=8)    :: VarE,VarK,VarV
 real (kind=8)    :: end,begin
+real (kind=8)    :: stag_move
 integer (kind=4) :: seed
 integer (kind=4) :: Lstag
 integer (kind=4) :: k,j
@@ -80,6 +81,7 @@ rcut2     = rcut*rcut
 rbin      = rcut/real(Nbin)
 delta_cm  = delta_cm/density**(1.d0/real(dim))
 attempted = Nstep*Np
+stag_move = real(attempted*Nstag)
 
 !Definition of the parameters of the propagator
 
@@ -95,7 +97,7 @@ allocate (LogWF(0:Nmax+1))
 allocate (xend(dim,2))
 
 call init(seed,Path,xend,crystal,resume)
-call Jastrow_Table(rcut,Rm,LogWF)
+call JastrowTable(rcut,Rm,LogWF)
 
 !Definition of used formats
 
@@ -295,7 +297,7 @@ do iblock=1,Nblock
 
    call cpu_time(end)
 
-101 format (x,a,x,f5.3)
+101 format (x,a,x,f5.2,x,a)
 102 format (a,x,G16.8e2,x,a,x,G16.8e2)
 
    print *, '-----------------------------------------------------------'
@@ -307,11 +309,11 @@ do iblock=1,Nblock
    print 102, '  > <Ec> =',BlockAvK/Np,'+/-',BlockVarK/Np
    print 102, '  > <Ep> =',BlockAvV/Np,'+/-',BlockVarV/Np
    print *, ''
-   print 101, '# Acceptance CM moves      =',real(acc_cm)/real(attempted)
-   print 101, '# Acceptance staging moves =',real(acc_bd)/real(attempted*Nstag)
-   print 101, '# Acceptance head moves    =',real(acc_head)/real(attempted*Nstag)
-   print 101, '# Acceptance tail moves    =',real(acc_tail)/real(attempted*Nstag)
-   print 101, '# Time per block           =',end-begin
+   print 101, '# Accepted CM moves      =',real(acc_cm)/real(attempted),'%'
+   print 101, '# Accepted staging moves =',real(acc_bd)/stag_move,'%'
+   print 101, '# Accepted head moves    =',real(acc_head)/stag_move,'%'
+   print 101, '# Accepted tail moves    =',real(acc_tail)/stag_move,'%'
+   print 101, '# Time per block         =',end-begin,'s'
   
 end do
 
