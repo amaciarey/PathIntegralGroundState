@@ -100,16 +100,16 @@ contains
 !-----------------------------------------------------------------------
 
   subroutine ReadParameters(resume,crystal,diagonal,wf_table,density,&
-       & alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,Lstag,Nmax,&
-       & Nobdm,Nblock,Nstep,Nbin,Nk)
+       & alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,Lstag,Nstag,&
+       & Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
 
     logical          :: resume, crystal, diagonal, wf_table
     real (kind=8)    :: density, alpha, dt, a_1, t_0, delta_cm
     real (kind=8)    :: Rm, Ak, N0
-    integer (kind=4) :: dim, Np, Nb, seed, Lstag, Nmax, Nobdm
-    integer (kind=4) :: Nblock, Nstep, Nbin, Nk
+    integer (kind=4) :: dim, Np, Nb, seed, Lstag, Nstag, Nmax
+    integer (kind=4) :: Nobdm, Nblock, Nstep, Nbin, Nk
 
     open (unit=1, file='vpi.in', status='old')
 
@@ -135,6 +135,7 @@ contains
     read (1,*) t_0
     read (1,*) delta_cm
     read (1,*) Lstag
+    read (1,*) Nstag
     read (1,*)
     read (1,*)
     read (1,*) 
@@ -195,11 +196,12 @@ contains
   
 !-----------------------------------------------------------------------
 
-  subroutine init(Path,xend,crystal,resume)
+  subroutine init(seed,Path,xend,crystal,resume)
 
     implicit none
     
     logical          :: crystal,resume
+    integer (kind=4) :: seed
     integer (kind=4) :: j,k,ip,ib
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension(dim,2)         :: xend
@@ -228,6 +230,8 @@ contains
        call mtgetf('rand_state','u')
 
     else
+
+       call sgrnd(seed)
 
        if (crystal) then
 

@@ -12,6 +12,7 @@ logical          :: crystal,diagonal,resume
 real (kind=8)    :: dt
 real (kind=8)    :: density,alpha
 real (kind=8)    :: delta_cm
+real (kind=8)    :: E1,E2
 real (kind=8)    :: E,Kin,Pot
 real (kind=8)    :: BlockAvE,BlockAvK,BlockAvV
 real (kind=8)    :: BlockAvE2,BlockAvK2,BlockAvV2
@@ -27,7 +28,7 @@ integer (kind=4) :: ip
 integer (kind=4) :: attempted
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
-integer (kind=4) :: ibis,Nbis
+integer (kind=4) :: istag,Nstag
 integer (kind=4) :: ngr
 integer (kind=4) :: Nobdm,iobdm
 integer (kind=4) :: Nk
@@ -43,8 +44,8 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 !Reading input parameters
 
 call ReadParameters(resume,crystal,diagonal,wf_table,density,&
-       & alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,Lstag,Nmax,&
-       & Nobdm,Nblock,Nstep,Nbin,Nk)
+       & alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,Lstag,Nstag,&
+       & Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
 pi = acos(-1.d0)
 V0 = (sin(alpha))**2
@@ -79,7 +80,6 @@ rcut2     = rcut*rcut
 rbin      = rcut/real(Nbin)
 delta_cm  = delta_cm/density**(1.d0/real(dim))
 attempted = Nstep*Np
-Nbis      = int(real(2*Nb+1)/real(Lstag)+1)
 
 !Definition of the parameters of the propagator
 
@@ -94,9 +94,14 @@ allocate (Path(dim,Np,0:2*Nb))
 allocate (LogWF(0:Nmax+1))
 allocate (xend(dim,2))
 
-call sgrnd(seed)
-call init(Path,xend,crystal,resume)
+call init(seed,Path,xend,crystal,resume)
 call Jastrow_Table(rcut,Rm,LogWF)
+
+!Definition of used formats
+
+103 format (x,a,x,i5)
+104 format (x,a,x,G12.6e2)
+105 format (x,a,x,3G12.6e2)
 
 !Printing the simulation parameters
 
@@ -107,18 +112,18 @@ print *, '=============================================================='
 print *, ''
 print *, '# Simulation parameters:'
 print *, ''
-print *, '  > Dimensions            :',dim
-print *, '  > Number of particles   :',Np
-print *, '  > Density               :',density
-print *, '  > Polarization          :',alpha
-print *, '  > Size of the box       :',Lbox
-print *, '  > Number of beads       :',Nb
-print *, '  > Time step             :',dt
-print *, '  > Number of blocks      :',Nblock
-print *, '  > MC steps per block    :',Nstep
+print 103, '  > Dimensions          :',dim
+print 103, '  > Number of particles :',Np
+print 104, '  > Density             :',density
+print 104, '  > Polarization        :',alpha
+print 105, '  > Size of the box     :',Lbox
+print 103, '  > Number of beads     :',Nb
+print 104, '  > Time step           :',dt
+print 103, '  > Number of blocks    :',Nblock
+print 103, '  > MC steps per block  :',Nstep
 print *, ''
 
-!Begin of the Monte Carlo sampling
+!Initializing accumulators
 
 allocate (gr(Nbin),AvGr(Nbin),AvGr2(Nbin),VarGr(Nbin))
 allocate (nrho(0:Npw,Nbin),AvNr(0:Npw,Nbin),AvNr2(0:Npw,Nbin),VarNr(0:Npw,Nbin))
@@ -182,7 +187,7 @@ do iblock=1,Nblock
             
             call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
                   
-            do ibis=1,Nbis            
+            do istag=1,Nstag            
                      
                call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
                call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
@@ -198,7 +203,7 @@ do iblock=1,Nblock
 
             call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
                   
-            do ibis=1,Nbis            
+            do istag=1,Nstag            
                
                call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
                call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
@@ -216,7 +221,7 @@ do iblock=1,Nblock
 
                call TranslateHalfChain(j,delta_cm,LogWF,dt,Np,Path,xend)
                   
-               do ibis=1,Nbis
+               do istag=1,Nstag
                   
                   call MoveHeadHalfChain(j,LogWF,dt,Lstag,Np,Path,xend)
                   call MoveTailHalfChain(j,LogWF,dt,Lstag,Np,Path,xend)
@@ -234,7 +239,11 @@ do iblock=1,Nblock
 
       !Energy calculation using mixed estimator
       
-      call LocalEnergy(LogWF,Path(:,:,0),Rm,E,Kin,Pot)
+      call LocalEnergy(LogWF,Path(:,:,0),Rm,E1,Kin,Pot)
+      call LocalEnergy(LogWF,Path(:,:,2*Nb),Rm,E2,Kin,Pot)
+
+      E = 0.5d0*(E1+E2)
+
       call PotentialEnergy(Path(:,:,Nb),Pot)
 
       Kin = E-Pot
@@ -286,20 +295,23 @@ do iblock=1,Nblock
 
    call cpu_time(end)
 
+101 format (x,a,x,f5.3)
+102 format (a,x,G16.8e2,x,a,x,G16.8e2)
+
    print *, '-----------------------------------------------------------'
    print *, 'BLOCK NUMBER :',iblock
    print *, ''
    print *, '# Block results:'
    print *, ''
-   print *, '  > <E>      =',BlockAvE/Np,'+/-',BlockVarE/Np
-   print *, '  > <Ec>     =',BlockAvK/Np,'+/-',BlockVarK/Np
-   print *, '  > <Ep>     =',BlockAvV/Np,'+/-',BlockVarV/Np
+   print 102, '  > <E>  =',BlockAvE/Np,'+/-',BlockVarE/Np
+   print 102, '  > <Ec> =',BlockAvK/Np,'+/-',BlockVarK/Np
+   print 102, '  > <Ep> =',BlockAvV/Np,'+/-',BlockVarV/Np
    print *, ''
-   print *, '# Acceptance CM moves      =',real(acc_cm)/real(attempted)
-   print *, '# Acceptance staging moves =',real(acc_bd)/real(attempted*Nbis)
-   print *, '# Acceptance head moves    =',real(acc_head)/real(attempted*Nbis)
-   print *, '# Acceptance tail moves    =',real(acc_tail)/real(attempted*Nbis)
-   print *, '# Time per block           =',end-begin
+   print 101, '# Acceptance CM moves      =',real(acc_cm)/real(attempted)
+   print 101, '# Acceptance staging moves =',real(acc_bd)/real(attempted*Nstag)
+   print 101, '# Acceptance head moves    =',real(acc_head)/real(attempted*Nstag)
+   print 101, '# Acceptance tail moves    =',real(acc_tail)/real(attempted*Nstag)
+   print 101, '# Time per block           =',end-begin
   
 end do
 
@@ -321,11 +333,12 @@ print *, 'FINAL RESULTS:'
 print *, ''
 print *, '# Final averages:'
 print *, ''
-print *, '  > <E>  =',AvE/Np,'+/-',VarE/Np
-print *, '  > <Ec> =',AvK/Np,'+/-',VarK/Np
-print *, '  > <Ep> =',AvV/Np,'+/-',VarV/Np
+print 102, '  > <E>  =',AvE/Np,'+/-',VarE/Np
+print 102, '  > <Ec> =',AvK/Np,'+/-',VarK/Np
+print 102, '  > <Ep> =',AvV/Np,'+/-',VarV/Np
 print *, ''
 print *, '=============================================================='
+print *, ''
 
 call NormAvGr(Nblock,AvGr,AvGr2,VarGr)
 call NormAvSk(Nblock,Nk,AvSk,AvSk2,VarSk)

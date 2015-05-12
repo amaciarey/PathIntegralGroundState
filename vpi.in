@@ -1,6 +1,6 @@
 # RESTART PARAMETER
 
-.false.         # Resume a previous simulation
+.false.         # .true. Resume a previous simulation, .false. otherwise
 
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
@@ -20,6 +20,7 @@
 0.d0
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
 18              # Length of the Staging movements
+5               # Number of staging movements per step
 
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
 
@@ -36,7 +37,7 @@
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-200             # Number of blocks
-100             # Steps per blocks
+20              # Number of blocks
+10              # Steps per blocks
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
