@@ -5,7 +5,7 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-50              # Number of particles
+32              # Number of particles
 192.d0          # Density
 0.d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
@@ -33,11 +33,11 @@
 450.D0          # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
 0.05d0          # 2nd parameter for the OBDM Guess for importance sampling, \approx n_0
 10              # Number of evaluation of OBDM per step
-4               # Maximum angular momentum partial wave in OBDM
+0               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-100             # Number of blocks
+50             # Number of blocks
 50              # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

@@ -748,7 +748,6 @@ contains
     !Pick a random bead that is the starting point of the displaced 
     !piece of chain
     
-    !i = 2*int((Nb-2**(Nlev-1)+1)*grnd())
     i = int((2*Nb-2**(Nlev)+1)*grnd())
 
     !Save the original chain
@@ -760,12 +759,12 @@ contains
     end do
     
     PrevDeltaS = 0.d0
-    SumDeltaS  = 0.d0
+    !SumDeltaS  = 0.d0
 
     do ilev=1,Nlev
 
        delta_ib  = 2**(Nlev-ilev+1)
-       dt_bis    = 0.5d0*delta_ib*dt
+       dt_bis    = 0.5d0*real(delta_ib)*dt
        sigma     = sqrt(0.5d0*dt_bis)
        SumDeltaS = 0.d0
        
@@ -805,8 +804,7 @@ contains
           end do
 
           call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt_bis,DeltaS)
-          !call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
-
+    
           SumDeltaS = SumDeltaS+DeltaS
 
        end do
@@ -822,24 +820,12 @@ contains
              PrevDeltaS = SumDeltaS
           else
              accept = .False.
-             exit
+             exit             
           end if
        end if
 
     end do
 
-    !Metropolis question
-
-!!$    if (exp(-SumDeltaS)>=1.d0) then
-!!$       accept = .True.
-!!$    else
-!!$       if (exp(-SumDeltaS)>=grnd()) then
-!!$          accept = .True.
-!!$       else
-!!$          accept = .False.
-!!$       end if
-!!$    end if
-    
     if (accept) then
     
        accepted = accepted+1
