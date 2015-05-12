@@ -29,6 +29,7 @@ integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
 integer (kind=4) :: ibis,Nbis
 integer (kind=4) :: ngr
+integer (kind=4) :: Nobdm,iobdm
 integer (kind=4) :: Nk
 integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 
@@ -41,51 +42,9 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 
 !Reading input parameters
 
-open (unit=1,file='vpi.in',status='old')
-
-read (1,*)
-read (1,*)
-read (1,*) resume
-read (1,*)
-read (1,*)
-read (1,*) 
-read (1,*) dim
-read (1,*) Np
-read (1,*) density
-read (1,*) alpha
-read (1,*) crystal
-read (1,*)
-read (1,*)
-read (1,*)
-read (1,*) diagonal
-read (1,*) dt
-read (1,*) Nb
-read (1,*) seed
-read (1,*) a_1
-read (1,*) t_0
-read (1,*) delta_cm
-read (1,*) Lstag
-read (1,*)
-read (1,*)
-read (1,*) 
-read (1,*) Nmax
-read (1,*) Rm
-read (1,*) wf_table
-read (1,*)
-read (1,*)
-read (1,*) 
-read (1,*) AK
-read (1,*) N0
-read (1,*) Npw
-read (1,*)
-read (1,*)
-read (1,*) 
-read (1,*) Nblock
-read (1,*) Nstep
-read (1,*) Nbin
-read (1,*) Nk
-
-close (unit=1)
+call ReadParameters(resume,crystal,diagonal,wf_table,density,&
+       & alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,Lstag,Nmax,&
+       & Nobdm,Nblock,Nstep,Nbin,Nk)
 
 pi = acos(-1.d0)
 V0 = (sin(alpha))**2
@@ -251,7 +210,7 @@ do iblock=1,Nblock
 
          !Move the last chain that is broken in two pieces
 
-         do k=1,10
+         do iobdm=1,Nobdm
                
             do j=1,2
 

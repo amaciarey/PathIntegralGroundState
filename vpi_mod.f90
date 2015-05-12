@@ -99,6 +99,70 @@ contains
 
 !-----------------------------------------------------------------------
 
+  subroutine ReadParameters(resume,crystal,diagonal,wf_table,density,&
+       & alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,Lstag,Nmax,&
+       & Nobdm,Nblock,Nstep,Nbin,Nk)
+    
+    implicit none
+
+    logical          :: resume, crystal, diagonal, wf_table
+    real (kind=8)    :: density, alpha, dt, a_1, t_0, delta_cm
+    real (kind=8)    :: Rm, Ak, N0
+    integer (kind=4) :: dim, Np, Nb, seed, Lstag, Nmax, Nobdm
+    integer (kind=4) :: Nblock, Nstep, Nbin, Nk
+
+    open (unit=1, file='vpi.in', status='old')
+
+    read (1,*)
+    read (1,*)
+    read (1,*) resume
+    read (1,*)
+    read (1,*)
+    read (1,*) 
+    read (1,*) dim
+    read (1,*) Np
+    read (1,*) density
+    read (1,*) alpha
+    read (1,*) crystal
+    read (1,*)
+    read (1,*)
+    read (1,*)
+    read (1,*) diagonal
+    read (1,*) dt
+    read (1,*) Nb
+    read (1,*) seed
+    read (1,*) a_1
+    read (1,*) t_0
+    read (1,*) delta_cm
+    read (1,*) Lstag
+    read (1,*)
+    read (1,*)
+    read (1,*) 
+    read (1,*) Nmax
+    read (1,*) Rm
+    read (1,*) wf_table
+    read (1,*)
+    read (1,*)
+    read (1,*) 
+    read (1,*) AK
+    read (1,*) N0
+    read (1,*) Nobdm
+    read (1,*) Npw
+    read (1,*)
+    read (1,*)
+    read (1,*) 
+    read (1,*) Nblock
+    read (1,*) Nstep
+    read (1,*) Nbin
+    read (1,*) Nk
+    
+    close (unit=1)
+
+    return
+  end subroutine ReadParameters
+
+!-----------------------------------------------------------------------
+
   subroutine Jastrow_Table(rmax,Rm,WF)
 
     implicit none

@@ -31,6 +31,7 @@
 
 450.D0          # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
 0.05d0          # 2nd parameter for the OBDM Guess for importance sampling, \approx n_0
+10              # Number of evaluation of OBDM per step
 4               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
