@@ -7,12 +7,12 @@
 2               # Dimensions
 50              # Number of particles
 192.d0          # Density
-0.6d0           # Polarization angle
+0.d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-.false.         # .true. if diagonal simulation, .false. otherwise
+.true.         # .true. if diagonal simulation, .false. otherwise
 3.d-5           # Time step 
 60              # Number of beads 
 1982            # Seed of the random number generator
@@ -38,6 +38,6 @@
 # PARAMETERS OF THE SAMPLING PROCESS
 
 100             # Number of blocks
-50             # Steps per blocks
+50              # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
