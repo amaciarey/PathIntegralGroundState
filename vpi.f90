@@ -193,8 +193,8 @@ do iblock=1,Nblock
                      
                call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
                call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               !call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
-               call Bisection(LogWF,dt,ip,Path,acc_bd)
+               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               !call Bisection(LogWF,dt,ip,Path,acc_bd)
 
             end do
 
