@@ -645,14 +645,14 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    do ib=0,2*Nb
+    i = int((2*Nb-Lstag+1)*grnd())
+     
+    do ib=i,i+Lstag
        do k=1,dim
           OldChain(k,ib) = Path(k,ip,ib)
        end do
     end do
-
-    i = int((2*Nb-Lstag+1)*grnd())
-        
+   
     SumDeltaS = 0.d0
 
     do j=1,Lstag-1
@@ -710,7 +710,7 @@ contains
     
     else
 
-       do ib=0,2*Nb
+       do ib=i,i+Lstag
           do k=1,dim
              Path(k,ip,ib) = OldChain(k,ib)
           end do
@@ -1018,14 +1018,14 @@ contains
     
     Ls = int((Lmax-1)*grnd())+2
 
-    do ib=0,2*Nb
+    i = 0
+          
+    do ib=i,i+Ls
        do k=1,dim
           OldChain(k,ib) = Path(k,ip,ib)
        end do
     end do
 
-    i = 0
-          
     SumDeltaS = 0.d0
 
     !Make an initial guess for the position of first bead
@@ -1115,7 +1115,7 @@ contains
     
     else
 
-       do ib=0,2*Nb
+       do ib=i,i+Ls
           do k=1,dim
              Path(k,ip,ib) = OldChain(k,ib)
           end do
@@ -1327,14 +1327,14 @@ contains
     
     Ls = int((Lmax-1)*grnd())+2
     
-    do ib=0,2*Nb
+    i = 2*Nb-Ls
+    
+    do ib=i,i+Ls
        do k=1,dim
           OldChain(k,ib) = Path(k,ip,ib)
        end do
     end do
-    
-    i = 2*Nb-Ls
-    
+
     SumDeltaS = 0.d0
     
     !Make an initial guess for the position of last bead
@@ -1424,7 +1424,7 @@ contains
        
     else
        
-       do ib=0,2*Nb
+       do ib=i,i+Ls
           do k=1,dim
              Path(k,ip,ib) = OldChain(k,ib)
           end do
