@@ -310,10 +310,10 @@ do iblock=1,Nblock
    print 102, '  > <Ec> =',BlockAvK/Np,'+/-',BlockVarK/Np
    print 102, '  > <Ep> =',BlockAvV/Np,'+/-',BlockVarV/Np
    print *, ''
-   print 101, '# Accepted CM moves      =',real(acc_cm)/real(attempted),'%'
-   print 101, '# Accepted staging moves =',real(acc_bd)/stag_move,'%'
-   print 101, '# Accepted head moves    =',real(acc_head)/stag_move,'%'
-   print 101, '# Accepted tail moves    =',real(acc_tail)/stag_move,'%'
+   print 101, '# Accepted CM moves      =',100*real(acc_cm)/real(attempted),'%'
+   print 101, '# Accepted staging moves =',100*real(acc_bd)/stag_move,'%'
+   print 101, '# Accepted head moves    =',100*real(acc_head)/stag_move,'%'
+   print 101, '# Accepted tail moves    =',100*real(acc_tail)/stag_move,'%'
    print 101, '# Time per block         =',end-begin,'s'
   
 end do

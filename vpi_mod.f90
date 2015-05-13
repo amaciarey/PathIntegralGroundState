@@ -743,7 +743,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 4
+    Nlev = 5
 
     !Pick a random bead that is the starting point of the displaced 
     !piece of chain
@@ -759,7 +759,6 @@ contains
     end do
     
     PrevDeltaS = 0.d0
-    !SumDeltaS  = 0.d0
 
     do ilev=1,Nlev
 
@@ -803,12 +802,27 @@ contains
              
           end do
 
+       end do
+
+       !Evaluation of the level action
+       
+       SumDeltaS = 0.d0
+
+       do j=1,2**ilev-1
+
+          icurr = i+j*delta_ib/2
+
+          do k=1,dim
+             xold(k) = OldChain(k,icurr)
+             xnew(k) = Path(k,ip,icurr)
+          end do
+
           call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt_bis,DeltaS)
-    
+          
           SumDeltaS = SumDeltaS+DeltaS
 
        end do
-
+       
        !Metropolis question
 
        if (exp(-SumDeltaS+PrevDeltaS)>=1.d0) then
