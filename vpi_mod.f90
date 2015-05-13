@@ -419,7 +419,7 @@ contains
        ibf = 2*Nb
     end if
 
-    do ib=0,2*Nb
+    do ib=ibi,ibf
        do k=1,dim
           OldChain(k,ib) = Path(k,ip,ib)
        end do
@@ -520,7 +520,7 @@ contains
 
     else
 
-       do ib=0,2*Nb
+       do ib=ibi,ibf
           do k=1,dim
              Path(k,ip,ib) = OldChain(k,ib)
           end do
@@ -910,18 +910,18 @@ contains
        Path(k,ip,Nb) = xend(k,half)
     end do
     
-    do ib=0,2*Nb
-       do k=1,dim
-          OldChain(k,ib) = Path(k,ip,ib)
-       end do
-    end do
-
     if (half==1) then
        i = int((Nb-Lstag+1)*grnd())
     else
        i = int((Nb-Lstag+1)*grnd())+Nb
     end if
-        
+     
+    do ib=i,i+Lstag
+       do k=1,dim
+          OldChain(k,ib) = Path(k,ip,ib)
+       end do
+    end do
+   
     SumDeltaS = 0.d0
 
     do j=1,Lstag-1
@@ -985,7 +985,7 @@ contains
 
        !Restore the original chain
 
-       do ib=0,2*Nb
+       do ib=i,i+Lstag
           do k=1,dim
              Path(k,ip,ib) = OldChain(k,ib)
           end do
@@ -1160,18 +1160,18 @@ contains
        Path(k,ip,Nb) = xend(k,half)
     end do
 
-    do ib=0,2*Nb
-       do k=1,dim
-          OldChain(k,ib) = Path(k,ip,ib)
-       end do
-    end do
-
     if (half==1) then
        i = 0
     else
        i = Nb
     end if
           
+    do ib=i,i+Ls
+       do k=1,dim
+          OldChain(k,ib) = Path(k,ip,ib)
+       end do
+    end do
+
     SumDeltaS = 0.d0
 
     !Make an initial guess for the position of first bead
@@ -1294,7 +1294,7 @@ contains
 
        !Restore the original chain
 
-       do ib=0,2*Nb
+       do ib=i,i+Ls
           do k=1,dim
              Path(k,ip,ib) = OldChain(k,ib)
           end do
@@ -1469,17 +1469,17 @@ contains
        Path(k,ip,Nb) = xend(k,half)
     end do
 
-    do ib=0,2*Nb
-       do k=1,dim
-          OldChain(k,ib) = Path(k,ip,ib)
-       end do
-    end do
-    
     if (half==1) then
        i = Nb-Ls
     else
        i = 2*Nb-Ls
     end if
+
+    do ib=i,i+Ls
+       do k=1,dim
+          OldChain(k,ib) = Path(k,ip,ib)
+       end do
+    end do
     
     SumDeltaS = 0.d0
     
@@ -1603,7 +1603,7 @@ contains
     
        !Restore the original chain
 
-       do ib=0,2*Nb
+       do ib=i,i+Ls
           do k=1,dim
              Path(k,ip,ib) = OldChain(k,ib)
           end do
