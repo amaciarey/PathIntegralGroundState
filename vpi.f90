@@ -193,13 +193,13 @@ do iblock=1,Nblock
 
             do istag=1,Nstag            
                      
-               !call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-               !call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               !call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               call Bisection(LogWF,dt,ip,Path,acc_bd)
-               call MoveHeadBisection(LogWF,dt,ip,Path,acc_head)
-               call MoveTailBisection(LogWF,dt,ip,Path,acc_tail)
+               !call Bisection(LogWF,dt,ip,Path,acc_bd)
+               !call MoveHeadBisection(LogWF,dt,ip,Path,acc_head)
+               !call MoveTailBisection(LogWF,dt,ip,Path,acc_tail)
                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             end do
 
