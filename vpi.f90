@@ -184,18 +184,22 @@ do iblock=1,Nblock
    do istep=1,Nstep
 
       if (diagonal) then
-      
+
          do ip=1,Np
             
-            call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
-                  
+            if (mod(istep,5)==0) then
+               call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+            end if
+
             do istag=1,Nstag            
                      
-               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               !call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+               !call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+               !call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               !call Bisection(LogWF,dt,ip,Path,acc_bd)
+               call Bisection(LogWF,dt,ip,Path,acc_bd)
+               call MoveHeadBisection(LogWF,dt,ip,Path,acc_head)
+               call MoveTailBisection(LogWF,dt,ip,Path,acc_tail)
                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             end do
 
