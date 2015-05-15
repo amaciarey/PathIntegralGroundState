@@ -731,7 +731,8 @@ contains
     real (kind=8)    :: dt,dt_bis
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,sigma
-    real (kind=8)    :: SumDeltaS,PrevDeltaS
+    real (kind=8)    :: SumDeltaS,TotDeltaS
+    real (kind=8)    :: LevelDeltaS,PrevDeltaS
     integer (kind=4) :: i,j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
@@ -749,18 +750,10 @@ contains
     !Pick a random bead that is the starting point of the displaced 
     !piece of chain
     
-    !i = int((2*Nb-2**(Nlev)+1)*grnd())
-    
     ii = int((2*Nb-2**(Nlev)+1)*grnd())
     ie = ii+2**Nlev
 
     !Save the original chain
-
-    !do ib=0,2*Nb
-    !   do k=1,dim
-    !      OldChain(k,ib) = Path(k,ip,ib)
-    !   end do
-    !end do
 
     do ib=ii,ie
        do k=1,dim
@@ -769,18 +762,17 @@ contains
     end do
     
     PrevDeltaS = 0.d0
+    SumDeltaS  = 0.d0
 
     do ilev=1,Nlev
 
        delta_ib  = 2**(Nlev-ilev+1)
        dt_bis    = 0.5d0*real(delta_ib)*dt
        sigma     = sqrt(0.5d0*dt_bis)
-              
+          
+       LevelDeltaS = 0.d0
+    
        do j=1,2**(ilev-1)
-
-          !iprev = i+(j-1)*delta_ib
-          !inext = i+j*delta_ib
-          !icurr = (iprev+inext)/2
 
           iprev = ii+(j-1)*delta_ib
           inext = ii+j*delta_ib
@@ -815,51 +807,33 @@ contains
              
           end do
 
-       end do
-
-       !Evaluation of the level action
-       
-       SumDeltaS = 0.d0
-
-!!$       do j=1,2**ilev-1
-!!$
-!!$          icurr = i+j*delta_ib/2
-!!$
-!!$          do k=1,dim
-!!$             xold(k) = OldChain(k,icurr)
-!!$             xnew(k) = Path(k,ip,icurr)
-!!$          end do
-!!$
-!!$          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt_bis,DeltaS)
-!!$          
-!!$          SumDeltaS = SumDeltaS+DeltaS
-!!$
-!!$       end do
-
-       do j=1,2**ilev-1
-
-          icurr = ii+j*delta_ib/2
-
-          do k=1,dim
-             xold(k) = OldChain(k,icurr)
-             xnew(k) = Path(k,ip,icurr)
-          end do
-
-          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt_bis,DeltaS)
+          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
           
-          SumDeltaS = SumDeltaS+DeltaS
+          LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
+          SumDeltaS   = SumDeltaS+DeltaS
 
        end do
+
+       !Evaluation of the action corresponding to the current bisection
+       !level. It is important to note that the "exact" action is only
+       !evaluated at the last level, in the rest of the levels of sampling
+       !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
+              
+       if (ilev==Nlev) then
+          TotDeltaS = SumDeltaS-PrevDeltaS
+       else
+          TotDeltaS = LevelDeltaS-PrevDeltaS
+       end if
        
        !Metropolis question
 
-       if (exp(-SumDeltaS+PrevDeltaS)>=1.d0) then
+       if (exp(-TotDeltaS)>=1.d0) then
           accept     = .True.
-          PrevDeltaS = SumDeltaS
+          PrevDeltaS = LevelDeltaS
        else
-          if (exp(-SumDeltaS+PrevDeltaS)>=grnd()) then
+          if (exp(-TotDeltaS)>=grnd()) then
              accept     = .True.
-             PrevDeltaS = SumDeltaS
+             PrevDeltaS = LevelDeltaS
           else
              accept = .False.
              exit             

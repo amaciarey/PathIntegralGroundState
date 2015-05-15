@@ -5,21 +5,21 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-32              # Number of particles
+128             # Number of particles
 192.d0          # Density
-0.6d0           # Polarization angle
+0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-.false.         # .true. if diagonal simulation, .false. otherwise
+.true.          # .true. if diagonal simulation, .false. otherwise
 3.d-5           # Time step 
 60              # Number of beads 
 1982            # Seed of the random number generator
 0.d0            # Parameters of the propagator decomposition
 0.d0
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
-18              # Length of the Staging movements
+16              # Length of the Staging movements
 5               # Number of staging movements per step
 
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
@@ -37,7 +37,7 @@
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-2000            # Number of blocks
+20             # Number of blocks
 50              # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
