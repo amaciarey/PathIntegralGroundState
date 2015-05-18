@@ -5,20 +5,20 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-128             # Number of particles
+32              # Number of particles
 192.d0          # Density
 0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-.true.          # .true. if diagonal simulation, .false. otherwise
+.false.         # .true. if diagonal simulation, .false. otherwise
 3.d-5           # Time step 
 60              # Number of beads 
 1982            # Seed of the random number generator
 0.d0            # Parameters of the propagator decomposition
 0.d0
-0.2d0		# Size of the CM movements (in units of density^(1/dim))
+0.15d0		# Size of the CM movements (in units of density^(1/dim))
 16              # Length of the Staging movements
 5               # Number of staging movements per step
 
@@ -30,14 +30,14 @@
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
-700.d0          # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
+850.d0          # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
 0.05d0          # 2nd parameter for the OBDM Guess for importance sampling, \approx n_0
 10              # Number of evaluation of OBDM per step
-5               # Maximum angular momentum partial wave in OBDM
+0               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-100             # Number of blocks
+2000            # Number of blocks
 50              # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

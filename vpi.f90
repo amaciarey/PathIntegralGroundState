@@ -21,12 +21,12 @@ real (kind=8)    :: AvE,AvK,AvV
 real (kind=8)    :: AvE2,AvK2,AvV2
 real (kind=8)    :: VarE,VarK,VarV
 real (kind=8)    :: end,begin
-real (kind=8)    :: stag_move
+real (kind=8)    :: stag_move,stag_half
 integer (kind=4) :: seed
 integer (kind=4) :: Lstag
 integer (kind=4) :: k,j
 integer (kind=4) :: ip
-integer (kind=4) :: attempted
+integer (kind=4) :: attempted,attemp_half
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
 integer (kind=4) :: istag,Nstag
@@ -34,6 +34,7 @@ integer (kind=4) :: ngr
 integer (kind=4) :: Nobdm,iobdm
 integer (kind=4) :: Nk
 integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
+integer (kind=4) :: acc_bd_half,acc_cm_half,acc_head_half,acc_tail_half
 
 real (kind=8),dimension(:),allocatable     :: LogWF
 real (kind=8),dimension(:,:),allocatable   :: xend
@@ -76,12 +77,14 @@ do k=1,dim
    qbin(k)     = 2.d0*pi/Lbox(k)
 end do
 
-rcut      = minval(LboxHalf)
-rcut2     = rcut*rcut
-rbin      = rcut/real(Nbin)
-delta_cm  = delta_cm/density**(1.d0/real(dim))
-attempted = Nstep*Np
-stag_move = real(attempted*Nstag)
+rcut        = minval(LboxHalf)
+rcut2       = rcut*rcut
+rbin        = rcut/real(Nbin)
+delta_cm    = delta_cm/density**(1.d0/real(dim))
+attempted   = Nstep*Np
+stag_move   = real(attempted*Nstag)
+attemp_half = 2*attempted
+stag_half   = 2*stag_move
 
 !Definition of the parameters of the propagator
 
@@ -176,6 +179,11 @@ do iblock=1,Nblock
    acc_head = 0
    acc_tail = 0
 
+   acc_cm_half   = 0
+   acc_bd_half   = 0
+   acc_head_half = 0
+   acc_tail_half = 0
+
    ngr  = 0
    gr   = 0.d0
    Sk   = 0.d0
@@ -193,13 +201,13 @@ do iblock=1,Nblock
 
             do istag=1,Nstag            
                      
-               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               !call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+               !call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+               !call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               !call Bisection(LogWF,dt,ip,Path,acc_bd)
-               !call MoveHeadBisection(LogWF,dt,ip,Path,acc_head)
-               !call MoveTailBisection(LogWF,dt,ip,Path,acc_tail)
+               call Bisection(LogWF,dt,ip,Path,acc_bd)
+               call MoveHeadBisection(LogWF,dt,ip,Path,acc_head)
+               call MoveTailBisection(LogWF,dt,ip,Path,acc_tail)
                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             end do
 
@@ -209,13 +217,18 @@ do iblock=1,Nblock
           
          do ip=1,Np-1
 
-            call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
-                  
+            if (mod(istep,1)==0) then
+               call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+            end if
+
             do istag=1,Nstag            
                
-               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               !call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+               !call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+               !call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               call Bisection(LogWF,dt,ip,Path,acc_bd)
+               call MoveHeadBisection(LogWF,dt,ip,Path,acc_head)
+               call MoveTailBisection(LogWF,dt,ip,Path,acc_tail)
                
             end do
 
@@ -226,14 +239,19 @@ do iblock=1,Nblock
          do iobdm=1,Nobdm
                
             do j=1,2
+               
+               if (mod(istep,1)==0) then
+                  call TranslateHalfChain(j,0.5d0*delta_cm,LogWF,dt,Np,Path,xend,acc_cm_half)
+               end if
 
-               call TranslateHalfChain(j,delta_cm,LogWF,dt,Np,Path,xend)
-                  
                do istag=1,Nstag
-                  
-                  call MoveHeadHalfChain(j,LogWF,dt,Lstag,Np,Path,xend)
-                  call MoveTailHalfChain(j,LogWF,dt,Lstag,Np,Path,xend)
-                  call StagingHalfChain(j,LogWF,dt,Lstag,Np,Path,xend)
+                                    
+                  !call MoveHeadHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_head_half)
+                  !call MoveTailHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_tail_half)
+                  !call StagingHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_bd_half)
+                  call MoveHeadHalfBisection(j,LogWF,dt,Np,Path,xend,acc_head_half)
+                  call MoveTailHalfBisection(j,LogWF,dt,Np,Path,xend,acc_tail_half)
+                  call BisectionHalf(j,LogWF,dt,Np,Path,xend,acc_bd_half)
                   
                end do
 
@@ -315,11 +333,23 @@ do iblock=1,Nblock
    print 102, '  > <Ec> =',BlockAvK/Np,'+/-',BlockVarK/Np
    print 102, '  > <Ep> =',BlockAvV/Np,'+/-',BlockVarV/Np
    print *, ''
-   print 101, '# Accepted CM moves      =',100*real(acc_cm)/real(attempted),'%'
-   print 101, '# Accepted staging moves =',100*real(acc_bd)/stag_move,'%'
-   print 101, '# Accepted head moves    =',100*real(acc_head)/stag_move,'%'
-   print 101, '# Accepted tail moves    =',100*real(acc_tail)/stag_move,'%'
-   print 101, '# Time per block         =',end-begin,'s'
+   print *, '# Acceptance of the diagonal movements:'
+   print *, ''
+   print 101, '> CM movements      =',100*real(acc_cm)/real(attempted),'%'
+   print 101, '> Staging movements =',100*real(acc_bd)/stag_move,'%'
+   print 101, '> Head movements    =',100*real(acc_head)/stag_move,'%'
+   print 101, '> Tail movements    =',100*real(acc_tail)/stag_move,'%'
+   if (diagonal .eq. .false.) then
+      print *, ' '
+      print *, '# Acceptance of off-diagonal movements:'
+      print *, ' '
+      print 101, '> CM movements      =',100*real(acc_cm_half)/real(attemp_half),'%'
+      print 101, '> Staging movements =',100*real(acc_bd_half)/stag_half,'%'
+      print 101, '> Head movements    =',100*real(acc_head_half)/stag_half,'%'
+      print 101, '> Tail movements    =',100*real(acc_tail_half)/stag_half,'%'
+      print *, ' '
+   end if
+   print 101, '# Time per block    =',end-begin,'seconds'
   
 end do
 
