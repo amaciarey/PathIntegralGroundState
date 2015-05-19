@@ -5,16 +5,16 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-32              # Number of particles
+50              # Number of particles
 192.d0          # Density
-0.d0            # Polarization angle
+0.6d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-.false.         # .true. if diagonal simulation, .false. otherwise
+.true.          # .true. if diagonal simulation, .false. otherwise
 3.d-5           # Time step 
-60              # Number of beads 
+20              # Number of beads 
 1982            # Seed of the random number generator
 0.d0            # Parameters of the propagator decomposition
 0.d0
@@ -37,7 +37,7 @@
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-2000            # Number of blocks
+200             # Number of blocks
 50              # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

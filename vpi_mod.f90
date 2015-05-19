@@ -29,7 +29,7 @@ contains
           GreenFunction = dt*4.d0*(Pot+(1.d0-a_1)*dt*dt*F2/12.d0)/3.d0
        end if
 
-       GreenFunction = dt*Pot
+       !GreenFunction = dt*Pot
 
     else if (opt==1) then
        
@@ -1627,7 +1627,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 3
+    Nlev = 4
 
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
@@ -1778,7 +1778,8 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 3
+    !Nlev = 4
+    Nlev = int((4-1)*grnd())+2
 
     ii = 0
     ie = ii+2**Nlev
@@ -1949,7 +1950,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 2
+    Nlev = 4
 
     Sold = 0.d0
     Snew = 0.d0
@@ -2161,7 +2162,8 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 3
+    !Nlev = 4
+    Nlev = int((4-1)*grnd())+2
 
     !Pick a random bead that is the starting point of the displaced 
     !piece of chain
@@ -2334,7 +2336,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 2
+    Nlev = 4
 
     Sold = 0.d0
     Snew = 0.d0
@@ -2738,140 +2740,3 @@ contains
 !-----------------------------------------------------------------------
 
 end module vpi_mod
-
-!-----------------------------------------------------------------------
-
-!!$  subroutine Bisection(LogWF,dt,ip,Path,accepted)
-!!$
-!!$    implicit none
-!!$
-!!$    logical          :: accept
-!!$    real (kind=8)    :: dt,dt_bis
-!!$    real (kind=8)    :: gauss1,gauss2
-!!$    real (kind=8)    :: DeltaS,sigma
-!!$    real (kind=8)    :: SumDeltaS,PrevDeltaS
-!!$    integer (kind=4) :: i,j
-!!$    integer (kind=4) :: ip,ib,k,accepted
-!!$    integer (kind=4) :: ilev,Nlev,delta_ib
-!!$    integer (kind=4) :: iprev,inext,icurr
-!!$        
-!!$    real (kind=8),dimension (dim)           :: xnew,xold
-!!$    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-!!$    real (kind=8),dimension (0:Nmax+1)      :: LogWF
-!!$    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
-!!$    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
-!!$    
-!!$    Nlev = 4
-!!$
-!!$    !Pick a random bead that is the starting point of the displaced 
-!!$    !piece of chain
-!!$    
-!!$    i = 2*int((Nb-2**(Nlev-1)+1)*grnd())
-!!$
-!!$    !Save the original chain
-!!$
-!!$    do ib=0,2*Nb
-!!$       do k=1,dim
-!!$          OldChain(k,ib) = Path(k,ip,ib)
-!!$       end do
-!!$    end do
-!!$    
-!!$    PrevDeltaS = 0.d0
-!!$    SumDeltaS  = 0.d0
-!!$
-!!$    do ilev=1,Nlev
-!!$
-!!$       delta_ib  = 2**(Nlev-ilev+1)
-!!$       dt_bis    = 0.5d0*delta_ib*dt
-!!$       sigma     = sqrt(0.5d0*dt_bis)
-!!$       SumDeltaS = 0.d0
-!!$       
-!!$       do j=1,2**(ilev-1)
-!!$
-!!$          iprev = i+(j-1)*delta_ib
-!!$          inext = i+j*delta_ib
-!!$          icurr = (iprev+inext)/2
-!!$
-!!$          !Free particle sampling
-!!$
-!!$          do k=1,dim
-!!$
-!!$             xold(k) = Path(k,ip,icurr)               
-!!$
-!!$             call rangauss(1.d0,0.d0,gauss1,gauss2)
-!!$
-!!$             xprev(k) = Path(k,ip,iprev)-xold(k)
-!!$             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-!!$             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-!!$             xprev(k) = xold(k)+xprev(k)
-!!$             
-!!$             xnext(k) = xold(k)-Path(k,ip,inext)
-!!$             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-!!$             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-!!$             xnext(k) = xold(k)-xnext(k)
-!!$             
-!!$             xmid(k) = 0.5d0*(xprev(k)+xnext(k))
-!!$             xnew(k) = xmid(k)+sigma*gauss1
-!!$
-!!$             !Periodic boundary conditions
-!!$
-!!$             call BoundaryConditions(k,xnew(k))
-!!$
-!!$             Path(k,ip,icurr) = xnew(k)
-!!$             
-!!$          end do
-!!$
-!!$          !call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt_bis,DeltaS)
-!!$          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
-!!$
-!!$          SumDeltaS = SumDeltaS+DeltaS
-!!$
-!!$       end do
-!!$
-!!$       !Metropolis question
-!!$
-!!$       if (exp(-SumDeltaS+PrevDeltaS)>=1.d0) then
-!!$          accept     = .True.
-!!$          PrevDeltaS = SumDeltaS
-!!$       else
-!!$          if (exp(-SumDeltaS+PrevDeltaS)>=grnd()) then
-!!$             accept     = .True.
-!!$             PrevDeltaS = SumDeltaS
-!!$          else
-!!$             accept = .False.
-!!$             exit
-!!$          end if
-!!$       end if
-!!$
-!!$    end do
-!!$
-!!$    !Metropolis question
-!!$
-!!$    if (exp(-SumDeltaS)>=1.d0) then
-!!$       accept = .True.
-!!$    else
-!!$       if (exp(-SumDeltaS)>=grnd()) then
-!!$          accept = .True.
-!!$       else
-!!$          accept = .False.
-!!$       end if
-!!$    end if
-!!$    
-!!$    if (accept) then
-!!$    
-!!$       accepted = accepted+1
-!!$    
-!!$    else
-!!$    
-!!$       do ib=0,2*Nb
-!!$          do k=1,dim
-!!$             Path(k,ip,ib) = OldChain(k,ib)
-!!$          end do
-!!$       end do
-!!$    
-!!$    end if
-!!$   
-!!$    return
-!!$  end subroutine Bisection
-!!$
-!!$
