@@ -24,7 +24,7 @@ real (kind=8)    :: end,begin
 real (kind=8)    :: stag_move,stag_half
 real (kind=8)    :: attempted,attemp_half
 integer (kind=4) :: seed
-integer (kind=4) :: Lstag
+integer (kind=4) :: Lstag,Nlev
 integer (kind=4) :: k,j
 integer (kind=4) :: ip
 integer (kind=4) :: Nstep,istep
@@ -36,6 +36,8 @@ integer (kind=4) :: Nk
 integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 integer (kind=4) :: acc_bd_half,acc_cm_half,acc_head_half,acc_tail_half
 
+character (len=3) :: sampling
+
 real (kind=8),dimension(:),allocatable     :: LogWF
 real (kind=8),dimension(:,:),allocatable   :: xend
 real (kind=8),dimension(:,:,:),allocatable :: Path
@@ -45,9 +47,9 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 
 !Reading input parameters
 
-call ReadParameters(resume,crystal,diagonal,wf_table,density,&
-                  & alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,&
-                  & seed,Lstag,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
+call ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
+     & density,alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,&
+     & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
 pi = acos(-1.d0)
 V0 = (sin(alpha))**2
@@ -115,6 +117,20 @@ print *, '=============================================================='
 print *, '       VPI Monte Carlo for homogeneous 2D dipoles             '
 print *, '=============================================================='
 print *, ''
+if (diagonal) then
+   print *, '# The simulation will consider DIAGONAL configurations only'
+else 
+   print *, '# The simulation will consider OFF-DIAGONAL configurations'
+end if
+print *, ' '
+if (sampling=="sta") then
+   print *, '# The Monte Carlo sampling will be performed using STAGING'
+   print *, '  algorithm'
+else
+   print *, '# The Monte Carlo sampling will be performed using BISECTION'
+   print *, '  algorithm'
+end if
+print *, ' '
 print *, '# Simulation parameters:'
 print *, ''
 print 103, '  > Dimensions          :',dim
@@ -199,16 +215,18 @@ do iblock=1,Nblock
                call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
             end if
 
-            do istag=1,Nstag            
-                     
-               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
-               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               !call Bisection(LogWF,dt,ip,Path,acc_bd)
-               !call MoveHeadBisection(LogWF,dt,ip,Path,acc_head)
-               !call MoveTailBisection(LogWF,dt,ip,Path,acc_tail)
-               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            do istag=1,Nstag
+               
+               if (sampling=="sta") then                     
+                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               else
+                  call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
+                  call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
+                  call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
+               end if
+
             end do
 
          end do
@@ -223,13 +241,16 @@ do iblock=1,Nblock
 
             do istag=1,Nstag            
                
-               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
-               !call Bisection(LogWF,dt,ip,Path,acc_bd)
-               !call MoveHeadBisection(LogWF,dt,ip,Path,acc_head)
-               !call MoveTailBisection(LogWF,dt,ip,Path,acc_tail)
-               
+               if (sampling=="sta") then
+                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               else
+                  call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
+                  call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
+                  call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
+               end if
+
             end do
 
          end do
@@ -246,14 +267,17 @@ do iblock=1,Nblock
                end if
 
                do istag=1,Nstag
-                                    
-                  call MoveHeadHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_head_half)
-                  call MoveTailHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_tail_half)
-                  call StagingHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_bd_half)
-                  !call MoveHeadHalfBisection(j,LogWF,dt,Np,Path,xend,acc_head_half)
-                  !call MoveTailHalfBisection(j,LogWF,dt,Np,Path,xend,acc_tail_half)
-                  !call BisectionHalf(j,LogWF,dt,Np,Path,xend,acc_bd_half)
-                  
+                               
+                  if (sampling=="sta") then
+                     call MoveHeadHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_head_half)
+                     call MoveTailHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_tail_half)
+                     call StagingHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_bd_half)
+                  else
+                     call MoveHeadHalfBisection(j,LogWF,dt,Nlev,Np,Path,xend,acc_head_half)
+                     call MoveTailHalfBisection(j,LogWF,dt,Nlev,Np,Path,xend,acc_tail_half)
+                     call BisectionHalf(j,LogWF,dt,Nlev,Np,Path,xend,acc_bd_half)
+                  end if
+
                end do
 
             end do
@@ -340,7 +364,7 @@ do iblock=1,Nblock
    print 101, '> Staging movements =',100*real(acc_bd)/stag_move,'%'
    print 101, '> Head movements    =',100*real(acc_head)/stag_move,'%'
    print 101, '> Tail movements    =',100*real(acc_tail)/stag_move,'%'
-   if (diagonal .eq. .false.) then
+   if (diagonal .eqv. .false.) then
       print *, ' '
       print *, '# Acceptance of off-diagonal movements:'
       print *, ' '

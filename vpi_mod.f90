@@ -99,17 +99,18 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine ReadParameters(resume,crystal,diagonal,wf_table,density,&
-       & alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,Lstag,Nstag,&
-       & Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
+  subroutine ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
+       & density,alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,&
+       & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
 
-    logical          :: resume, crystal, diagonal, wf_table
-    real (kind=8)    :: density, alpha, dt, a_1, t_0, delta_cm
-    real (kind=8)    :: Rm, Ak, N0
-    integer (kind=4) :: dim, Np, Nb, seed, Lstag, Nstag, Nmax
-    integer (kind=4) :: Nobdm, Nblock, Nstep, Nbin, Nk
+    logical           :: resume, crystal, diagonal, wf_table
+    character (len=3) :: sampling
+    real (kind=8)     :: density, alpha, dt, a_1, t_0, delta_cm
+    real (kind=8)     :: Rm, Ak, N0
+    integer (kind=4)  :: dim, Np, Nb, seed, Lstag, Nstag, Nmax
+    integer (kind=4)  :: Nobdm, Nblock, Nstep, Nbin, Nk, Nlev
 
     open (unit=1, file='vpi.in', status='old')
 
@@ -134,7 +135,29 @@ contains
     read (1,*) a_1
     read (1,*) t_0
     read (1,*) delta_cm
-    read (1,*) Lstag
+    read (1,*) sampling
+    if (sampling=="sta") then
+       read (1,*) Lstag
+       read (1,*) 
+    else
+       if (sampling=="bis") then
+          read (1,*) 
+          read (1,*) Nlev
+       else
+          print *, ' '
+          print *, 'ERROR!!!'
+          print *, ' '
+          print *, 'The sampling method must be one of these two options:'
+          print *, ' '
+          print *, ' 1. sta = For staging method'
+          print *, ' 2. bis = For bisection method'
+          print *, ' '
+          print *, 'Set the parameter "sampling" to one of the valid options'
+          print *, 'and try again'
+          print *, ' '
+          stop
+       end if
+    end if
     read (1,*) Nstag
     read (1,*)
     read (1,*)
@@ -637,7 +660,7 @@ contains
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: Lstag,j,i
+    integer (kind=4) :: Lstag,j
     integer (kind=4) :: ii,ie
 
     real (kind=8),dimension (dim)           :: xnew,xold
@@ -733,7 +756,7 @@ contains
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: Lstag,j,i
+    integer (kind=4) :: Lstag,j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: half
 
@@ -846,7 +869,7 @@ contains
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: j,i
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: Lmax,Ls
 
@@ -981,7 +1004,7 @@ contains
     real (kind=8)    :: rij,rij2
     real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: j,i
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: Lmax,Ls
     integer (kind=4) :: half
@@ -1160,7 +1183,7 @@ contains
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: j,i
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: Lmax,Ls
     
@@ -1294,7 +1317,7 @@ contains
     real (kind=8)    :: rij,rij2
     real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: j,i
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: Lmax,Ls
     integer (kind=4) :: half
@@ -1465,7 +1488,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine Bisection(LogWF,dt,ip,Path,accepted)
+  subroutine Bisection(LogWF,dt,level,ip,Path,accepted)
 
     implicit none
 
@@ -1475,10 +1498,10 @@ contains
     real (kind=8)    :: DeltaS,sigma
     real (kind=8)    :: SumDeltaS,TotDeltaS
     real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    integer (kind=4) :: i,j
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,delta_ib
+    integer (kind=4) :: ilev,Nlev,level,delta_ib
     integer (kind=4) :: iprev,inext,icurr
         
     real (kind=8),dimension (dim)           :: xnew,xold
@@ -1487,7 +1510,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 4
+    Nlev = level
 
     !Pick a random bead that is the starting point of the displaced 
     !piece of chain
@@ -1603,7 +1626,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine BisectionHalf(half,LogWF,dt,ip,Path,xend,accepted)
+  subroutine BisectionHalf(half,LogWF,dt,level,ip,Path,xend,accepted)
 
     implicit none
 
@@ -1613,10 +1636,10 @@ contains
     real (kind=8)    :: DeltaS,sigma
     real (kind=8)    :: SumDeltaS,TotDeltaS
     real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    integer (kind=4) :: i,j
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,delta_ib
+    integer (kind=4) :: ilev,Nlev,level,delta_ib
     integer (kind=4) :: iprev,inext,icurr
     integer (kind=4) :: half
         
@@ -1627,7 +1650,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 4
+    Nlev = level
 
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
@@ -1756,7 +1779,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveHeadBisection(LogWF,dt,ip,Path,accepted)
+  subroutine MoveHeadBisection(LogWF,dt,level,ip,Path,accepted)
 
     implicit none
 
@@ -1766,10 +1789,10 @@ contains
     real (kind=8)    :: DeltaS,sigma
     real (kind=8)    :: SumDeltaS,TotDeltaS
     real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    integer (kind=4) :: i,j
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,delta_ib
+    integer (kind=4) :: ilev,Nlev,level,delta_ib
     integer (kind=4) :: iprev,inext,icurr
         
     real (kind=8),dimension (dim)           :: xnew,xold
@@ -1778,8 +1801,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    !Nlev = 4
-    Nlev = int((4-1)*grnd())+2
+    Nlev = int((level-1)*grnd())+2
 
     ii = 0
     ie = ii+2**Nlev
@@ -1923,7 +1945,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveHeadHalfBisection(half,LogWF,dt,ip,Path,xend,accepted)
+  subroutine MoveHeadHalfBisection(half,LogWF,dt,level,ip,Path,xend,accepted)
 
     implicit none
 
@@ -1935,10 +1957,10 @@ contains
     real (kind=8)    :: LevelDeltaS,PrevDeltaS
     real (kind=8)    :: rij,rij2
     real (kind=8)    :: Snew,Sold
-    integer (kind=4) :: i,j
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,delta_ib
+    integer (kind=4) :: ilev,Nlev,level,delta_ib
     integer (kind=4) :: iprev,inext,icurr
     integer (kind=4) :: half
         
@@ -1950,7 +1972,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 4
+    Nlev = level
 
     Sold = 0.d0
     Snew = 0.d0
@@ -2140,7 +2162,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveTailBisection(LogWF,dt,ip,Path,accepted)
+  subroutine MoveTailBisection(LogWF,dt,level,ip,Path,accepted)
 
     implicit none
 
@@ -2150,10 +2172,10 @@ contains
     real (kind=8)    :: DeltaS,sigma
     real (kind=8)    :: SumDeltaS,TotDeltaS
     real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    integer (kind=4) :: i,j
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,delta_ib
+    integer (kind=4) :: ilev,Nlev,level,delta_ib
     integer (kind=4) :: iprev,inext,icurr
         
     real (kind=8),dimension (dim)           :: xnew,xold
@@ -2162,8 +2184,7 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    !Nlev = 4
-    Nlev = int((4-1)*grnd())+2
+    Nlev = int((level-1)*grnd())+2
 
     !Pick a random bead that is the starting point of the displaced 
     !piece of chain
@@ -2309,7 +2330,7 @@ contains
 
  !-----------------------------------------------------------------------
 
-  subroutine MoveTailHalfBisection(half,LogWF,dt,ip,Path,xend,accepted)
+  subroutine MoveTailHalfBisection(half,LogWF,dt,level,ip,Path,xend,accepted)
 
     implicit none
 
@@ -2321,10 +2342,10 @@ contains
     real (kind=8)    :: LevelDeltaS,PrevDeltaS
     real (kind=8)    :: rij,rij2
     real (kind=8)    :: Snew,Sold
-    integer (kind=4) :: i,j
+    integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,delta_ib
+    integer (kind=4) :: ilev,Nlev,level,delta_ib
     integer (kind=4) :: iprev,inext,icurr
     integer (kind=4) :: half
         
@@ -2336,8 +2357,8 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = 4
-
+    Nlev = level
+    
     Sold = 0.d0
     Snew = 0.d0
 

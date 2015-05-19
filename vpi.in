@@ -13,13 +13,15 @@
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
 .true.          # .true. if diagonal simulation, .false. otherwise
-3.d-5           # Time step 
-20              # Number of beads 
+2.5d-5          # Time step 
+24              # Number of beads 
 1982            # Seed of the random number generator
 0.d0            # Parameters of the propagator decomposition
 0.d0
-0.15d0		# Size of the CM movements (in units of density^(1/dim))
-16              # Length of the Staging movements
+0.2d0		# Size of the CM movements (in units of density^(1/dim))
+bisection       # Sampling method (sta=staging, bis=bisection)
+18              # Length of the Staging movements
+4               # Bisection level, implies that the length of movements is 2**Nlev
 5               # Number of staging movements per step
 
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
