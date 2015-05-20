@@ -5,22 +5,22 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-50              # Number of particles
+32              # Number of particles
 192.d0          # Density
-0.6d0           # Polarization angle
+0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-.true.          # .true. if diagonal simulation, .false. otherwise
-2.5d-5          # Time step 
-24              # Number of beads 
+.false.         # .true. if diagonal simulation, .false. otherwise
+3.33d-5         # Time step 
+18              # Number of beads 
 1982            # Seed of the random number generator
-0.d0            # Parameters of the propagator decomposition
+0.9d0           # Parameters of the propagator decomposition (a_1 and t_0)
 0.d0
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
-bisection       # Sampling method (sta=staging, bis=bisection)
-18              # Length of the Staging movements
+staging         # Sampling method (sta=staging, bis=bisection)
+16              # Length of the Staging movements
 4               # Bisection level, implies that the length of movements is 2**Nlev
 5               # Number of staging movements per step
 
@@ -32,14 +32,14 @@ bisection       # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
-850.d0          # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
+0.d0            # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
 0.05d0          # 2nd parameter for the OBDM Guess for importance sampling, \approx n_0
 10              # Number of evaluation of OBDM per step
 0               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-200             # Number of blocks
+200              # Number of blocks
 50              # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

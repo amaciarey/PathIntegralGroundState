@@ -29,8 +29,6 @@ contains
           GreenFunction = dt*4.d0*(Pot+(1.d0-a_1)*dt*dt*F2/12.d0)/3.d0
        end if
 
-       !GreenFunction = dt*Pot
-
     else if (opt==1) then
        
        if (mod(ib,2)==0) then
@@ -288,7 +286,7 @@ contains
 
        do j=1,2
           do k=1,dim
-             xend(k,j) = Path(k,Np,Nb)+1.d-6*(2.d0*grnd()-1.d0)
+             xend(k,j) = Path(k,Np,Nb)+1.d-5*(2.d0*grnd()-1.d0)
           end do
        end do
 
@@ -467,61 +465,61 @@ contains
 
     end do
            
-    if (half==1) then
-       
-       do k=1,dim
-          xij(k) = Path(k,ip,Nb)-xend(k,2)
-       end do
-
-       call MinimumImage(xij,rij2)
-
-       if (rij2<=rcut2) then
-          rij  = sqrt(rij2)
-          Snew = log(OBDMGuess(rij)*rij**(dim-1))
-       end if
-    
-       do k=1,dim
-          xij(k) = OldChain(k,Nb)-xend(k,2)
-       end do       
-
-       call MinimumImage(xij,rij2)
-
-       if (rij2<=rcut2) then
-          rij  = sqrt(rij2)
-          Sold = log(OBDMGuess(rij)*rij**(dim-1))
-       end if
-      
-       SumDeltaS = SumDeltaS+(Snew-Sold)
-    
-    end if
-
-    if (half==2) then
-
-       do k=1,dim
-          xij(k) = Path(k,ip,Nb)-xend(k,1)
-       end do
-
-       call MinimumImage(xij,rij2)
-
-       if (rij2<=rcut2) then
-          rij  = sqrt(rij2)
-          Snew = log(OBDMGuess(rij)*rij**(dim-1))
-       end if
-
-       do k=1,dim
-          xij(k) = OldChain(k,Nb)-xend(k,1)
-       end do
-
-       call MinimumImage(xij,rij2)
-
-       if (rij2<=rcut2) then
-          rij  = sqrt(rij2)
-          Sold = log(OBDMGuess(rij)*rij**(dim-1))
-       end if
-
-       SumDeltaS = SumDeltaS+(Snew-Sold)
-
-    end if
+!!$    if (half==1) then
+!!$       
+!!$       do k=1,dim
+!!$          xij(k) = Path(k,ip,Nb)-xend(k,2)
+!!$       end do
+!!$
+!!$       call MinimumImage(xij,rij2)
+!!$
+!!$       if (rij2<=rcut2) then
+!!$          rij  = sqrt(rij2)
+!!$          Snew = log(OBDMGuess(rij)*rij**(dim-1))
+!!$       end if
+!!$    
+!!$       do k=1,dim
+!!$          xij(k) = OldChain(k,Nb)-xend(k,2)
+!!$       end do       
+!!$
+!!$       call MinimumImage(xij,rij2)
+!!$
+!!$       if (rij2<=rcut2) then
+!!$          rij  = sqrt(rij2)
+!!$          Sold = log(OBDMGuess(rij)*rij**(dim-1))
+!!$       end if
+!!$      
+!!$       SumDeltaS = SumDeltaS+(Snew-Sold)
+!!$    
+!!$    end if
+!!$
+!!$    if (half==2) then
+!!$
+!!$       do k=1,dim
+!!$          xij(k) = Path(k,ip,Nb)-xend(k,1)
+!!$       end do
+!!$
+!!$       call MinimumImage(xij,rij2)
+!!$
+!!$       if (rij2<=rcut2) then
+!!$          rij  = sqrt(rij2)
+!!$          Snew = log(OBDMGuess(rij)*rij**(dim-1))
+!!$       end if
+!!$
+!!$       do k=1,dim
+!!$          xij(k) = OldChain(k,Nb)-xend(k,1)
+!!$       end do
+!!$
+!!$       call MinimumImage(xij,rij2)
+!!$
+!!$       if (rij2<=rcut2) then
+!!$          rij  = sqrt(rij2)
+!!$          Sold = log(OBDMGuess(rij)*rij**(dim-1))
+!!$       end if
+!!$
+!!$       SumDeltaS = SumDeltaS+(Snew-Sold)
+!!$
+!!$    end if
     
     if (exp(-SumDeltaS)>=1.d0) then
        accept = .True.
@@ -1109,33 +1107,33 @@ contains
        
     end do
 
-    if (half==2) then
-       
-       do k=1,dim
-          xij(k) = Path(k,ip,Nb)-xend(k,1)
-       end do
-
-       call MinimumImage(xij,rij2)
-
-       if (rij2<=rcut2) then
-          rij  = sqrt(rij2)
-          Snew = log(OBDMGuess(rij)*rij**(dim-1))
-       end if
-          
-       do k=1,dim
-          xij(k) = OldChain(k,Nb)-xend(k,1)
-       end do
-
-       call MinimumImage(xij,rij2)
-
-       if (rij2<=rcut2) then
-          rij  = sqrt(rij2)
-          Sold = log(OBDMGuess(rij)*rij**(dim-1))
-       end if
-
-       SumDeltaS = SumDeltaS+(Snew-Sold)
-
-    end if
+!!$    if (half==2) then
+!!$       
+!!$       do k=1,dim
+!!$          xij(k) = Path(k,ip,Nb)-xend(k,1)
+!!$       end do
+!!$
+!!$       call MinimumImage(xij,rij2)
+!!$
+!!$       if (rij2<=rcut2) then
+!!$          rij  = sqrt(rij2)
+!!$          Snew = log(OBDMGuess(rij)*rij**(dim-1))
+!!$       end if
+!!$          
+!!$       do k=1,dim
+!!$          xij(k) = OldChain(k,Nb)-xend(k,1)
+!!$       end do
+!!$
+!!$       call MinimumImage(xij,rij2)
+!!$
+!!$       if (rij2<=rcut2) then
+!!$          rij  = sqrt(rij2)
+!!$          Sold = log(OBDMGuess(rij)*rij**(dim-1))
+!!$       end if
+!!$
+!!$       SumDeltaS = SumDeltaS+(Snew-Sold)
+!!$
+!!$    end if
 
     !Metropolis question
     
@@ -1423,33 +1421,33 @@ contains
        
     end do
       
-    if (half==1) then
-       
-       do k=1,dim
-          xij(k) = Path(k,ip,Nb)-xend(k,2)
-       end do
-
-       call MinimumImage(xij,rij2)
-
-       if (rij2<=rcut2) then
-          rij  = sqrt(rij2)
-          Snew = log(OBDMGuess(rij)*rij**(dim-1))
-       end if
-          
-       do k=1,dim
-          xij(k) = OldChain(k,Nb)-xend(k,2)
-       end do
-
-       call MinimumImage(xij,rij2)
-
-       if (rij2<=rcut2) then
-          rij  = sqrt(rij2)
-          Sold = log(OBDMGuess(rij)*rij**(dim-1))
-       end if
-
-       SumDeltaS = SumDeltaS+(Snew-Sold)
-    
-    end if
+!!$    if (half==1) then
+!!$       
+!!$       do k=1,dim
+!!$          xij(k) = Path(k,ip,Nb)-xend(k,2)
+!!$       end do
+!!$
+!!$       call MinimumImage(xij,rij2)
+!!$
+!!$       if (rij2<=rcut2) then
+!!$          rij  = sqrt(rij2)
+!!$          Snew = log(OBDMGuess(rij)*rij**(dim-1))
+!!$       end if
+!!$          
+!!$       do k=1,dim
+!!$          xij(k) = OldChain(k,Nb)-xend(k,2)
+!!$       end do
+!!$
+!!$       call MinimumImage(xij,rij2)
+!!$
+!!$       if (rij2<=rcut2) then
+!!$          rij  = sqrt(rij2)
+!!$          Sold = log(OBDMGuess(rij)*rij**(dim-1))
+!!$       end if
+!!$
+!!$       SumDeltaS = SumDeltaS+(Snew-Sold)
+!!$    
+!!$    end if
     
     !Metropolis question
     
@@ -2545,6 +2543,380 @@ contains
    
     return
   end subroutine MoveTailHalfBisection
+
+!-----------------------------------------------------------------------
+
+  subroutine OpenChain(LogWF,dt,Lmax,ip,Path,xend,isopen,accepted)
+    
+    implicit none
+
+    logical          :: isopen,accept
+    real (kind=8)    :: dt,sigma
+    real (kind=8)    :: gauss1,gauss2
+    real (kind=8)    :: DeltaS,SumDeltaS,DeltaK
+    real (kind=8)    :: rij2
+    integer (kind=4) :: half
+    integer (kind=4) :: ip,ib,k,accepted
+    integer (kind=4) :: j
+    integer (kind=4) :: ii,ie
+    integer (kind=4) :: Lmax,Ls
+
+    real (kind=8),dimension (dim,2)         :: xend
+    real (kind=8),dimension (dim)           :: xnew,xold,xij
+    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
+    
+
+    Ls   = int((Lmax-1)*grnd())+2
+    half = int(grnd()*2)+1
+    
+    SumDeltaS = -log(5.d0)
+
+    if (half==1) then
+
+       ii = Nb-Ls
+       ie = Nb
+       
+       !Save the original positions of the piece of the chain
+       !that will be displaced
+      
+       do ib=ii,ie
+          do k=1,dim
+             OldChain(k,ib) = Path(k,ip,ib)
+          end do
+       end do
+       
+       !Make an initial guess for the position of central bead
+    
+       do k=1,dim
+       
+          xold(k) = Path(k,ip,ie)               
+       
+          call rangauss(1.d0,0.d0,gauss1,gauss2)
+          
+          xprev(k) = Path(k,ip,ii)-xold(k)
+          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+          xprev(k) = xold(k)+xprev(k)
+          
+          xmid(k)  = xprev(k)
+          sigma    = sqrt(real(Ls)*dt)
+          
+          xnew(k) = xmid(k)+sigma*gauss1
+          
+          !Periodic boundary conditions
+          
+          call BoundaryConditions(k,xnew(k))
+          
+          Path(k,ip,ie) = xnew(k)
+          
+       end do
+       
+       call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
+    
+       SumDeltaS = SumDeltaS+DeltaS
+
+    else
+
+       ii = Nb
+       ie = Nb+Ls
+
+       !Save the original positions of the piece of the chain
+       !that will be displaced
+      
+       do ib=ii,ie
+          do k=1,dim
+             OldChain(k,ib) = Path(k,ip,ib)
+          end do
+       end do
+       
+       SumDeltaS = 0.d0
+       
+       !Make an initial guess for the position of central bead
+       
+       do k=1,dim
+          
+          xold(k) = Path(k,ip,ii)               
+          
+          call rangauss(1.d0,0.d0,gauss1,gauss2)
+          
+          xnext(k) = xold(k)-Path(k,ip,ie)
+          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+          xnext(k) = xold(k)-xnext(k)
+          
+          xmid(k)  = xnext(k)
+          sigma    = sqrt(real(Ls)*dt)
+          xnew(k)  = xmid(k)+sigma*gauss1
+          
+          !Periodic boundary conditions
+          
+          call BoundaryConditions(k,xnew(k))
+          
+          Path(k,ip,ii) = xnew(k)
+          
+       end do
+       
+       call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
+       
+       SumDeltaS = SumDeltaS+DeltaS
+              
+    end if
+
+    !Reconstruction of the whole chain piece using Staging
+
+    do j=1,Ls-1
+       
+       do k=1,dim
+          
+          xold(k) = Path(k,ip,ii+j)               
+          
+          call rangauss(1.d0,0.d0,gauss1,gauss2)
+          
+          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+          xprev(k) = xold(k)+xprev(k)
+          
+          xnext(k) = xold(k)-Path(k,ip,ie)
+          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+          xnext(k) = xold(k)-xnext(k)
+          
+          xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+          sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          
+          xnew(k) = xmid(k)+sigma*gauss1
+          
+          !Periodic boundary conditions
+          
+          call BoundaryConditions(k,xnew(k))
+          
+          Path(k,ip,ii+j) = xnew(k)
+          
+       end do
+       
+       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+       
+       SumDeltaS = SumDeltaS+DeltaS
+       
+    end do
+
+    !Evaluation of the change in the kinetic action due to the fact
+    !that the link is broken
+
+    do k=1,dim
+       xij(k) = Path(k,ip,ii)-Path(k,ip,ie)
+    end do
+    
+    call MinimumImage(xij,rij2)
+    
+    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*log(0.5d0*real(Ls)*dt)
+     
+    !Metropolis question
+    
+    if (exp(-SumDeltaS-DeltaK)>=1.d0) then
+       accept = .True.
+    else
+       if (exp(-SumDeltaS-DeltaK)>=grnd()) then
+          accept = .True.
+       else
+          accept = .False.
+       end if
+    end if
+
+    if (accept) then
+    
+       isopen   = .true.
+       accepted = accepted+1
+       
+       if (half==1) then
+          do k=1,dim
+             xend(k,1) = Path(k,ip,Nb)
+             xend(k,2) = OldChain(k,Nb)
+          end do
+       else
+          do k=1,dim
+             xend(k,1) = OldChain(k,Nb)
+             xend(k,2) = Path(k,ip,Nb)
+          end do
+       end if
+    
+    else
+       
+       do ib=ii,ie
+          do k=1,dim
+             Path(k,ip,ib) = OldChain(k,ib)
+          end do
+       end do
+
+    end if
+
+    return
+  end subroutine OpenChain
+
+!-----------------------------------------------------------------------
+
+  subroutine CloseChain(LogWF,dt,Lmax,ip,Path,xend,isopen,accepted)
+
+    implicit none
+
+    logical          :: isopen,accept
+    real (kind=8)    :: dt,sigma
+    real (kind=8)    :: gauss1,gauss2
+    real (kind=8)    :: DeltaS,SumDeltaS,DeltaK
+    real (kind=8)    :: rij2
+    integer (kind=4) :: half
+    integer (kind=4) :: ip,ib,k,accepted
+    integer (kind=4) :: j
+    integer (kind=4) :: ii,ie
+    integer (kind=4) :: Lmax,Ls
+
+    real (kind=8),dimension (dim,2)         :: xend
+    real (kind=8),dimension (dim)           :: xnew,xold,xij
+    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
+
+    Ls = int((Lmax-1)*grnd())+2
+
+    SumDeltaS = log(5.d0)
+
+    half = int(grnd()*2)+1
+
+    if (half==1) then
+
+       ii = Nb-Ls
+       ie = Nb
+       
+       !Save the original positions of the piece of the chain
+       !that will be displaced
+      
+       do ib=ii,ie
+          do k=1,dim
+             OldChain(k,ib) = Path(k,ip,ib)
+          end do
+       end do
+
+       do k=1,dim
+          Path(k,ip,ie) = xend(k,2)
+       end do
+
+    else
+       
+       ii = Nb
+       ie = Nb+Ls
+       
+       !Save the original positions of the piece of the chain
+       !that will be displaced
+      
+       do ib=ii,ie
+          do k=1,dim
+             OldChain(k,ib) = Path(k,ip,ib)
+          end do
+       end do
+
+       do k=1,dim
+          Path(k,ip,ii) = xend(k,1)
+       end do
+
+    end if
+
+    !Reconstruction of the whole chain piece using Staging
+
+    do j=1,Ls-1
+       
+       do k=1,dim
+          
+          xold(k) = Path(k,ip,ii+j)               
+          
+          call rangauss(1.d0,0.d0,gauss1,gauss2)
+          
+          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+          xprev(k) = xold(k)+xprev(k)
+          
+          xnext(k) = xold(k)-Path(k,ip,ie)
+          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+          xnext(k) = xold(k)-xnext(k)
+          
+          xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+          sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          
+          xnew(k) = xmid(k)+sigma*gauss1
+          
+          !Periodic boundary conditions
+          
+          call BoundaryConditions(k,xnew(k))
+          
+          Path(k,ip,ii+j) = xnew(k)
+          
+       end do
+       
+       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+       
+       SumDeltaS = SumDeltaS+DeltaS
+       
+    end do
+
+        !Evaluation of the change in the kinetic action due to the fact
+    !that the link is broken
+
+    do k=1,dim
+       xij(k) = Path(k,ip,ii)-Path(k,ip,ie)
+    end do
+    
+    call MinimumImage(xij,rij2)
+    
+    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*log(0.5d0*real(Ls)*dt)
+    
+    !Metropolis question
+    
+    if (exp(-SumDeltaS+DeltaK)>=1.d0) then
+       accept = .True.
+    else
+       if (exp(-SumDeltaS+DeltaK)>=grnd()) then
+          accept = .True.
+       else
+          accept = .False.
+       end if
+    end if
+       
+    if (accept) then
+    
+       isopen   = .false.
+       accepted = accepted+1
+       
+       if (half==1) then
+          do k=1,dim
+             xend(k,1) = Path(k,ip,Nb)
+             xend(k,2) = OldChain(k,Nb)
+          end do
+       else
+          do k=1,dim
+             xend(k,1) = OldChain(k,Nb)
+             xend(k,2) = Path(k,ip,Nb)
+          end do
+       end if
+    
+    else
+       
+       do ib=ii,ie
+          do k=1,dim
+             Path(k,ip,ib) = OldChain(k,ib)
+          end do
+       end do
+
+    end if
+    
+
+    return
+  end subroutine CloseChain
 
 !-----------------------------------------------------------------------
 

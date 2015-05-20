@@ -9,6 +9,7 @@ use vpi_mod
 implicit none 
 
 logical          :: crystal,diagonal,resume
+logical          :: isopen
 real (kind=8)    :: dt
 real (kind=8)    :: density,alpha
 real (kind=8)    :: delta_cm
@@ -30,11 +31,14 @@ integer (kind=4) :: ip
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
 integer (kind=4) :: istag,Nstag
-integer (kind=4) :: ngr
+integer (kind=4) :: ngr,nnr
 integer (kind=4) :: Nobdm,iobdm
 integer (kind=4) :: Nk
 integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 integer (kind=4) :: acc_bd_half,acc_cm_half,acc_head_half,acc_tail_half
+integer (kind=4) :: acc_open,try_open
+integer (kind=4) :: acc_close,try_close
+integer (kind=4) :: iworm,zcount,iupdate,idiag
 
 character (len=3) :: sampling
 
@@ -83,10 +87,6 @@ rcut        = minval(LboxHalf)
 rcut2       = rcut*rcut
 rbin        = rcut/real(Nbin)
 delta_cm    = delta_cm/density**(1.d0/real(dim))
-attempted   = real(Nstep*Np)
-stag_move   = real(attempted*Nstag)
-attemp_half = 2.d0*real(Nstep*Nobdm)
-stag_half   = 2.d0*real(Nstep*Nobdm*Nstag)
 
 !Definition of the parameters of the propagator
 
@@ -161,6 +161,7 @@ Avk2 = 0.d0
 AvV2 = 0.d0
 
 ngr = 0
+nnr = 0
 
 AvGr  = 0.d0
 AvGr2 = 0.d0
@@ -176,6 +177,9 @@ VarNr = 0.d0
  
 nrho = 0.d0
 
+isopen = .false.
+iworm  = 0
+
 !Begin the main Monte Carlo loop
 
 do iblock=1,Nblock
@@ -189,6 +193,18 @@ do iblock=1,Nblock
    BlockAvE2 = 0.d0
    BlockAvK2 = 0.d0
    BlockAvV2 = 0.d0
+   
+   try_open  = 0
+   try_close = 0
+
+   attempted   = 0
+   attemp_half = 0
+
+   stag_move = 0
+   stag_half = 0
+
+   acc_open  = 0
+   acc_close = 0
 
    acc_cm   = 0
    acc_bd   = 0
@@ -204,123 +220,151 @@ do iblock=1,Nblock
    gr   = 0.d0
    Sk   = 0.d0
    nrho = 0.d0
+
+   zcount = 0
+   idiag  = 0 
    
    do istep=1,Nstep
 
-      if (diagonal) then
+      if (isopen) then
 
          do ip=1,Np
+
+            if (ip/=iworm) then
+
+               attempted = attempted+1
             
-            if (mod(istep,1)==0) then
                call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
-            end if
-
-            do istag=1,Nstag
                
-               if (sampling=="sta") then                     
-                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
-               else
-                  call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
-                  call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
-                  call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
-               end if
-
-            end do
-
-         end do
-
-      else
-          
-         do ip=1,Np-1
-
-            if (mod(istep,1)==0) then
-               call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
-            end if
-
-            do istag=1,Nstag            
-               
-               if (sampling=="sta") then
-                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
-               else
-                  call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
-                  call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
-                  call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
-               end if
-
-            end do
-
-         end do
-
-         !Move the last chain that represents the off-diagonal configuration of the 
-         !system
-
-         do iobdm=1,Nobdm
-               
-            do j=1,2
-               
-               if (mod(istep,1)==0) then
-                  call TranslateHalfChain(j,delta_cm,LogWF,dt,Np,Path,xend,acc_cm_half)
-               end if
-
                do istag=1,Nstag
+                  stag_move = stag_move+1
+                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               end do
+
+            else
+
+               do iobdm=1,Nobdm
+               
+                  do j=1,2
+
+                     attemp_half = attemp_half+1
+               
+                     call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
+                     
+                     do istag=1,Nstag
+
+                        stag_half = stag_half+1
                                
-                  if (sampling=="sta") then
-                     call MoveHeadHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_head_half)
-                     call MoveTailHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_tail_half)
-                     call StagingHalfChain(j,LogWF,dt,Lstag,Np,Path,xend,acc_bd_half)
-                  else
-                     call MoveHeadHalfBisection(j,LogWF,dt,Nlev,Np,Path,xend,acc_head_half)
-                     call MoveTailHalfBisection(j,LogWF,dt,Nlev,Np,Path,xend,acc_tail_half)
-                     call BisectionHalf(j,LogWF,dt,Nlev,Np,Path,xend,acc_bd_half)
-                  end if
+                        call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
+                        call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
+                        call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
+                        
+                     end do
+
+                  end do
+
+                  nnr = nnr+1
+
+                  call OBDM(xend,nrho)
 
                end do
 
-            end do
-
-            call OBDM(xend,nrho)
-
+            end if
+            
          end do
+
+      else
+         
+         zcount = zcount+1
+      
+         do ip=1,Np
+
+            attempted = attempted+1
+
+            call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+            
+            do istag=1,Nstag
+
+               stag_move = stag_move+1
+
+               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+            end do
+               
+         end do
+         
+      end if
+
+      !Open and Close updates... let's see what happens...
+
+      iupdate = int(grnd()*2)
+
+      if (iupdate==0) then
+         if (isopen .eqv. .false.) then
+            iworm = int(grnd()*Np)+1
+            call OpenChain(LogWF,dt,Lstag,iworm,Path,xend,isopen,acc_open)
+            try_open = try_open+1
+         end if
+      else
+         if (isopen .eqv. .true.) then
+            call CloseChain(LogWF,dt,Lstag,iworm,Path,xend,isopen,acc_close)
+            try_close = try_close+1
+         end if
+      end if                  
+
+      if (isopen .eqv. .false.) then
+         
+         idiag = idiag+1
+
+         !Energy calculation using mixed estimator
+      
+         call LocalEnergy(LogWF,Path(:,:,0),Rm,E1,Kin,Pot)
+         call LocalEnergy(LogWF,Path(:,:,2*Nb),Rm,E2,Kin,Pot)
+
+         E = 0.5d0*(E1+E2)
+
+         call PotentialEnergy(Path(:,:,Nb),Pot)
+      
+         Kin = E-Pot
+            
+         !Accumulating energy averages     
+      
+         call Accumulate(E,Kin,Pot,BlockAvE,BlockAvK,BlockAvV)
+         call Accumulate(E**2,Kin**2,Pot**2,BlockAvE2,BlockAvK2,BlockAvV2)
+
+         !Structural quantities
+      
+         ngr = ngr+1
+      
+         call PairCorrelation(Path(:,:,Nb),gr)
+         call StructureFactor(Nk,Path(:,:,Nb),Sk)
 
       end if
 
-      !Energy calculation using mixed estimator
-      
-      call LocalEnergy(LogWF,Path(:,:,0),Rm,E1,Kin,Pot)
-      call LocalEnergy(LogWF,Path(:,:,2*Nb),Rm,E2,Kin,Pot)
-
-      E = 0.5d0*(E1+E2)
-
-      call PotentialEnergy(Path(:,:,Nb),Pot)
-
-      Kin = E-Pot
-            
-      !Accumulating energy averages     
-      
-      call Accumulate(E,Kin,Pot,BlockAvE,BlockAvK,BlockAvV)
-      call Accumulate(E**2,Kin**2,Pot**2,BlockAvE2,BlockAvK2,BlockAvV2)
-
-      !Structural quantities
-      
-      ngr = ngr+1
-      
-      call PairCorrelation(Path(:,:,Nb),gr)
-      call StructureFactor(Nk,Path(:,:,Nb),Sk)
-
    end do
+
+   if (ngr/=0) then
+      call Normalize(density,Nk,ngr,gr,Sk)
+      call AccumGr(gr,AvGr,AvGr2)
+      call AccumSk(Nk,Sk,AvSk,AvSk2)
+   end if
+
+   if (nnr/=0) then
+      call NormalizeNr(density,zcount,nrho)
+      call AccumNr(nrho,AvNr,AvNr2)
+   end if
 
    !Normalizing averages and evaluating variances per block
    
-   call NormalizeAv(Nstep,BlockAvE,BlockAvK,BlockAvV)
-   call NormalizeAv(Nstep,BlockAvE2,BlockAvK2,BlockAvV2)
+   call NormalizeAv(idiag,BlockAvE,BlockAvK,BlockAvV)
+   call NormalizeAv(idiag,BlockAvE2,BlockAvK2,BlockAvV2)
 
-   BlockVarE = Var(Nstep,BlockAvE,BlockAvE2)
-   BlockVarK = Var(Nstep,BlockAvK,BlockAvK2)
-   BlockVarV = Var(Nstep,BlockAvV,BlockAvV2)
+   BlockVarE = Var(idiag,BlockAvE,BlockAvE2)
+   BlockVarK = Var(idiag,BlockAvK,BlockAvK2)
+   BlockVarV = Var(idiag,BlockAvV,BlockAvV2)
    
    !Accumulating global averages
   
@@ -330,18 +374,12 @@ do iblock=1,Nblock
    !Outputs of the block
 
    write (2,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,BlockAvV/Np
+   
 
    if (mod(iblock,10)==0) then
 
       call CheckPoint(Path,xend)
 
-   end if
-
-   call Normalize(density,Nk,ngr,gr,Sk,nrho)
-   call AccumGr(gr,AvGr,AvGr2)
-   call AccumSk(Nk,Sk,AvSk,AvSk2)
-   if (diagonal .eqv. .false.) then
-      call AccumNr(nrho,AvNr,AvNr2)
    end if
 
    call cpu_time(end)
@@ -374,6 +412,12 @@ do iblock=1,Nblock
       print 101, '> Tail movements    =',100*real(acc_tail_half)/stag_half,'%'
    end if
    print *, ' '
+   print *, '# Acceptance open/close updates:'
+   print *, ' '
+   !print *, '> Open  :',100*real(acc_open)/real(try_open)
+   !print *, '> Close :',100*real(acc_close)/real(try_close)
+   print *, '> Open try:',try_open,'Open acc:',acc_open
+   print *, '> Close try:',try_close,'Close acc:',acc_close
    print 101, '# Time per block    =',end-begin,'seconds'
   
 end do

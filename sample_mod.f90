@@ -330,7 +330,7 @@ contains
   
 !-----------------------------------------------------------------------
 
-  subroutine Normalize(density,Nk,ngr,gr,Sk,nrho)
+  subroutine Normalize(density,Nk,ngr,gr,Sk)
 
     implicit none
 
@@ -340,12 +340,10 @@ contains
     real (kind=8)    :: k_n
     integer (kind=4) :: ibin,k
     integer (kind=4) :: ngr,Nk
-    integer (kind=4) :: m
-
-    real (kind=8),dimension (Nbin)       :: gr
-    real (kind=8),dimension (dim,Nk)     :: Sk
-    real (kind=8),dimension (0:Npw,Nbin) :: nrho
-
+    
+    real (kind=8),dimension (Nbin)   :: gr
+    real (kind=8),dimension (dim,Nk) :: Sk
+    
     k_n  = pi**(0.5d0*dim)/r8_gamma(0.5d0*dim+1.d0)
     norm = real(Np)*real(ngr)
 
@@ -353,9 +351,6 @@ contains
        r   = (real(ibin)-0.5d0)*rbin
        nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
        gr(ibin)   = gr(ibin)/(nid*norm)
-       do m=0,Npw
-          nrho(m,ibin) = nrho(m,ibin)*OBDMGuess(r)
-       end do
     end do
 
     do ibin=1,Nk
@@ -367,6 +362,34 @@ contains
     return
   end subroutine Normalize
 
+!-----------------------------------------------------------------------
+
+  subroutine NormalizeNr(density,nz,nrho)
+
+    implicit none
+
+    real (kind=8)    :: r8_gamma
+    real (kind=8)    :: density
+    real (kind=8)    :: k_n,nid
+    real (kind=8)    :: r
+
+    integer (kind=4) :: ibin,m
+    integer (kind=4) :: nz
+
+    real (kind=8), dimension (0:Npw,Nbin) :: nrho
+
+    k_n = pi**(0.5d0*dim)/r8_gamma(0.5d0*dim+1.d0)
+
+    do ibin=1,Nbin
+       r   = (real(ibin)-0.5d0)*rbin
+       nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
+       do m=0,Npw
+          nrho(m,ibin) = nrho(m,ibin)/(nid*real(nz))
+       end do
+    end do
+    
+    return
+  end subroutine NormalizeNr
 !-----------------------------------------------------------------------
 
   subroutine AccumGr(gr,AvGr,AvGr2)

@@ -1,4 +1,4 @@
-input='PathIntegralGroundState/nr_vpi'
+input='nr_vpi'
 
 data_file=sprintf("%s.out",input)
 plot_file=sprintf("%s.eps",input)
