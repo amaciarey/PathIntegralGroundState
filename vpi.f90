@@ -60,7 +60,7 @@ call ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
 
 pi = acos(-1.d0)
 V0 = (sin(alpha))**2
-CWorm = 0.5d0
+CWorm = 1.d0
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
 
@@ -91,12 +91,6 @@ rcut        = minval(LboxHalf)
 rcut2       = rcut*rcut
 rbin        = rcut/real(Nbin)
 delta_cm    = delta_cm/density**(1.d0/real(dim))
-
-CWormVol = CWorm
-
-do k=1,dim
-   CWormVol = CWormVol/Lbox(k)
-end do
 
 !Definition of the parameters of the propagator
 
@@ -207,14 +201,14 @@ do iblock=1,Nblock
    try_open  = 0
    try_close = 0
 
+   acc_open  = 0
+   acc_close = 0
+
    attempted   = 0
    attemp_half = 0
 
    stag_move = 0
    stag_half = 0
-
-   acc_open  = 0
-   acc_close = 0
 
    acc_cm   = 0
    acc_bd   = 0
@@ -227,10 +221,9 @@ do iblock=1,Nblock
    acc_tail_half = 0
 
    ngr  = 0
-   nnr  = 0
    gr   = 0.d0
    Sk   = 0.d0
-   nrho = 0.d0
+!   nrho = 0.d0
 
    idiag_block = 0 
    
@@ -243,12 +236,12 @@ do iblock=1,Nblock
       if (iupdate==0) then
          if (isopen .eqv. .false.) then
             iworm = int(grnd()*Np)+1
-            call OpenChain(LogWF,dt,Lstag,iworm,Path,xend,isopen,acc_open)
+            call OpenChain(LogWF,density,dt,Lstag,iworm,Path,xend,isopen,acc_open)
             try_open = try_open+1
          end if
       else
          if (isopen .eqv. .true.) then
-            call CloseChain(LogWF,dt,Lstag,iworm,Path,xend,isopen,acc_close)
+            call CloseChain(LogWF,density,dt,Lstag,iworm,Path,xend,isopen,acc_close)
             try_close = try_close+1
          end if
       end if                  
@@ -291,8 +284,6 @@ do iblock=1,Nblock
                      end do
 
                   end do
-
-                  nnr = nnr+1
 
                   call OBDM(xend,nrho)
 
@@ -377,11 +368,11 @@ do iblock=1,Nblock
 
    end if
 
-   if (nnr/=0) then
+   if (idiag_block/=Nstep) then
       
       obdm_bl    = obdm_bl+1
       numz_block = real(idiag)/real(iblock) 
-      !numz_block = real(idiag)
+      numz_block = real(idiag)
       
       call NormalizeNr(density,numz_block,Nobdm,nrho)
       call AccumNr(nrho,AvNr,AvNr2)

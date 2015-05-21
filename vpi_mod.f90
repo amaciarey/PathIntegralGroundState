@@ -2546,11 +2546,12 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine OpenChain(LogWF,dt,Lmax,ip,Path,xend,isopen,accepted)
+  subroutine OpenChain(LogWF,density,dt,Lmax,ip,Path,xend,isopen,accepted)
     
     implicit none
 
     logical          :: isopen,accept
+    real (kind=8)    :: density
     real (kind=8)    :: dt,sigma
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS,DeltaK
@@ -2571,7 +2572,7 @@ contains
     Ls   = int((Lmax-1)*grnd())+2
     half = int(grnd()*2)+1
     
-    SumDeltaS = -log(CWormVol*real(Np))
+    SumDeltaS = -log(CWorm*density)
 
     if (half==1) then
 
@@ -2758,11 +2759,12 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine CloseChain(LogWF,dt,Lmax,ip,Path,xend,isopen,accepted)
+  subroutine CloseChain(LogWF,density,dt,Lmax,ip,Path,xend,isopen,accepted)
 
     implicit none
 
     logical          :: isopen,accept
+    real (kind=8)    :: density
     real (kind=8)    :: dt,sigma
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS,DeltaK
@@ -2782,7 +2784,7 @@ contains
 
     Ls = int((Lmax-1)*grnd())+2
 
-    SumDeltaS = log(CWormVol*real(Np))
+    SumDeltaS = log(CWorm*density)
 
     half = int(grnd()*2)+1
 

@@ -395,7 +395,7 @@ contains
     real (kind=8)    :: density
     real (kind=8)    :: k_n,nid
     real (kind=8)    :: zconf
-    real (kind=8)    :: r
+    real (kind=8)    :: r,nrhist,nr0
 
     integer (kind=4) :: ibin,m
     integer (kind=4) :: Nobdm
@@ -407,10 +407,13 @@ contains
     do ibin=1,Nbin
        r   = (real(ibin)-0.5d0)*rbin
        nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
+       nrhist = nrho(0,ibin)
        do m=0,Npw
-          nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
+          !nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
+          nr0 = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
        end do
-       write (98,*) r,nrho(0,ibin)
+       !write (98,*) r,nrho(0,ibin),nrhist
+       write (98,*) r,nr0,nrhist
     end do
     
     return
