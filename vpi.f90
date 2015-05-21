@@ -21,6 +21,7 @@ real (kind=8)    :: BlockVarE,BlockVarK,BlockVarV
 real (kind=8)    :: AvE,AvK,AvV
 real (kind=8)    :: AvE2,AvK2,AvV2
 real (kind=8)    :: VarE,VarK,VarV
+real (kind=8)    :: numz_block
 real (kind=8)    :: end,begin
 real (kind=8)    :: stag_move,stag_half
 real (kind=8)    :: attempted,attemp_half
@@ -38,7 +39,9 @@ integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 integer (kind=4) :: acc_bd_half,acc_cm_half,acc_head_half,acc_tail_half
 integer (kind=4) :: acc_open,try_open
 integer (kind=4) :: acc_close,try_close
-integer (kind=4) :: iworm,zcount,iupdate,idiag
+integer (kind=4) :: iworm,zcount,iupdate
+integer (kind=4) :: idiag,idiag_block
+integer (kind=4) :: obdm_bl,diag_bl
 
 character (len=3) :: sampling
 
@@ -57,6 +60,7 @@ call ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
 
 pi = acos(-1.d0)
 V0 = (sin(alpha))**2
+CWorm = 0.5d0
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
 
@@ -87,6 +91,12 @@ rcut        = minval(LboxHalf)
 rcut2       = rcut*rcut
 rbin        = rcut/real(Nbin)
 delta_cm    = delta_cm/density**(1.d0/real(dim))
+
+CWormVol = CWorm
+
+do k=1,dim
+   CWormVol = CWormVol/Lbox(k)
+end do
 
 !Definition of the parameters of the propagator
 
@@ -160,9 +170,6 @@ AvE2 = 0.d0
 Avk2 = 0.d0
 AvV2 = 0.d0
 
-ngr = 0
-nnr = 0
-
 AvGr  = 0.d0
 AvGr2 = 0.d0
 VarGr = 0.d0
@@ -177,8 +184,11 @@ VarNr = 0.d0
  
 nrho = 0.d0
 
-isopen = .false.
-iworm  = 0
+isopen  = .false.
+iworm   = 0
+idiag   = 0
+obdm_bl = 0
+diag_bl = 0
 
 !Begin the main Monte Carlo loop
 
@@ -217,14 +227,31 @@ do iblock=1,Nblock
    acc_tail_half = 0
 
    ngr  = 0
+   nnr  = 0
    gr   = 0.d0
    Sk   = 0.d0
    nrho = 0.d0
 
-   zcount = 0
-   idiag  = 0 
+   idiag_block = 0 
    
    do istep=1,Nstep
+
+      !Open and Close updates... let's see what happens...
+
+      iupdate = int(grnd()*2)
+
+      if (iupdate==0) then
+         if (isopen .eqv. .false.) then
+            iworm = int(grnd()*Np)+1
+            call OpenChain(LogWF,dt,Lstag,iworm,Path,xend,isopen,acc_open)
+            try_open = try_open+1
+         end if
+      else
+         if (isopen .eqv. .true.) then
+            call CloseChain(LogWF,dt,Lstag,iworm,Path,xend,isopen,acc_close)
+            try_close = try_close+1
+         end if
+      end if                  
 
       if (isopen) then
 
@@ -277,7 +304,8 @@ do iblock=1,Nblock
 
       else
          
-         zcount = zcount+1
+         idiag = idiag+1
+         idiag_block = idiag_block+1
       
          do ip=1,Np
 
@@ -292,32 +320,10 @@ do iblock=1,Nblock
                call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
                call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
                call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+            
             end do
                
          end do
-         
-      end if
-
-      !Open and Close updates... let's see what happens...
-
-      iupdate = int(grnd()*2)
-
-      if (iupdate==0) then
-         if (isopen .eqv. .false.) then
-            iworm = int(grnd()*Np)+1
-            call OpenChain(LogWF,dt,Lstag,iworm,Path,xend,isopen,acc_open)
-            try_open = try_open+1
-         end if
-      else
-         if (isopen .eqv. .true.) then
-            call CloseChain(LogWF,dt,Lstag,iworm,Path,xend,isopen,acc_close)
-            try_close = try_close+1
-         end if
-      end if                  
-
-      if (isopen .eqv. .false.) then
-         
-         idiag = idiag+1
 
          !Energy calculation using mixed estimator
       
@@ -341,41 +347,51 @@ do iblock=1,Nblock
       
          call PairCorrelation(Path(:,:,Nb),gr)
          call StructureFactor(Nk,Path(:,:,Nb),Sk)
-
+         
       end if
-
+ 
    end do
 
-   if (ngr/=0) then
+   if (idiag_block/=0) then
+
+      diag_bl = diag_bl+1
+      
       call Normalize(density,Nk,ngr,gr,Sk)
+      call NormalizeSk(Nk,ngr,Sk)
       call AccumGr(gr,AvGr,AvGr2)
       call AccumSk(Nk,Sk,AvSk,AvSk2)
+
+      !Normalizing averages and evaluating variances per block
+   
+      call NormalizeAv(idiag_block,BlockAvE,BlockAvK,BlockAvV)
+      call NormalizeAv(idiag_block,BlockAvE2,BlockAvK2,BlockAvV2)
+
+      BlockVarE = Var(idiag_block,BlockAvE,BlockAvE2)
+      BlockVarK = Var(idiag_block,BlockAvK,BlockAvK2)
+      BlockVarV = Var(idiag_block,BlockAvV,BlockAvV2)
+
+      !Accumulating global averages
+  
+      call Accumulate(BlockAvE,BlockAvK,BlockAvV,AvE,AvK,AvV)
+      call Accumulate(BlockAvE**2,BlockAvK**2,BlockAvV**2,AvE2,AvK2,AvV2)
+
    end if
 
    if (nnr/=0) then
-      call NormalizeNr(density,zcount,nrho)
+      
+      obdm_bl    = obdm_bl+1
+      numz_block = real(idiag)/real(iblock) 
+      !numz_block = real(idiag)
+      
+      call NormalizeNr(density,numz_block,Nobdm,nrho)
       call AccumNr(nrho,AvNr,AvNr2)
+   
    end if
-
-   !Normalizing averages and evaluating variances per block
    
-   call NormalizeAv(idiag,BlockAvE,BlockAvK,BlockAvV)
-   call NormalizeAv(idiag,BlockAvE2,BlockAvK2,BlockAvV2)
-
-   BlockVarE = Var(idiag,BlockAvE,BlockAvE2)
-   BlockVarK = Var(idiag,BlockAvK,BlockAvK2)
-   BlockVarV = Var(idiag,BlockAvV,BlockAvV2)
-   
-   !Accumulating global averages
-  
-   call Accumulate(BlockAvE,BlockAvK,BlockAvV,AvE,AvK,AvV)
-   call Accumulate(BlockAvE**2,BlockAvK**2,BlockAvV**2,AvE2,AvK2,AvV2)
-
    !Outputs of the block
 
    write (2,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,BlockAvV/Np
-   
-
+  
    if (mod(iblock,10)==0) then
 
       call CheckPoint(Path,xend)
@@ -414,8 +430,9 @@ do iblock=1,Nblock
    print *, ' '
    print *, '# Acceptance open/close updates:'
    print *, ' '
-   !print *, '> Open  :',100*real(acc_open)/real(try_open)
-   !print *, '> Close :',100*real(acc_close)/real(try_close)
+   print *, '> Diagonal configurations:',idiag_block
+   !print 101, '> Open update  :',100*real(acc_open)/real(try_open),'%'
+   !print 101, '> Close update :',100*real(acc_close)/real(try_close),'%'
    print *, '> Open try:',try_open,'Open acc:',acc_open
    print *, '> Close try:',try_close,'Close acc:',acc_close
    print 101, '# Time per block    =',end-begin,'seconds'
@@ -428,12 +445,12 @@ deallocate (LogWF)
 
 !Normalizing global averages and evaluating final variances
 
-call NormalizeAv(Nblock,AvE,AvK,AvV)
-call NormalizeAv(Nblock,AvE2,AvK2,AvV2)
+call NormalizeAv(diag_bl,AvE,AvK,AvV)
+call NormalizeAv(diag_bl,AvE2,AvK2,AvV2)
 
-VarE = Var(Nblock,AvE,AvE2)
-VarK = Var(Nblock,AvK,AvK2)
-VarV = Var(Nblock,AvV,AvV2)
+VarE = Var(diag_bl,AvE,AvE2)
+VarK = Var(diag_bl,AvK,AvK2)
+VarV = Var(diag_bl,AvV,AvV2)
 
 print *, '=============================================================='
 print *, 'FINAL RESULTS:'
@@ -447,9 +464,9 @@ print *, ''
 print *, '=============================================================='
 print *, ''
 
-call NormAvGr(Nblock,AvGr,AvGr2,VarGr)
-call NormAvSk(Nblock,Nk,AvSk,AvSk2,VarSk)
-call NormAvNr(Nblock,AvNr,AvNr2,VarNr)
+call NormAvGr(diag_bl,AvGr,AvGr2,VarGr)
+call NormAvSk(diag_bl,Nk,AvSk,AvSk2,VarSk)
+call NormAvNr(obdm_bl,AvNr,AvNr2,VarNr)
 
 deallocate (Path)
 deallocate (nrho)

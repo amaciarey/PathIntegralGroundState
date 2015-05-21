@@ -2567,12 +2567,11 @@ contains
     real (kind=8),dimension (0:Nmax+1)      :: LogWF
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
-    
 
     Ls   = int((Lmax-1)*grnd())+2
     half = int(grnd()*2)+1
     
-    SumDeltaS = -log(5.d0)
+    SumDeltaS = -log(CWormVol*real(Np))
 
     if (half==1) then
 
@@ -2713,7 +2712,7 @@ contains
     
     call MinimumImage(xij,rij2)
     
-    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*log(0.5d0*real(Ls)*dt)
+    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
      
     !Metropolis question
     
@@ -2783,7 +2782,7 @@ contains
 
     Ls = int((Lmax-1)*grnd())+2
 
-    SumDeltaS = log(5.d0)
+    SumDeltaS = log(CWormVol*real(Np))
 
     half = int(grnd()*2)+1
 
@@ -2864,7 +2863,7 @@ contains
        
     end do
 
-        !Evaluation of the change in the kinetic action due to the fact
+    !Evaluation of the change in the kinetic action due to the fact
     !that the link is broken
 
     do k=1,dim
@@ -2873,7 +2872,7 @@ contains
     
     call MinimumImage(xij,rij2)
     
-    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*log(0.5d0*real(Ls)*dt)
+    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
     
     !Metropolis question
     

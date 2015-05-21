@@ -353,28 +353,52 @@ contains
        gr(ibin)   = gr(ibin)/(nid*norm)
     end do
 
-    do ibin=1,Nk
-       do k=1,dim
-          Sk(k,ibin) = Sk(k,ibin)/norm
-       end do
-    end do
+!    do ibin=1,Nk
+!       do k=1,dim
+!          Sk(k,ibin) = Sk(k,ibin)/norm
+!       end do
+!    end do
         
     return
   end subroutine Normalize
 
 !-----------------------------------------------------------------------
 
-  subroutine NormalizeNr(density,nz,nrho)
+  subroutine NormalizeSk(Nk,ngr,Sk)
+
+    implicit none
+    
+    real (kind=8)    :: norm
+    integer (kind=4) :: k,ik,Nk
+    integer (kind=4) :: ngr
+
+    real (kind=8), dimension (dim,Nk) :: Sk
+
+    norm = real(Np)*real(ngr)
+
+    do ik=1,Nk
+       do k=1,dim
+          Sk(k,ik) = Sk(k,ik)/norm
+       end do
+    end do
+
+    return
+  end subroutine NormalizeSk
+
+!-----------------------------------------------------------------------
+
+  subroutine NormalizeNr(density,zconf,Nobdm,nrho)
 
     implicit none
 
     real (kind=8)    :: r8_gamma
     real (kind=8)    :: density
     real (kind=8)    :: k_n,nid
+    real (kind=8)    :: zconf
     real (kind=8)    :: r
 
     integer (kind=4) :: ibin,m
-    integer (kind=4) :: nz
+    integer (kind=4) :: Nobdm
 
     real (kind=8), dimension (0:Npw,Nbin) :: nrho
 
@@ -384,12 +408,14 @@ contains
        r   = (real(ibin)-0.5d0)*rbin
        nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
        do m=0,Npw
-          nrho(m,ibin) = nrho(m,ibin)/(nid*real(nz))
+          nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
        end do
+       write (98,*) r,nrho(0,ibin)
     end do
     
     return
   end subroutine NormalizeNr
+
 !-----------------------------------------------------------------------
 
   subroutine AccumGr(gr,AvGr,AvGr2)
