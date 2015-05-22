@@ -1848,9 +1848,9 @@ contains
     
     do ilev=1,Nlev
 
-       delta_ib  = 2**(Nlev-ilev+1)
-       dt_bis    = 0.5d0*real(delta_ib)*dt
-       sigma     = sqrt(0.5d0*dt_bis)
+       delta_ib = 2**(Nlev-ilev+1)
+       dt_bis   = 0.5d0*real(delta_ib)*dt
+       sigma    = sqrt(0.5d0*dt_bis)
           
        LevelDeltaS = 0.d0
     
@@ -2614,9 +2614,9 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
+       !call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-       SumDeltaS = SumDeltaS+DeltaS
+       !SumDeltaS = SumDeltaS+DeltaS
 
     else
 
@@ -2659,9 +2659,9 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
+       !call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
        
-       SumDeltaS = SumDeltaS+DeltaS
+       !SumDeltaS = SumDeltaS+DeltaS
               
     end if
 
@@ -2750,6 +2750,11 @@ contains
           do k=1,dim
              Path(k,ip,ib) = OldChain(k,ib)
           end do
+       end do
+
+       do k=1,dim
+          xend(k,1) = Path(k,ip,ib)
+          xend(k,2) = xend(k,1)
        end do
 
     end if
@@ -2896,12 +2901,12 @@ contains
        if (half==1) then
           do k=1,dim
              xend(k,1) = Path(k,ip,Nb)
-             xend(k,2) = OldChain(k,Nb)
+             xend(k,2) = xend(k,1)
           end do
        else
           do k=1,dim
-             xend(k,1) = OldChain(k,Nb)
-             xend(k,2) = Path(k,ip,Nb)
+             xend(k,1) = Path(k,ip,Nb)
+             xend(k,2) = xend(k,1)
           end do
        end if
     

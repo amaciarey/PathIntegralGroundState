@@ -330,7 +330,7 @@ contains
   
 !-----------------------------------------------------------------------
 
-  subroutine Normalize(density,Nk,ngr,gr,Sk)
+  subroutine Normalize(density,ngr,gr)
 
     implicit none
 
@@ -338,27 +338,20 @@ contains
     real (kind=8)    :: density
     real (kind=8)    :: nid,r,norm
     real (kind=8)    :: k_n
-    integer (kind=4) :: ibin,k
-    integer (kind=4) :: ngr,Nk
+    integer (kind=4) :: ibin
+    integer (kind=4) :: ngr
     
     real (kind=8),dimension (Nbin)   :: gr
-    real (kind=8),dimension (dim,Nk) :: Sk
-    
+        
     k_n  = pi**(0.5d0*dim)/r8_gamma(0.5d0*dim+1.d0)
     norm = real(Np)*real(ngr)
 
     do ibin=1,Nbin
        r   = (real(ibin)-0.5d0)*rbin
        nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
-       gr(ibin)   = gr(ibin)/(nid*norm)
+       gr(ibin) = gr(ibin)/(nid*norm)
     end do
 
-!    do ibin=1,Nk
-!       do k=1,dim
-!          Sk(k,ibin) = Sk(k,ibin)/norm
-!       end do
-!    end do
-        
     return
   end subroutine Normalize
 
@@ -409,8 +402,8 @@ contains
        nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
        nrhist = nrho(0,ibin)
        do m=0,Npw
-          !nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
           nr0 = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
+          nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
        end do
        !write (98,*) r,nrho(0,ibin),nrhist
        write (98,*) r,nr0,nrhist

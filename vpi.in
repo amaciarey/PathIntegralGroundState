@@ -5,7 +5,7 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-32              # Number of particles
+20              # Number of particles
 192.d0          # Density
 0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
@@ -16,7 +16,7 @@
 3.33d-5         # Time step 
 18              # Number of beads 
 1982            # Seed of the random number generator
-0.9d0           # Parameters of the propagator decomposition (a_1 and t_0)
+0.d0            # Parameters of the propagator decomposition (a_1 and t_0)
 0.d0
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
 staging         # Sampling method (sta=staging, bis=bisection)

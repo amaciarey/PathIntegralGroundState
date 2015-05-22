@@ -58,9 +58,9 @@ call ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
      & density,alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,&
      & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
-pi = acos(-1.d0)
-V0 = (sin(alpha))**2
-CWorm = 1.d0
+pi    = acos(-1.d0)
+V0    = (sin(alpha))**2
+CWorm = 10.d0
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
 
@@ -87,10 +87,10 @@ do k=1,dim
    qbin(k)     = 2.d0*pi/Lbox(k)
 end do
 
-rcut        = minval(LboxHalf)
-rcut2       = rcut*rcut
-rbin        = rcut/real(Nbin)
-delta_cm    = delta_cm/density**(1.d0/real(dim))
+rcut     = minval(LboxHalf)
+rcut2    = rcut*rcut
+rbin     = rcut/real(Nbin)
+delta_cm = delta_cm/density**(1.d0/real(dim))
 
 !Definition of the parameters of the propagator
 
@@ -116,17 +116,12 @@ call JastrowTable(rcut,Rm,LogWF)
 
 !Printing the simulation parameters
 
-print *, ''
-print *, '=============================================================='
-print *, '       VPI Monte Carlo for homogeneous 2D dipoles             '
-print *, '=============================================================='
-print *, ''
-if (diagonal) then
-   print *, '# The simulation will consider DIAGONAL configurations only'
-else 
-   print *, '# The simulation will consider OFF-DIAGONAL configurations'
-end if
-print *, ' '
+print *,    ''
+print *,    '=============================================================='
+print *,    '       VPI Monte Carlo for homogeneous 2D dipoles             '
+print *,    '=============================================================='
+print *,    ''
+print *,    ' '
 if (sampling=="sta") then
    print *, '# The Monte Carlo sampling will be performed using STAGING'
    print *, '  algorithm'
@@ -134,19 +129,19 @@ else
    print *, '# The Monte Carlo sampling will be performed using BISECTION'
    print *, '  algorithm'
 end if
-print *, ' '
-print *, '# Simulation parameters:'
-print *, ''
-print 103, '  > Dimensions          :',dim
-print 103, '  > Number of particles :',Np
-print 104, '  > Density             :',density
-print 104, '  > Polarization        :',alpha
-print 105, '  > Size of the box     :',Lbox
-print 103, '  > Number of beads     :',Nb
-print 104, '  > Time step           :',dt
-print 103, '  > Number of blocks    :',Nblock
-print 103, '  > MC steps per block  :',Nstep
-print *, ''
+print *,    ' '
+print *,    '# Simulation parameters:'
+print *,    ''
+print 103,  '  > Dimensions          :',dim
+print 103,  '  > Number of particles :',Np
+print 104,  '  > Density             :',density
+print 104,  '  > Polarization        :',alpha
+print 105,  '  > Size of the box     :',Lbox
+print 103,  '  > Number of beads     :',Nb
+print 104,  '  > Time step           :',dt
+print 103,  '  > Number of blocks    :',Nblock
+print 103,  '  > MC steps per block  :',Nstep
+print *,    ''
 
 !Initializing accumulators
 
@@ -223,7 +218,7 @@ do iblock=1,Nblock
    ngr  = 0
    gr   = 0.d0
    Sk   = 0.d0
-!   nrho = 0.d0
+   nrho = 0.d0
 
    idiag_block = 0 
    
@@ -347,7 +342,7 @@ do iblock=1,Nblock
 
       diag_bl = diag_bl+1
       
-      call Normalize(density,Nk,ngr,gr,Sk)
+      call Normalize(density,ngr,gr)
       call NormalizeSk(Nk,ngr,Sk)
       call AccumGr(gr,AvGr,AvGr2)
       call AccumSk(Nk,Sk,AvSk,AvSk2)
@@ -371,8 +366,8 @@ do iblock=1,Nblock
    if (idiag_block/=Nstep) then
       
       obdm_bl    = obdm_bl+1
-      numz_block = real(idiag)/real(iblock) 
-      numz_block = real(idiag)
+      numz_block = real(idiag)/real(obdm_bl) 
+!      numz_block = real(idiag)
       
       call NormalizeNr(density,numz_block,Nobdm,nrho)
       call AccumNr(nrho,AvNr,AvNr2)
@@ -394,38 +389,34 @@ do iblock=1,Nblock
 101 format (x,a,x,f5.2,x,a)
 102 format (a,x,G16.8e2,x,a,x,G16.8e2)
 
-   print *, '-----------------------------------------------------------'
-   print *, 'BLOCK NUMBER :',iblock
-   print *, ' '
-   print *, '# Block results:'
-   print *, ' '
+   print *,   '-----------------------------------------------------------'
+   print *,   'BLOCK NUMBER :',iblock
+   print *,   ' '
+   print *,   '# Block results:'
+   print *,   ' '
    print 102, '  > <E>  =',BlockAvE/Np,'+/-',BlockVarE/Np
    print 102, '  > <Ec> =',BlockAvK/Np,'+/-',BlockVarK/Np
    print 102, '  > <Ep> =',BlockAvV/Np,'+/-',BlockVarV/Np
-   print *, ''
-   print *, '# Acceptance of diagonal movements:'
-   print *, ' '
+   print *,   ''
+   print *,   '# Acceptance of diagonal movements:'
+   print *,   ' '
    print 101, '> CM movements      =',100*real(acc_cm)/attempted,'%'
    print 101, '> Staging movements =',100*real(acc_bd)/stag_move,'%'
    print 101, '> Head movements    =',100*real(acc_head)/stag_move,'%'
    print 101, '> Tail movements    =',100*real(acc_tail)/stag_move,'%'
-   if (diagonal .eqv. .false.) then
-      print *, ' '
-      print *, '# Acceptance of off-diagonal movements:'
-      print *, ' '
-      print 101, '> CM movements      =',100*real(acc_cm_half)/attemp_half,'%'
-      print 101, '> Staging movements =',100*real(acc_bd_half)/stag_half,'%'
-      print 101, '> Head movements    =',100*real(acc_head_half)/stag_half,'%'
-      print 101, '> Tail movements    =',100*real(acc_tail_half)/stag_half,'%'
-   end if
-   print *, ' '
-   print *, '# Acceptance open/close updates:'
-   print *, ' '
-   print *, '> Diagonal configurations:',idiag_block
-   !print 101, '> Open update  :',100*real(acc_open)/real(try_open),'%'
-   !print 101, '> Close update :',100*real(acc_close)/real(try_close),'%'
-   print *, '> Open try:',try_open,'Open acc:',acc_open
-   print *, '> Close try:',try_close,'Close acc:',acc_close
+   print *,   ' '
+   print *,   '# Acceptance of off-diagonal movements:'
+   print *,   ' '
+   print 101, '> CM movements      =',100*real(acc_cm_half)/attemp_half,'%'
+   print 101, '> Staging movements =',100*real(acc_bd_half)/stag_half,'%'
+   print 101, '> Head movements    =',100*real(acc_head_half)/stag_half,'%'
+   print 101, '> Tail movements    =',100*real(acc_tail_half)/stag_half,'%'
+   print *,   ' '
+   print *,   '# Acceptance open/close updates:'
+   print *,   ' '
+   print 101, '> Diagonal conf.    =',100.d0*real(idiag_block)/real(Nstep),'%'
+   print 101, '> Open acc          =',100.d0*real(acc_open)/real(try_open),'%'
+   print 101, '> Close try         =',100.d0*real(acc_close)/real(try_close),'%'
    print 101, '# Time per block    =',end-begin,'seconds'
   
 end do
@@ -460,7 +451,7 @@ call NormAvSk(diag_bl,Nk,AvSk,AvSk2,VarSk)
 call NormAvNr(obdm_bl,AvNr,AvNr2,VarNr)
 
 deallocate (Path)
-deallocate (nrho)
+deallocate (nrho,AvNr,AvNr2,VarNr)
 deallocate (gr,AvGr,AvGr2,VarGr)
 deallocate (Sk,AvSk,AvSk2,VarSk)
 
