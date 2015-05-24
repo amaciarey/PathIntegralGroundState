@@ -60,7 +60,7 @@ call ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
 
 pi    = acos(-1.d0)
 V0    = (sin(alpha))**2
-CWorm = 10.d0
+CWorm = 1.d0
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
 
@@ -218,7 +218,7 @@ do iblock=1,Nblock
    ngr  = 0
    gr   = 0.d0
    Sk   = 0.d0
-   nrho = 0.d0
+   !nrho = 0.d0
 
    idiag_block = 0 
    
@@ -363,16 +363,15 @@ do iblock=1,Nblock
 
    end if
 
-   if (idiag_block/=Nstep) then
+   !if (idiag_block/=Nstep) then
       
-      obdm_bl    = obdm_bl+1
-      numz_block = real(idiag)/real(obdm_bl) 
-!      numz_block = real(idiag)
-      
+   !   obdm_bl    = obdm_bl+1
+      !numz_block = real(idiag)/real(obdm_bl) 
+      numz_block = real(idiag)
       call NormalizeNr(density,numz_block,Nobdm,nrho)
-      call AccumNr(nrho,AvNr,AvNr2)
+   !   call AccumNr(nrho,AvNr,AvNr2)
    
-   end if
+   !end if
    
    !Outputs of the block
 

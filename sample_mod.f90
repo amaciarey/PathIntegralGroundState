@@ -403,11 +403,12 @@ contains
        nrhist = nrho(0,ibin)
        do m=0,Npw
           nr0 = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
-          nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
+          !nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
        end do
-       !write (98,*) r,nrho(0,ibin),nrhist
        write (98,*) r,nr0,nrhist
     end do
+    write (98,*) 
+    write (98,*)
     
     return
   end subroutine NormalizeNr
