@@ -2569,7 +2569,8 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
 
-    Ls   = int((Lmax-1)*grnd())+2
+    !Ls   = int((Lmax-1)*grnd())+2
+    Ls   = 2*int(((Lmax-2)/2)*grnd())+2
     half = int(grnd()*2)+1
     
     SumDeltaS = -log(CWorm*density)
@@ -2787,11 +2788,11 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
 
-    Ls = int((Lmax-1)*grnd())+2
-
-    SumDeltaS = log(CWorm*density)
-
+    !Ls = int((Lmax-1)*grnd())+2
+    Ls   = 2*int(((Lmax-2)/2)*grnd())+2
     half = int(grnd()*2)+1
+    
+    SumDeltaS = log(CWorm*density)
 
     if (half==1) then
 

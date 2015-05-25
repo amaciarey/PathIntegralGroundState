@@ -335,7 +335,7 @@ do iblock=1,Nblock
          call StructureFactor(Nk,Path(:,:,Nb),Sk)
          
       end if
- 
+
    end do
 
    if (idiag_block/=0) then
