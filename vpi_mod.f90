@@ -44,43 +44,44 @@ contains
 
 !-----------------------------------------------------------------------
 
-  function Force(k,xij,rij)
-
-    implicit none 
-    
-    real (kind=8)    :: rij,Force
-    real (kind=8)    :: costheta
-    real (kind=8)    :: dVdr
-    integer (kind=4) :: k
-
-    real (kind=8),dimension (dim) :: xij
-    
-    costheta = xij(1)/rij
-
-    dVdr = -3.d0/rij**4
-
-    Force = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
-
-    if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)/rij 
-    
-    return 
-  end function Force
-
 !!$  function Force(k,xij,rij)
 !!$
 !!$    implicit none 
 !!$    
 !!$    real (kind=8)    :: rij,Force
+!!$    real (kind=8)    :: costheta
 !!$    real (kind=8)    :: dVdr
 !!$    integer (kind=4) :: k
 !!$
 !!$    real (kind=8),dimension (dim) :: xij
 !!$    
-!!$    dVdr  = 0.5d0*(Potential(abs(rij+dr))-Potential(abs(rij-dr)))/dr
-!!$    Force = dVdr*xij(k)/rij
+!!$    costheta = xij(1)/rij
 !!$
+!!$    dVdr = -3.d0/rij**4
+!!$
+!!$    Force = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
+!!$
+!!$    if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)/rij 
+!!$    
 !!$    return 
 !!$  end function Force
+
+  function Force(k,xij,rij)
+
+    implicit none 
+    
+    real (kind=8)    :: rij,Force
+    real (kind=8)    :: dVdr
+    integer (kind=4) :: k
+
+    real (kind=8),dimension (dim) :: xij
+    
+    !dVdr  = 0.5d0*(Potential(abs(rij+dr))-Potential(abs(rij-dr)))/dr
+    dVdr  = -6.d0*(2.d0/rij**7-1.d0)/rij**6
+    Force = dVdr*xij(k)/rij
+
+    return 
+  end function Force
 
 !-----------------------------------------------------------------------
 
@@ -464,63 +465,9 @@ contains
        SumDeltaS = SumDeltaS+DeltaS
 
     end do
-           
-!!$    if (half==1) then
-!!$       
-!!$       do k=1,dim
-!!$          xij(k) = Path(k,ip,Nb)-xend(k,2)
-!!$       end do
-!!$
-!!$       call MinimumImage(xij,rij2)
-!!$
-!!$       if (rij2<=rcut2) then
-!!$          rij  = sqrt(rij2)
-!!$          Snew = log(OBDMGuess(rij)*rij**(dim-1))
-!!$       end if
-!!$    
-!!$       do k=1,dim
-!!$          xij(k) = OldChain(k,Nb)-xend(k,2)
-!!$       end do       
-!!$
-!!$       call MinimumImage(xij,rij2)
-!!$
-!!$       if (rij2<=rcut2) then
-!!$          rij  = sqrt(rij2)
-!!$          Sold = log(OBDMGuess(rij)*rij**(dim-1))
-!!$       end if
-!!$      
-!!$       SumDeltaS = SumDeltaS+(Snew-Sold)
-!!$    
-!!$    end if
-!!$
-!!$    if (half==2) then
-!!$
-!!$       do k=1,dim
-!!$          xij(k) = Path(k,ip,Nb)-xend(k,1)
-!!$       end do
-!!$
-!!$       call MinimumImage(xij,rij2)
-!!$
-!!$       if (rij2<=rcut2) then
-!!$          rij  = sqrt(rij2)
-!!$          Snew = log(OBDMGuess(rij)*rij**(dim-1))
-!!$       end if
-!!$
-!!$       do k=1,dim
-!!$          xij(k) = OldChain(k,Nb)-xend(k,1)
-!!$       end do
-!!$
-!!$       call MinimumImage(xij,rij2)
-!!$
-!!$       if (rij2<=rcut2) then
-!!$          rij  = sqrt(rij2)
-!!$          Sold = log(OBDMGuess(rij)*rij**(dim-1))
-!!$       end if
-!!$
-!!$       SumDeltaS = SumDeltaS+(Snew-Sold)
-!!$
-!!$    end if
     
+    !Metropolis question
+   
     if (exp(-SumDeltaS)>=1.d0) then
        accept = .True.
     else
@@ -1107,34 +1054,6 @@ contains
        
     end do
 
-!!$    if (half==2) then
-!!$       
-!!$       do k=1,dim
-!!$          xij(k) = Path(k,ip,Nb)-xend(k,1)
-!!$       end do
-!!$
-!!$       call MinimumImage(xij,rij2)
-!!$
-!!$       if (rij2<=rcut2) then
-!!$          rij  = sqrt(rij2)
-!!$          Snew = log(OBDMGuess(rij)*rij**(dim-1))
-!!$       end if
-!!$          
-!!$       do k=1,dim
-!!$          xij(k) = OldChain(k,Nb)-xend(k,1)
-!!$       end do
-!!$
-!!$       call MinimumImage(xij,rij2)
-!!$
-!!$       if (rij2<=rcut2) then
-!!$          rij  = sqrt(rij2)
-!!$          Sold = log(OBDMGuess(rij)*rij**(dim-1))
-!!$       end if
-!!$
-!!$       SumDeltaS = SumDeltaS+(Snew-Sold)
-!!$
-!!$    end if
-
     !Metropolis question
     
     if (exp(-SumDeltaS)>=1.d0) then
@@ -1421,34 +1340,6 @@ contains
        
     end do
       
-!!$    if (half==1) then
-!!$       
-!!$       do k=1,dim
-!!$          xij(k) = Path(k,ip,Nb)-xend(k,2)
-!!$       end do
-!!$
-!!$       call MinimumImage(xij,rij2)
-!!$
-!!$       if (rij2<=rcut2) then
-!!$          rij  = sqrt(rij2)
-!!$          Snew = log(OBDMGuess(rij)*rij**(dim-1))
-!!$       end if
-!!$          
-!!$       do k=1,dim
-!!$          xij(k) = OldChain(k,Nb)-xend(k,2)
-!!$       end do
-!!$
-!!$       call MinimumImage(xij,rij2)
-!!$
-!!$       if (rij2<=rcut2) then
-!!$          rij  = sqrt(rij2)
-!!$          Sold = log(OBDMGuess(rij)*rij**(dim-1))
-!!$       end if
-!!$
-!!$       SumDeltaS = SumDeltaS+(Snew-Sold)
-!!$    
-!!$    end if
-    
     !Metropolis question
     
     if (exp(-SumDeltaS)>=1.d0) then
@@ -2615,9 +2506,9 @@ contains
           
        end do
        
-       !call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-       !SumDeltaS = SumDeltaS+DeltaS
+       SumDeltaS = SumDeltaS+DeltaS
 
     else
 
@@ -2632,8 +2523,6 @@ contains
              OldChain(k,ib) = Path(k,ip,ib)
           end do
        end do
-       
-       SumDeltaS = 0.d0
        
        !Make an initial guess for the position of central bead
        
@@ -2660,9 +2549,9 @@ contains
           
        end do
        
-       !call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
        
-       !SumDeltaS = SumDeltaS+DeltaS
+       SumDeltaS = SumDeltaS+DeltaS
               
     end if
 
@@ -2754,7 +2643,7 @@ contains
        end do
 
        do k=1,dim
-          xend(k,1) = Path(k,ip,ib)
+          xend(k,1) = Path(k,ip,Nb)
           xend(k,2) = xend(k,1)
        end do
 
@@ -2810,7 +2699,13 @@ contains
 
        do k=1,dim
           Path(k,ip,ie) = xend(k,2)
+          xold(k)       = OldChain(k,ie)
+          xnew(k)       = Path(k,ip,ie)          
        end do
+
+       call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
+    
+       SumDeltaS = SumDeltaS+DeltaS
 
     else
        
@@ -2828,7 +2723,13 @@ contains
 
        do k=1,dim
           Path(k,ip,ii) = xend(k,1)
+          xold(k)       = OldChain(k,ii)
+          xnew(k)       = Path(k,ip,ii)
        end do
+
+       call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
+    
+       SumDeltaS = SumDeltaS+DeltaS
 
     end if
 
