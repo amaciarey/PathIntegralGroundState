@@ -102,16 +102,30 @@ contains
     
   end function Potential
 
-!!$  function Potential(rij)
-!!$
-!!$    implicit none
-!!$    
-!!$    real (kind=8) :: Potential,rij
-!!$    
-!!$    Potential = V0/rij**3
-!!$    
-!!$  end function Potential
-
 !-----------------------------------------------------------------------  
+
+  function Force(k,xij,rij)
+
+    implicit none 
+    
+    real (kind=8)    :: rij,Force
+    real (kind=8)    :: costheta
+    real (kind=8)    :: dVdr
+    integer (kind=4) :: k
+
+    real (kind=8),dimension (dim) :: xij
+    
+    costheta = xij(1)/rij
+
+    dVdr = -3.d0/rij**4
+
+    Force = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
+
+    if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)/rij 
+    
+    return 
+  end function Force
+
+!-----------------------------------------------------------------------
 
 end module system_mod

@@ -60,7 +60,7 @@ call ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
 
 pi    = acos(-1.d0)
 V0    = (sin(alpha))**2
-CWorm = 1.d0
+CWorm = 10.d0
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
 
@@ -366,9 +366,11 @@ do iblock=1,Nblock
    !if (idiag_block/=Nstep) then
       
    !   obdm_bl    = obdm_bl+1
-      !numz_block = real(idiag)/real(obdm_bl) 
+      !numz_block = real(idiag)/real(obdm_bl)
+   !if (mod(iblock,10)==0) then
       numz_block = real(idiag)
       call NormalizeNr(density,numz_block,Nobdm,nrho)
+   !end if
    !   call AccumNr(nrho,AvNr,AvNr2)
    
    !end if
@@ -385,7 +387,7 @@ do iblock=1,Nblock
 
    call cpu_time(end)
 
-101 format (x,a,x,f5.2,x,a)
+101 format (x,a,x,f6.2,x,a)
 102 format (a,x,G16.8e2,x,a,x,G16.8e2)
 
    print *,   '-----------------------------------------------------------'
