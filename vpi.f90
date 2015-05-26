@@ -8,7 +8,7 @@ use vpi_mod
 
 implicit none 
 
-logical          :: crystal,diagonal,resume
+logical          :: crystal,resume
 logical          :: isopen
 real (kind=8)    :: dt
 real (kind=8)    :: density,alpha
@@ -32,15 +32,15 @@ integer (kind=4) :: ip
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
 integer (kind=4) :: istag,Nstag
-integer (kind=4) :: ngr,nnr
+integer (kind=4) :: ngr
 integer (kind=4) :: Nobdm,iobdm
 integer (kind=4) :: Nk
 integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 integer (kind=4) :: acc_bd_half,acc_cm_half,acc_head_half,acc_tail_half
 integer (kind=4) :: acc_open,try_open
 integer (kind=4) :: acc_close,try_close
-integer (kind=4) :: iworm,zcount,iupdate
-integer (kind=4) :: idiag,idiag_block
+integer (kind=4) :: iworm,iupdate
+integer (kind=4) :: idiag,idiag_block,idiag_aux
 integer (kind=4) :: obdm_bl,diag_bl
 
 character (len=3) :: sampling
@@ -54,13 +54,12 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 
 !Reading input parameters
 
-call ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
-     & density,alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,&
+call ReadParameters(resume,crystal,wf_table,sampling,&
+     & density,alpha,dt,a_1,t_0,delta_cm,Rm,dim,Np,Nb,seed,&
      & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
-pi    = acos(-1.d0)
-V0    = (sin(alpha))**2
-CWorm = 10.d0
+pi = acos(-1.d0)
+V0 = (sin(alpha))**2
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
 
@@ -176,6 +175,7 @@ nrho = 0.d0
 isopen  = .false.
 iworm   = 0
 idiag   = 0
+idiag_aux = 0
 obdm_bl = 0
 diag_bl = 0
 
@@ -291,6 +291,7 @@ do iblock=1,Nblock
       else
          
          idiag = idiag+1
+         idiag_aux = idiag_aux+1
          idiag_block = idiag_block+1
       
          do ip=1,Np
@@ -368,12 +369,22 @@ do iblock=1,Nblock
    !   obdm_bl    = obdm_bl+1
       !numz_block = real(idiag)/real(obdm_bl)
    !if (mod(iblock,10)==0) then
-      numz_block = real(idiag)
-      call NormalizeNr(density,numz_block,Nobdm,nrho)
+   !   numz_block = real(idiag)
+   !   call NormalizeNr(density,numz_block,Nobdm,nrho)
    !end if
    !   call AccumNr(nrho,AvNr,AvNr2)
    
    !end if
+   
+   if (idiag_aux/100>=1) then
+      obdm_bl    = obdm_bl+1
+      numz_block = real(idiag_aux)
+      call NormalizeNr(density,numz_block,Nobdm,nrho)
+      call AccumNr(nrho,AvNr,AvNr2)
+      !Restarting counters
+      idiag_aux = 0
+      nrho      = 0.d0
+   end if
    
    !Outputs of the block
 

@@ -388,24 +388,25 @@ contains
     real (kind=8)    :: density
     real (kind=8)    :: k_n,nid
     real (kind=8)    :: zconf
-    real (kind=8)    :: r,nrhist,nr0
+    real (kind=8)    :: r
 
     integer (kind=4) :: ibin,m
     integer (kind=4) :: Nobdm
 
     real (kind=8), dimension (0:Npw,Nbin) :: nrho
+    !real (kind=8), dimension (0:Npw)      :: rho_r
 
     k_n = pi**(0.5d0*dim)/r8_gamma(0.5d0*dim+1.d0)
 
     do ibin=1,Nbin
        r   = (real(ibin)-0.5d0)*rbin
        nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
-       nrhist = nrho(0,ibin)
+       !nrhist = nrho(0,ibin)
        do m=0,Npw
-          nr0 = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
-          !nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
+          !rho_r(m) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
+          nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
        end do
-       write (98,*) r,nr0,nrhist
+       write (98,'(20g20.10e3)') r,(nrho(m,ibin),m=0,Npw)
     end do
     write (98,*) 
     write (98,*)

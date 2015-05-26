@@ -5,14 +5,13 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-32              # Number of particles
+64              # Number of particles
 192.d0          # Density
-0.d0            # Polarization angle
+0.6d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-.false.         # .true. if diagonal simulation, .false. otherwise
 3.33d-5         # Time step 
 18              # Number of beads 
 1982            # Seed of the random number generator
@@ -32,10 +31,9 @@ staging         # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
-0.d0            # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
-0.05d0          # 2nd parameter for the OBDM Guess for importance sampling, \approx n_0
+2.d0            # C0 constant of the WORM algorithm
 10              # Number of evaluation of OBDM per step
-0               # Maximum angular momentum partial wave in OBDM
+5               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
