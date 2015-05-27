@@ -95,6 +95,9 @@ rcut     = minval(LboxHalf)
 rcut2    = rcut*rcut
 rbin     = rcut/real(Nbin)
 delta_cm = delta_cm/density**(1.d0/real(dim))
+isopen   = .false.
+iworm    = 0
+
 
 !Definition of the parameters of the propagator
 
@@ -109,7 +112,7 @@ allocate (Path(dim,Np,0:2*Nb))
 allocate (LogWF(0:Nmax+1))
 allocate (xend(dim,2))
 
-call init(seed,Path,xend,crystal,resume)
+call init(seed,Path,xend,crystal,resume,isopen,iworm)
 call JastrowTable(rcut,Rm,LogWF)
 
 !Definition of used formats
@@ -153,7 +156,8 @@ allocate (gr(Nbin),AvGr(Nbin),AvGr2(Nbin),VarGr(Nbin))
 allocate (nrho(0:Npw,Nbin),AvNr(0:Npw,Nbin),AvNr2(0:Npw,Nbin),VarNr(0:Npw,Nbin))
 allocate (Sk(dim,Nk),AvSk(dim,Nk),AvSk2(dim,Nk),VarSk(dim,Nk))
 
-open (unit=2,file='e_vpi.out')
+open (unit=1,file='e_vpi.out')
+open (unit=2,file='et_vpi.out')
 
 AvE  = 0.d0
 AvK  = 0.d0
@@ -185,8 +189,6 @@ VarNr = 0.d0
  
 nrho = 0.d0
 
-isopen    = .false.
-iworm     = 0
 idiag     = 0
 idiag_aux = 0
 obdm_bl   = 0
@@ -370,19 +372,14 @@ do iblock=1,Nblock
 
    if (idiag_block/=0) then
 
-      diag_bl = diag_bl+1
+      !Normalize final results of the block
       
       call NormalizeGr(density,ngr,gr)
       call NormalizeSk(Nk,ngr,Sk)
-      
-      call AccumGr(gr,AvGr,AvGr2)
-      call AccumSk(Nk,Sk,AvSk,AvSk2)
 
-      !Normalizing averages and evaluating variances per block
-   
       call NormalizeAv(idiag_block,BlockAvE,BlockAvK,BlockAvV)
       call NormalizeAv(idiag_block,BlockAvE2,BlockAvK2,BlockAvV2)
-
+      
       BlockVarE = Var(idiag_block,BlockAvE,BlockAvE2)
       BlockVarK = Var(idiag_block,BlockAvK,BlockAvK2)
       BlockVarV = Var(idiag_block,BlockAvV,BlockAvV2)
@@ -394,18 +391,23 @@ do iblock=1,Nblock
       BlockVarKt = Var(idiag_block,BlockAvKt,BlockAvKt2)
       BlockVarVt = Var(idiag_block,BlockAvVt,BlockAvVt2)
 
-      !Accumulating global averages
-  
+      !Update all the accumulators and observables
+
+      diag_bl = diag_bl+1
+      
       call Accumulate(BlockAvE,BlockAvK,BlockAvV,AvE,AvK,AvV)
       call Accumulate(BlockAvE**2,BlockAvK**2,BlockAvV**2,AvE2,AvK2,AvV2)
 
       call Accumulate(BlockAvEt,BlockAvKt,BlockAvVt,AvEt,AvKt,AvVt)
       call Accumulate(BlockAvEt**2,BlockAvKt**2,BlockAvVt**2,AvEt2,AvKt2,AvVt2)
+      
+      call AccumGr(gr,AvGr,AvGr2)
+      call AccumSk(Nk,Sk,AvSk,AvSk2)      
 
       !Outputs of the block
 
-      write (2,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,BlockAvV/Np
-      write (99,'(5g20.10e3)') real(iblock),BlockAvEt/Np,BlockAvKt/Np,BlockAvVt/Np
+      write (1,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,BlockAvV/Np
+      write (2,'(5g20.10e3)') real(iblock),BlockAvEt/Np,BlockAvKt/Np,BlockAvVt/Np
 
    end if
 
@@ -426,7 +428,7 @@ do iblock=1,Nblock
      
    if (mod(iblock,10)==0) then
 
-      call CheckPoint(Path,xend)
+      call CheckPoint(Path,xend,isopen,iworm)
 
    end if
 
@@ -472,6 +474,7 @@ do iblock=1,Nblock
   
 end do
 
+close (unit=1)
 close (unit=2)
 
 deallocate (LogWF)

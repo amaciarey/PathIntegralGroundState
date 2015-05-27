@@ -162,12 +162,12 @@ contains
   
 !-----------------------------------------------------------------------
 
-  subroutine init(seed,Path,xend,crystal,resume)
+  subroutine init(seed,Path,xend,crystal,resume,isopen,iworm)
 
     implicit none
     
-    logical          :: crystal,resume
-    integer (kind=4) :: seed
+    logical          :: crystal,resume,isopen
+    integer (kind=4) :: seed,iworm
     integer (kind=4) :: j,k,ip,ib
     
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
@@ -177,6 +177,9 @@ contains
     if (resume) then
        
        open (unit=2,file='checkpoint.dat',status='old')
+
+       read (2,*) isopen
+       read (2,*) iworm
 
        do ip=1,Np
 
@@ -243,16 +246,20 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine CheckPoint(Path,xend)
+  subroutine CheckPoint(Path,xend,isopen,iworm)
     
     implicit none
 
-    integer (kind=4) :: j,k,ip,ib
+    logical          :: isopen
+    integer (kind=4) :: j,k,ip,ib,iworm
 
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension(dim,2)         :: xend
 
     open (unit=3,file='checkpoint.dat')
+
+    write (3,*) isopen
+    write (3,*) iworm
 
     do ip=1,Np
          
