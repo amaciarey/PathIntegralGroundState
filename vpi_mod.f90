@@ -169,6 +169,7 @@ contains
     logical          :: crystal,resume
     integer (kind=4) :: seed
     integer (kind=4) :: j,k,ip,ib
+    
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension(dim,2)         :: xend
     real (kind=8),dimension(dim,Np)        :: R
@@ -351,7 +352,6 @@ contains
     logical          :: accept
     real (kind=8)    :: delta,dt
     real (kind=8)    :: DeltaS,SumDeltaS
-    real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: ibi,ibf
     integer (kind=4) :: half
@@ -361,9 +361,6 @@ contains
     real (kind=8),dimension (0:Nmax+1)      :: LogWF
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
-
-    Snew = 0.d0
-    Sold = 0.d0
 
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
