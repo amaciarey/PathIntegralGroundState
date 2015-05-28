@@ -54,6 +54,26 @@ contains
 
   end function Potential
 
+!-----------------------------------------------------------------------
+
+   function Force(k,xij,rij)
+
+    implicit none 
+    
+    real (kind=8)    :: rij,Force
+    real (kind=8)    :: dVdr,V0
+    integer (kind=4) :: k
+
+    real (kind=8),dimension (dim) :: xij
+    
+    V0 = 22.0228d0
+
+    dVdr  = -6.d0*V0*(2.d0/rij**7-1.d0)/rij**6
+    Force = dVdr*xij(k)/rij
+
+    return 
+  end function Force
+
 !-----------------------------------------------------------------------  
 
 end module system_mod

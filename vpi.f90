@@ -8,19 +8,24 @@ use vpi_mod
 
 implicit none 
 
-logical          :: crystal,diagonal,resume
-logical          :: isopen
-real (kind=8)    :: dt
+logical          :: crystal,resume,isopen
+real (kind=8)    :: dt,delta_cm
 real (kind=8)    :: density,alpha
-real (kind=8)    :: delta_cm
 real (kind=8)    :: E1,E2
 real (kind=8)    :: E,Kin,Pot
+real (kind=8)    :: Et,Kt
 real (kind=8)    :: BlockAvE,BlockAvK,BlockAvV
 real (kind=8)    :: BlockAvE2,BlockAvK2,BlockAvV2
 real (kind=8)    :: BlockVarE,BlockVarK,BlockVarV
+real (kind=8)    :: BlockAvEt,BlockAvKt,BlockAvVt
+real (kind=8)    :: BlockAvEt2,BlockAvKt2,BlockAvVt2
+real (kind=8)    :: BlockVarEt,BlockVarKt,BlockVarVt
 real (kind=8)    :: AvE,AvK,AvV
 real (kind=8)    :: AvE2,AvK2,AvV2
 real (kind=8)    :: VarE,VarK,VarV
+real (kind=8)    :: AvEt,AvKt,AvVt
+real (kind=8)    :: AvEt2,AvKt2,AvVt2
+real (kind=8)    :: VarEt,VarKt,VarVt
 real (kind=8)    :: numz_block
 real (kind=8)    :: end,begin
 real (kind=8)    :: stag_move,stag_half
@@ -32,16 +37,17 @@ integer (kind=4) :: ip
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
 integer (kind=4) :: istag,Nstag
-integer (kind=4) :: ngr,nnr
+integer (kind=4) :: ngr
 integer (kind=4) :: Nobdm,iobdm
 integer (kind=4) :: Nk
 integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 integer (kind=4) :: acc_bd_half,acc_cm_half,acc_head_half,acc_tail_half
 integer (kind=4) :: acc_open,try_open
 integer (kind=4) :: acc_close,try_close
-integer (kind=4) :: iworm,zcount,iupdate
-integer (kind=4) :: idiag,idiag_block
+integer (kind=4) :: iworm,iupdate
+integer (kind=4) :: idiag,idiag_block,idiag_aux
 integer (kind=4) :: obdm_bl,diag_bl
+integer (kind=4) :: ioffdiag,ioffdiag_aux
 
 character (len=3) :: sampling
 
@@ -54,13 +60,12 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 
 !Reading input parameters
 
-call ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
-     & density,alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,&
+call ReadParameters(resume,crystal,wf_table,sampling,&
+     & density,alpha,dt,a_1,t_0,delta_cm,Rm,dim,Np,Nb,seed,&
      & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
-pi    = acos(-1.d0)
-V0    = (sin(alpha))**2
-CWorm = 1.d0
+pi = acos(-1.d0)
+!V0 = (sin(alpha))**2
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
 
@@ -91,6 +96,9 @@ rcut     = minval(LboxHalf)
 rcut2    = rcut*rcut
 rbin     = rcut/real(Nbin)
 delta_cm = delta_cm/density**(1.d0/real(dim))
+isopen   = .false.
+iworm    = 0
+
 
 !Definition of the parameters of the propagator
 
@@ -105,7 +113,7 @@ allocate (Path(dim,Np,0:2*Nb))
 allocate (LogWF(0:Nmax+1))
 allocate (xend(dim,2))
 
-call init(seed,Path,xend,crystal,resume)
+call init(seed,Path,xend,crystal,resume,isopen,iworm)
 call JastrowTable(rcut,Rm,LogWF)
 
 !Definition of used formats
@@ -149,15 +157,24 @@ allocate (gr(Nbin),AvGr(Nbin),AvGr2(Nbin),VarGr(Nbin))
 allocate (nrho(0:Npw,Nbin),AvNr(0:Npw,Nbin),AvNr2(0:Npw,Nbin),VarNr(0:Npw,Nbin))
 allocate (Sk(dim,Nk),AvSk(dim,Nk),AvSk2(dim,Nk),VarSk(dim,Nk))
 
-open (unit=2,file='e_vpi.out')
+open (unit=1,file='e_vpi.out')
+open (unit=2,file='et_vpi.out')
 
 AvE  = 0.d0
 AvK  = 0.d0
 AvV  = 0.d0
 
+AvEt  = 0.d0
+AvKt  = 0.d0
+AvVt  = 0.d0
+
 AvE2 = 0.d0
-Avk2 = 0.d0
+AvK2 = 0.d0
 AvV2 = 0.d0
+
+AvEt2 = 0.d0
+AvKt2 = 0.d0
+AvVt2 = 0.d0
 
 AvGr  = 0.d0
 AvGr2 = 0.d0
@@ -173,11 +190,12 @@ VarNr = 0.d0
  
 nrho = 0.d0
 
-isopen  = .false.
-iworm   = 0
-idiag   = 0
-obdm_bl = 0
-diag_bl = 0
+ioffdiag  = 0
+ioffdiag_aux = 0
+idiag     = 0
+idiag_aux = 0
+obdm_bl   = 0
+diag_bl   = 0
 
 !Begin the main Monte Carlo loop
 
@@ -185,42 +203,51 @@ do iblock=1,Nblock
    
    call cpu_time(begin)
 
+   !Initializing block accumulators
+   
+   try_open  = 0
+   acc_open  = 0
+
+   try_close = 0
+   acc_close = 0
+
+   attempted = 0
+   acc_cm    = 0
+
+   stag_move = 0
+   acc_bd    = 0
+   acc_head  = 0
+   acc_tail  = 0
+   
+   attemp_half = 0
+   acc_cm_half = 0
+   
+   stag_half     = 0
+   acc_bd_half   = 0
+   acc_head_half = 0
+   acc_tail_half = 0
+
+   idiag_block   = 0 
+
+   ngr = 0
+   gr  = 0.d0
+   Sk  = 0.d0
+   
    BlockAvE = 0.d0
    BlockAvK = 0.d0
    BlockAvV = 0.d0
+
+   BlockAvEt = 0.d0
+   BlockAvKt = 0.d0
+   BlockAvVt = 0.d0
 
    BlockAvE2 = 0.d0
    BlockAvK2 = 0.d0
    BlockAvV2 = 0.d0
    
-   try_open  = 0
-   try_close = 0
-
-   acc_open  = 0
-   acc_close = 0
-
-   attempted   = 0
-   attemp_half = 0
-
-   stag_move = 0
-   stag_half = 0
-
-   acc_cm   = 0
-   acc_bd   = 0
-   acc_head = 0
-   acc_tail = 0
-
-   acc_cm_half   = 0
-   acc_bd_half   = 0
-   acc_head_half = 0
-   acc_tail_half = 0
-
-   ngr  = 0
-   gr   = 0.d0
-   Sk   = 0.d0
-   !nrho = 0.d0
-
-   idiag_block = 0 
+   BlockAvEt2 = 0.d0
+   BlockAvKt2 = 0.d0
+   BlockAvVt2 = 0.d0
    
    do istep=1,Nstep
 
@@ -228,20 +255,23 @@ do iblock=1,Nblock
 
       iupdate = int(grnd()*2)
 
-      if (iupdate==0) then
-         if (isopen .eqv. .false.) then
+      if (isopen) then
+         if (iupdate == 0) then
+            call CloseChain(LogWF,density,dt,Lstag,iworm,Path,xend,isopen,acc_close)
+            try_close = try_close+1
+         end if
+      else
+         if (iupdate == 1) then
             iworm = int(grnd()*Np)+1
             call OpenChain(LogWF,density,dt,Lstag,iworm,Path,xend,isopen,acc_open)
             try_open = try_open+1
          end if
-      else
-         if (isopen .eqv. .true.) then
-            call CloseChain(LogWF,density,dt,Lstag,iworm,Path,xend,isopen,acc_close)
-            try_close = try_close+1
-         end if
-      end if                  
+      end if
 
       if (isopen) then
+
+         ioffdiag = ioffdiag+1
+         ioffdiag_aux = ioffdiag_aux+1
 
          do ip=1,Np
 
@@ -290,7 +320,8 @@ do iblock=1,Nblock
 
       else
          
-         idiag = idiag+1
+         idiag       = idiag+1
+         idiag_aux   = idiag_aux+1
          idiag_block = idiag_block+1
       
          do ip=1,Np
@@ -318,14 +349,21 @@ do iblock=1,Nblock
 
          E = 0.5d0*(E1+E2)
 
-         call PotentialEnergy(Path(:,:,Nb),Pot)
+         !call PotentialEnergy(Path(:,:,Nb),Pot)
       
-         Kin = E-Pot
+         !Energy evaluation using thermodynamic estimator
+
+         call ThermEnergy(Path,dt,Et,Kt,Pot)
+
+         Kin = E-Pot         
             
          !Accumulating energy averages     
       
          call Accumulate(E,Kin,Pot,BlockAvE,BlockAvK,BlockAvV)
+         call Accumulate(Et,Kt,Pot,BlockAvEt,BlockAvKt,BlockAvVt)
+
          call Accumulate(E**2,Kin**2,Pot**2,BlockAvE2,BlockAvK2,BlockAvV2)
+         call Accumulate(Et**2,Kt**2,Pot**2,BlockAvEt2,BlockAvKt2,BlockAvVt2)
 
          !Structural quantities
       
@@ -340,52 +378,70 @@ do iblock=1,Nblock
 
    if (idiag_block/=0) then
 
-      diag_bl = diag_bl+1
+      !Normalize final results of the block
       
-      call Normalize(density,ngr,gr)
+      call NormalizeGr(density,ngr,gr)
       call NormalizeSk(Nk,ngr,Sk)
-      call AccumGr(gr,AvGr,AvGr2)
-      call AccumSk(Nk,Sk,AvSk,AvSk2)
 
-      !Normalizing averages and evaluating variances per block
-   
       call NormalizeAv(idiag_block,BlockAvE,BlockAvK,BlockAvV)
       call NormalizeAv(idiag_block,BlockAvE2,BlockAvK2,BlockAvV2)
-
+      
       BlockVarE = Var(idiag_block,BlockAvE,BlockAvE2)
       BlockVarK = Var(idiag_block,BlockAvK,BlockAvK2)
       BlockVarV = Var(idiag_block,BlockAvV,BlockAvV2)
 
-      !Accumulating global averages
-  
+      call NormalizeAv(idiag_block,BlockAvEt,BlockAvKt,BlockAvVt)
+      call NormalizeAv(idiag_block,BlockAvEt2,BlockAvKt2,BlockAvVt2)
+
+      BlockVarEt = Var(idiag_block,BlockAvEt,BlockAvEt2)
+      BlockVarKt = Var(idiag_block,BlockAvKt,BlockAvKt2)
+      BlockVarVt = Var(idiag_block,BlockAvVt,BlockAvVt2)
+
+      !Update all the accumulators and observables
+
+      diag_bl = diag_bl+1
+      
       call Accumulate(BlockAvE,BlockAvK,BlockAvV,AvE,AvK,AvV)
       call Accumulate(BlockAvE**2,BlockAvK**2,BlockAvV**2,AvE2,AvK2,AvV2)
 
+      call Accumulate(BlockAvEt,BlockAvKt,BlockAvVt,AvEt,AvKt,AvVt)
+      call Accumulate(BlockAvEt**2,BlockAvKt**2,BlockAvVt**2,AvEt2,AvKt2,AvVt2)
+      
+      call AccumGr(gr,AvGr,AvGr2)
+      call AccumSk(Nk,Sk,AvSk,AvSk2)      
+
+      !Outputs of the block
+
+      write (1,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,BlockAvV/Np
+      write (2,'(5g20.10e3)') real(iblock),BlockAvEt/Np,BlockAvKt/Np,BlockAvVt/Np
+
    end if
 
-   !if (idiag_block/=Nstep) then
+   if (idiag_aux/Nstep>=1) then
       
-   !   obdm_bl    = obdm_bl+1
-      !numz_block = real(idiag)/real(obdm_bl) 
-      numz_block = real(idiag)
+      obdm_bl    = obdm_bl+1
+      numz_block = real(idiag_aux)
+      !numz_block = real(ioffdiag_aux)
       call NormalizeNr(density,numz_block,Nobdm,nrho)
-   !   call AccumNr(nrho,AvNr,AvNr2)
+      call AccumNr(nrho,AvNr,AvNr2)
+      
+      !Restarting counters
    
-   !end if
+      idiag_aux    = 0
+      ioffdiag_aux = 0
+      nrho         = 0.d0
    
-   !Outputs of the block
-
-   write (2,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,BlockAvV/Np
-  
+   end if
+     
    if (mod(iblock,10)==0) then
 
-      call CheckPoint(Path,xend)
+      call CheckPoint(Path,xend,isopen,iworm)
 
    end if
 
    call cpu_time(end)
 
-101 format (x,a,x,f5.2,x,a)
+101 format (x,a,x,f6.2,x,a)
 102 format (a,x,G16.8e2,x,a,x,G16.8e2)
 
    print *,   '-----------------------------------------------------------'
@@ -396,6 +452,10 @@ do iblock=1,Nblock
    print 102, '  > <E>  =',BlockAvE/Np,'+/-',BlockVarE/Np
    print 102, '  > <Ec> =',BlockAvK/Np,'+/-',BlockVarK/Np
    print 102, '  > <Ep> =',BlockAvV/Np,'+/-',BlockVarV/Np
+   print *,   ' '
+   print 102, '  > <Et> =',BlockAvEt/Np,'+/-',BlockVarEt/Np
+   print 102, '  > <Kt> =',BlockAvKt/Np,'+/-',BlockVarKt/Np
+   print 102, '  > <Vt> =',BlockAvVt/Np,'+/-',BlockVarVt/Np
    print *,   ''
    print *,   '# Acceptance of diagonal movements:'
    print *,   ' '
@@ -416,10 +476,12 @@ do iblock=1,Nblock
    print 101, '> Diagonal conf.    =',100.d0*real(idiag_block)/real(Nstep),'%'
    print 101, '> Open acc          =',100.d0*real(acc_open)/real(try_open),'%'
    print 101, '> Close try         =',100.d0*real(acc_close)/real(try_close),'%'
+   print *,   ' '
    print 101, '# Time per block    =',end-begin,'seconds'
   
 end do
 
+close (unit=1)
 close (unit=2)
 
 deallocate (LogWF)
@@ -433,6 +495,13 @@ VarE = Var(diag_bl,AvE,AvE2)
 VarK = Var(diag_bl,AvK,AvK2)
 VarV = Var(diag_bl,AvV,AvV2)
 
+call NormalizeAv(diag_bl,AvEt,AvKt,AvVt)
+call NormalizeAv(diag_bl,AvEt2,AvKt2,AvVt2)
+
+VarEt = Var(diag_bl,AvEt,AvEt2)
+VarKt = Var(diag_bl,AvKt,AvKt2)
+VarVt = Var(diag_bl,AvVt,AvVt2)
+
 print *, '=============================================================='
 print *, 'FINAL RESULTS:'
 print *, ''
@@ -441,6 +510,12 @@ print *, ''
 print 102, '  > <E>  =',AvE/Np,'+/-',VarE/Np
 print 102, '  > <Ec> =',AvK/Np,'+/-',VarK/Np
 print 102, '  > <Ep> =',AvV/Np,'+/-',VarV/Np
+print *, ''
+print 102, '  > <Et> =',AvEt/Np,'+/-',VarEt/Np
+print 102, '  > <Kt> =',AvKt/Np,'+/-',VarKt/Np
+print 102, '  > <Vt> =',AvVt/Np,'+/-',VarVt/Np
+print *, 'Diagonal     =',real(idiag)/real(idiag+ioffdiag)
+print *, 'Off-diagonal =',real(ioffdiag)/real(idiag+ioffdiag)
 print *, ''
 print *, '=============================================================='
 print *, ''

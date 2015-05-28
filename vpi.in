@@ -5,41 +5,39 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 3               # Dimensions
-32              # Number of particles
+16              # Number of particles
 0.365d0         # Density
 0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-.false.         # .true. if diagonal simulation, .false. otherwise
-6.25d-3         # Time step 
-30              # Number of beads 
+3.75d-3         # Time step 
+50              # Number of beads 
 1982            # Seed of the random number generator
 0.d0            # Parameters of the propagator decomposition (a_1 and t_0)
 0.d0
-0.2d0		# Size of the CM movements (in units of density^(1/dim))
+0.15d0		# Size of the CM movements (in units of density^(1/dim))
 staging         # Sampling method (sta=staging, bis=bisection)
-12              # Length of the Staging movements
+20              # Length of the Staging movements
 4               # Bisection level, implies that the length of movements is 2**Nlev
-5               # Number of staging movements per step
+10              # Number of staging movements per step
 
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
 
 10000           # Grid points for the tabulation of the wave function
-1.2d0           # Variational parameter
+1.20d0          # Variational parameter
 .false.         # .true. if tabulate the wave function, .false. otherwise
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
-0.d0            # 1st parameter for the OBDM Guess for importance sampling, \approx <K>
-0.05d0          # 2nd parameter for the OBDM Guess for importance sampling, \approx n_0
+0.5d0           # C0 constant of the WORM algorithm
 10              # Number of evaluation of OBDM per step
 0               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-1600             # Number of blocks
+2000            # Number of blocks
 100             # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

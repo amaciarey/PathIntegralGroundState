@@ -44,70 +44,16 @@ contains
 
 !-----------------------------------------------------------------------
 
-!!$  function Force(k,xij,rij)
-!!$
-!!$    implicit none 
-!!$    
-!!$    real (kind=8)    :: rij,Force
-!!$    real (kind=8)    :: costheta
-!!$    real (kind=8)    :: dVdr
-!!$    integer (kind=4) :: k
-!!$
-!!$    real (kind=8),dimension (dim) :: xij
-!!$    
-!!$    costheta = xij(1)/rij
-!!$
-!!$    dVdr = -3.d0/rij**4
-!!$
-!!$    Force = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
-!!$
-!!$    if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)/rij 
-!!$    
-!!$    return 
-!!$  end function Force
-
-  function Force(k,xij,rij)
-
-    implicit none 
-    
-    real (kind=8)    :: rij,Force
-    real (kind=8)    :: dVdr
-    integer (kind=4) :: k
-
-    real (kind=8),dimension (dim) :: xij
-    
-    !dVdr  = 0.5d0*(Potential(abs(rij+dr))-Potential(abs(rij-dr)))/dr
-    dVdr  = -6.d0*(2.d0/rij**7-1.d0)/rij**6
-    Force = dVdr*xij(k)/rij
-
-    return 
-  end function Force
-
-!-----------------------------------------------------------------------
-
-  function OBDMGuess(r)
-
-    implicit none
-
-    real (kind=8) :: r,OBDMGuess
-
-    OBDMGuess = (1.d0-N0)*exp(-AK*r*r)+N0
-
-    return
-  end function OBDMGuess
-
-!-----------------------------------------------------------------------
-
-  subroutine ReadParameters(resume,crystal,diagonal,wf_table,sampling,&
-       & density,alpha,dt,a_1,t_0,delta_cm,Rm,Ak,N0,dim,Np,Nb,seed,&
+  subroutine ReadParameters(resume,crystal,wf_table,sampling,&
+       & density,alpha,dt,a_1,t_0,delta_cm,Rm,dim,Np,Nb,seed,&
        & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
 
-    logical           :: resume, crystal, diagonal, wf_table
+    logical           :: resume, crystal, wf_table
     character (len=3) :: sampling
     real (kind=8)     :: density, alpha, dt, a_1, t_0, delta_cm
-    real (kind=8)     :: Rm, Ak, N0
+    real (kind=8)     :: Rm
     integer (kind=4)  :: dim, Np, Nb, seed, Lstag, Nstag, Nmax
     integer (kind=4)  :: Nobdm, Nblock, Nstep, Nbin, Nk, Nlev
 
@@ -127,7 +73,6 @@ contains
     read (1,*)
     read (1,*)
     read (1,*)
-    read (1,*) diagonal
     read (1,*) dt
     read (1,*) Nb
     read (1,*) seed
@@ -167,8 +112,7 @@ contains
     read (1,*)
     read (1,*)
     read (1,*) 
-    read (1,*) AK
-    read (1,*) N0
+    read (1,*) CWorm
     read (1,*) Nobdm
     read (1,*) Npw
     read (1,*)
@@ -218,13 +162,14 @@ contains
   
 !-----------------------------------------------------------------------
 
-  subroutine init(seed,Path,xend,crystal,resume)
+  subroutine init(seed,Path,xend,crystal,resume,isopen,iworm)
 
     implicit none
     
-    logical          :: crystal,resume
-    integer (kind=4) :: seed
+    logical          :: crystal,resume,isopen
+    integer (kind=4) :: seed,iworm
     integer (kind=4) :: j,k,ip,ib
+    
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension(dim,2)         :: xend
     real (kind=8),dimension(dim,Np)        :: R
@@ -232,6 +177,9 @@ contains
     if (resume) then
        
        open (unit=2,file='checkpoint.dat',status='old')
+
+       read (2,*) isopen
+       read (2,*) iworm
 
        do ip=1,Np
 
@@ -298,16 +246,20 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine CheckPoint(Path,xend)
+  subroutine CheckPoint(Path,xend,isopen,iworm)
     
     implicit none
 
-    integer (kind=4) :: j,k,ip,ib
+    logical          :: isopen
+    integer (kind=4) :: j,k,ip,ib,iworm
 
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension(dim,2)         :: xend
 
     open (unit=3,file='checkpoint.dat')
+
+    write (3,*) isopen
+    write (3,*) iworm
 
     do ip=1,Np
          
@@ -407,21 +359,15 @@ contains
     logical          :: accept
     real (kind=8)    :: delta,dt
     real (kind=8)    :: DeltaS,SumDeltaS
-    real (kind=8)    :: rij2,rij
-    real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: ibi,ibf
     integer (kind=4) :: half
     
-    real (kind=8),dimension (dim)           :: xij
     real (kind=8),dimension (dim)           :: xold,xnew,dx
     real (kind=8),dimension (dim,2)         :: xend
     real (kind=8),dimension (0:Nmax+1)      :: LogWF
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
-
-    Snew = 0.d0
-    Sold = 0.d0
 
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
@@ -946,7 +892,6 @@ contains
     real (kind=8)    :: dt,sigma
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
-    real (kind=8)    :: rij,rij2
     real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: j
@@ -954,7 +899,6 @@ contains
     integer (kind=4) :: Lmax,Ls
     integer (kind=4) :: half
 
-    real (kind=8),dimension (dim)           :: xij
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
     real (kind=8),dimension (dim,2)         :: xend
@@ -1231,7 +1175,6 @@ contains
     real (kind=8)    :: dt,sigma
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
-    real (kind=8)    :: rij,rij2
     real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: j
@@ -1239,7 +1182,6 @@ contains
     integer (kind=4) :: Lmax,Ls
     integer (kind=4) :: half
     
-    real (kind=8),dimension (dim)           :: xij
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
     real (kind=8),dimension (dim,2)         :: xend
@@ -1844,8 +1786,6 @@ contains
     real (kind=8)    :: DeltaS,sigma
     real (kind=8)    :: SumDeltaS,TotDeltaS
     real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    real (kind=8)    :: rij,rij2
-    real (kind=8)    :: Snew,Sold
     integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
@@ -1854,7 +1794,6 @@ contains
     integer (kind=4) :: half
         
     real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (dim)           :: xij
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
     real (kind=8),dimension (0:Nmax+1)      :: LogWF
@@ -1862,9 +1801,6 @@ contains
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
     Nlev = level
-
-    Sold = 0.d0
-    Snew = 0.d0
 
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
@@ -1978,33 +1914,33 @@ contains
               
        if (ilev==Nlev) then
           
-          if (half==2) then
-             
-             do k=1,dim
-                xij(k) = Path(k,ip,Nb)-xend(k,1)
-             end do
-             
-             call MinimumImage(xij,rij2)
-             
-             if (rij2<=rcut2) then
-                rij  = sqrt(rij2)
-                Snew = log(OBDMGuess(rij)*rij**(dim-1))
-             end if
-             
-             do k=1,dim
-                xij(k) = OldChain(k,Nb)-xend(k,1)
-             end do
-             
-             call MinimumImage(xij,rij2)
-             
-             if (rij2<=rcut2) then
-                rij  = sqrt(rij2)
-                Sold = log(OBDMGuess(rij)*rij**(dim-1))
-             end if
-             
-             SumDeltaS = SumDeltaS+(Snew-Sold)
-    
-          end if
+!!$          if (half==2) then
+!!$             
+!!$             do k=1,dim
+!!$                xij(k) = Path(k,ip,Nb)-xend(k,1)
+!!$             end do
+!!$             
+!!$             call MinimumImage(xij,rij2)
+!!$             
+!!$             if (rij2<=rcut2) then
+!!$                rij  = sqrt(rij2)
+!!$                Snew = log(OBDMGuess(rij)*rij**(dim-1))
+!!$             end if
+!!$             
+!!$             do k=1,dim
+!!$                xij(k) = OldChain(k,Nb)-xend(k,1)
+!!$             end do
+!!$             
+!!$             call MinimumImage(xij,rij2)
+!!$             
+!!$             if (rij2<=rcut2) then
+!!$                rij  = sqrt(rij2)
+!!$                Sold = log(OBDMGuess(rij)*rij**(dim-1))
+!!$             end if
+!!$             
+!!$             SumDeltaS = SumDeltaS+(Snew-Sold)
+!!$    
+!!$          end if
           
           TotDeltaS = SumDeltaS-PrevDeltaS
        else
@@ -2229,8 +2165,6 @@ contains
     real (kind=8)    :: DeltaS,sigma
     real (kind=8)    :: SumDeltaS,TotDeltaS
     real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    real (kind=8)    :: rij,rij2
-    real (kind=8)    :: Snew,Sold
     integer (kind=4) :: j
     integer (kind=4) :: ii,ie
     integer (kind=4) :: ip,ib,k,accepted
@@ -2239,7 +2173,6 @@ contains
     integer (kind=4) :: half
         
     real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (dim)           :: xij
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
     real (kind=8),dimension (0:Nmax+1)      :: LogWF
@@ -2248,9 +2181,6 @@ contains
     
     Nlev = level
     
-    Sold = 0.d0
-    Snew = 0.d0
-
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
     end do
@@ -2364,33 +2294,33 @@ contains
               
        if (ilev==Nlev) then
           
-          if (half==1) then
-             
-             do k=1,dim
-                xij(k) = Path(k,ip,Nb)-xend(k,2)
-             end do
-             
-             call MinimumImage(xij,rij2)
-             
-             if (rij2<=rcut2) then
-                rij  = sqrt(rij2)
-                Snew = log(OBDMGuess(rij)*rij**(dim-1))
-             end if
-             
-             do k=1,dim
-                xij(k) = OldChain(k,Nb)-xend(k,2)
-             end do
-             
-             call MinimumImage(xij,rij2)
-             
-             if (rij2<=rcut2) then
-                rij  = sqrt(rij2)
-                Sold = log(OBDMGuess(rij)*rij**(dim-1))
-             end if
-             
-             SumDeltaS = SumDeltaS+(Snew-Sold)
-    
-          end if
+!!$          if (half==1) then
+!!$             
+!!$             do k=1,dim
+!!$                xij(k) = Path(k,ip,Nb)-xend(k,2)
+!!$             end do
+!!$             
+!!$             call MinimumImage(xij,rij2)
+!!$             
+!!$             if (rij2<=rcut2) then
+!!$                rij  = sqrt(rij2)
+!!$                Snew = log(OBDMGuess(rij)*rij**(dim-1))
+!!$             end if
+!!$             
+!!$             do k=1,dim
+!!$                xij(k) = OldChain(k,Nb)-xend(k,2)
+!!$             end do
+!!$             
+!!$             call MinimumImage(xij,rij2)
+!!$             
+!!$             if (rij2<=rcut2) then
+!!$                rij  = sqrt(rij2)
+!!$                Sold = log(OBDMGuess(rij)*rij**(dim-1))
+!!$             end if
+!!$             
+!!$             SumDeltaS = SumDeltaS+(Snew-Sold)
+!!$    
+!!$          end if
           
           TotDeltaS = SumDeltaS-PrevDeltaS
        else
@@ -2508,8 +2438,6 @@ contains
        
        call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-       SumDeltaS = SumDeltaS+DeltaS
-
     else
 
        ii = Nb
@@ -2551,9 +2479,9 @@ contains
        
        call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
        
-       SumDeltaS = SumDeltaS+DeltaS
-              
     end if
+    
+    SumDeltaS = SumDeltaS+0.5d0*DeltaS
 
     !Reconstruction of the whole chain piece using Staging
 
@@ -2705,8 +2633,6 @@ contains
 
        call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-       SumDeltaS = SumDeltaS+DeltaS
-
     else
        
        ii = Nb
@@ -2729,9 +2655,9 @@ contains
 
        call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
     
-       SumDeltaS = SumDeltaS+DeltaS
-
     end if
+
+    SumDeltaS = SumDeltaS+0.5d0*DeltaS
 
     !Reconstruction of the whole chain piece using Staging
 

@@ -189,6 +189,61 @@ contains
     
     return
   end subroutine LocalEnergy
+
+!-----------------------------------------------------------------------
+
+  subroutine ThermEnergy(Path,dt,E,Ec,Ep)
+
+    implicit none
+
+    real (kind=8)    :: E,Ec,Ep
+    real (kind=8)    :: dt
+    real (kind=8)    :: Pot,F2
+    real (kind=8)    :: rij2
+    integer (kind=4) :: ib
+    integer (kind=4) :: ip
+    integer (kind=4) :: k
+        
+    real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
+    real (kind=8),dimension(dim)           :: xij
+        
+    Ep = 0.d0
+    Ec = 0.d0
+    E  = 0.d0
+    
+    do ib=0,2*Nb-1
+       
+       call PotentialEnergy(Path(:,:,ib),Pot,F2)
+       
+       if (ib==Nb) then
+          Ep = Pot
+       end if
+       
+       E = E+0.5d0*real(dim*Np)/dt+GreenFunction(1,ib,dt,Pot,F2)
+       
+       do ip=1,Np
+          
+          rij2 = 0.d0
+          
+          do k=1,dim
+             
+             xij(k) = Path(k,ip,ib)-Path(k,ip,ib+1)
+             
+          end do
+          
+          call MinimumImage(xij,rij2)
+
+          if (rij2<=rcut2) E = E-0.5d0*rij2/(dt*dt)
+          
+       end do
+       
+    end do
+    
+    E  = 0.5d0*E/real(Nb)
+    Ec = E-Ep
+    
+    return
+  end subroutine ThermEnergy
   
 !-----------------------------------------------------------------------
 
@@ -330,7 +385,7 @@ contains
   
 !-----------------------------------------------------------------------
 
-  subroutine Normalize(density,ngr,gr)
+  subroutine NormalizeGr(density,ngr,gr)
 
     implicit none
 
@@ -353,7 +408,7 @@ contains
     end do
 
     return
-  end subroutine Normalize
+  end subroutine NormalizeGr
 
 !-----------------------------------------------------------------------
 
@@ -388,24 +443,23 @@ contains
     real (kind=8)    :: density
     real (kind=8)    :: k_n,nid
     real (kind=8)    :: zconf
-    real (kind=8)    :: r,nrhist,nr0
+    real (kind=8)    :: r,rho
 
     integer (kind=4) :: ibin,m
     integer (kind=4) :: Nobdm
 
     real (kind=8), dimension (0:Npw,Nbin) :: nrho
-
+    
     k_n = pi**(0.5d0*dim)/r8_gamma(0.5d0*dim+1.d0)
 
     do ibin=1,Nbin
        r   = (real(ibin)-0.5d0)*rbin
        nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
-       nrhist = nrho(0,ibin)
        do m=0,Npw
-          nr0 = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
-          !nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
+          nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
+          rho = nrho(m,ibin)
        end do
-       write (98,*) r,nr0,nrhist
+       write (98,'(20g20.10e3)') r,rho
     end do
     write (98,*) 
     write (98,*)
