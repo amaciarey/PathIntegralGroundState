@@ -270,16 +270,25 @@ do iblock=1,Nblock
          do ip=1,Np
 
             if (ip/=iworm) then
-
-               attempted = attempted+1
-            
-               call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
                
+               if (mod(istep,10)==0) then               
+                  attempted = attempted+1
+                  call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+               end if
+
                do istag=1,Nstag
                   stag_move = stag_move+1
-                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+                  
+                  if (sampling=="sta") then
+                     call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+                     call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+                     call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+                  else
+                     call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
+                     call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
+                     call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
+                  end if
+
                end do
 
             else
@@ -287,19 +296,26 @@ do iblock=1,Nblock
                do iobdm=1,Nobdm
                
                   do j=1,2
-
-                     attemp_half = attemp_half+1
-               
-                     call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
                      
+                     if (mod(istep,10)==0) then
+                        attemp_half = attemp_half+1
+                        call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
+                     end if
+
                      do istag=1,Nstag
 
                         stag_half = stag_half+1
-                               
-                        call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
-                        call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
-                        call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
                         
+                        if (sampling=="sta") then
+                           call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
+                           call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
+                           call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
+                        else
+                           call MoveHeadHalfBisection(j,LogWF,dt,Nlev,ip,Path,xend,acc_head_half)
+                           call MoveHeadHalfBisection(j,LogWF,dt,Nlev,ip,Path,xend,acc_tail_half)
+                           call BisectionHalf(j,LogWF,dt,Nlev,ip,Path,xend,acc_bd_half)
+                        end if
+
                      end do
 
                   end do
@@ -320,18 +336,25 @@ do iblock=1,Nblock
       
          do ip=1,Np
 
-            attempted = attempted+1
+            if (mod(istep,10)==0) then
+               attempted = attempted+1
+               call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+            end if
 
-            call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
-            
             do istag=1,Nstag
 
                stag_move = stag_move+1
 
-               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
-            
+               if (sampling=="sta") then
+                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               else
+                  call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
+                  call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
+                  call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
+               end if
+
             end do
                
          end do

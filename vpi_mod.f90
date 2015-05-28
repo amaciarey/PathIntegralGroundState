@@ -2438,7 +2438,7 @@ contains
        
        call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-       SumDeltaS = SumDeltaS+DeltaS
+       !SumDeltaS = SumDeltaS+DeltaS
 
     else
 
@@ -2481,9 +2481,11 @@ contains
        
        call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
        
-       SumDeltaS = SumDeltaS+DeltaS
+       !SumDeltaS = SumDeltaS+DeltaS
               
     end if
+
+    !SumDeltaS = SumDeltaS+DeltaS
 
     !Reconstruction of the whole chain piece using Staging
 
@@ -2635,7 +2637,7 @@ contains
 
        call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-       SumDeltaS = SumDeltaS+DeltaS
+       !SumDeltaS = SumDeltaS+DeltaS
 
     else
        
@@ -2659,9 +2661,11 @@ contains
 
        call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
     
-       SumDeltaS = SumDeltaS+DeltaS
+       !SumDeltaS = SumDeltaS+DeltaS
 
     end if
+
+    !SumDeltaS = SumDeltaS+DeltaS
 
     !Reconstruction of the whole chain piece using Staging
 
