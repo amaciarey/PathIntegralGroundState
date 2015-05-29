@@ -258,7 +258,12 @@ contains
 
     open (unit=3,file='checkpoint.dat')
 
-    write (3,*) isopen
+    if (isopen) then
+       write (3,*) ".True."
+    else
+       write (3,*) ".False."
+    end if
+
     write (3,*) iworm
 
     do ip=1,Np
