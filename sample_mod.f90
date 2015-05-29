@@ -443,7 +443,7 @@ contains
     real (kind=8)    :: density
     real (kind=8)    :: k_n,nid
     real (kind=8)    :: zconf
-    real (kind=8)    :: r,rho
+    real (kind=8)    :: r
 
     integer (kind=4) :: ibin,m
     integer (kind=4) :: Nobdm
@@ -457,12 +457,11 @@ contains
        nid = density*k_n*((r+0.5d0*rbin)**dim-(r-0.5d0*rbin)**dim)
        do m=0,Npw
           nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
-          rho = nrho(m,ibin)
        end do
-       write (98,'(20g20.10e3)') r,rho
+       !write (98,'(20g20.10e3)') r,(nrho(m,ibin),m=0,Npw)
     end do
-    write (98,*) 
-    write (98,*)
+    !write (98,*) 
+    !write (98,*)
     
     return
   end subroutine NormalizeNr

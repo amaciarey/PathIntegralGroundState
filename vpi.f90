@@ -47,7 +47,6 @@ integer (kind=4) :: acc_close,try_close
 integer (kind=4) :: iworm,iupdate
 integer (kind=4) :: idiag,idiag_block,idiag_aux
 integer (kind=4) :: obdm_bl,diag_bl
-integer (kind=4) :: ioffdiag,ioffdiag_aux
 
 character (len=3) :: sampling
 
@@ -65,7 +64,7 @@ call ReadParameters(resume,crystal,wf_table,sampling,&
      & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
 pi = acos(-1.d0)
-!V0 = (sin(alpha))**2
+V0 = (sin(alpha))**2
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
 
@@ -190,8 +189,6 @@ VarNr = 0.d0
  
 nrho = 0.d0
 
-ioffdiag  = 0
-ioffdiag_aux = 0
 idiag     = 0
 idiag_aux = 0
 obdm_bl   = 0
@@ -201,9 +198,9 @@ diag_bl   = 0
 
 do iblock=1,Nblock
    
-   call cpu_time(begin)
-
    !Initializing block accumulators
+
+   call cpu_time(begin)
    
    try_open  = 0
    acc_open  = 0
@@ -251,7 +248,8 @@ do iblock=1,Nblock
    
    do istep=1,Nstep
 
-      !Open and Close updates... let's see what happens...
+      !Open and Close updates to determine if the system is in a diagonal
+      !or in an off-diagonal configuration
 
       iupdate = int(grnd()*2)
 
@@ -268,24 +266,33 @@ do iblock=1,Nblock
          end if
       end if
 
-      if (isopen) then
+      !Sampling of the paths 
 
-         ioffdiag = ioffdiag+1
-         ioffdiag_aux = ioffdiag_aux+1
+      if (isopen) then
 
          do ip=1,Np
 
             if (ip/=iworm) then
-
-               attempted = attempted+1
-            
-               call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
                
+               if (mod(istep,10)==0) then               
+                  attempted = attempted+1
+                  call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+               end if
+
                do istag=1,Nstag
+                  
                   stag_move = stag_move+1
-                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+                  
+                  if (sampling=="sta") then
+                     call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+                     call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+                     call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+                  else
+                     call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
+                     call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
+                     call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
+                  end if
+
                end do
 
             else
@@ -293,19 +300,26 @@ do iblock=1,Nblock
                do iobdm=1,Nobdm
                
                   do j=1,2
-
-                     attemp_half = attemp_half+1
-               
-                     call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
                      
+                     if (mod(istep,10)==0) then
+                        attemp_half = attemp_half+1
+                        call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
+                     end if
+
                      do istag=1,Nstag
 
                         stag_half = stag_half+1
-                               
-                        call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
-                        call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
-                        call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
                         
+                        if (sampling=="sta") then
+                           call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
+                           call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
+                           call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
+                        else
+                           call MoveHeadHalfBisection(j,LogWF,dt,Nlev,ip,Path,xend,acc_head_half)
+                           call MoveHeadHalfBisection(j,LogWF,dt,Nlev,ip,Path,xend,acc_tail_half)
+                           call BisectionHalf(j,LogWF,dt,Nlev,ip,Path,xend,acc_bd_half)
+                        end if
+
                      end do
 
                   end do
@@ -326,18 +340,25 @@ do iblock=1,Nblock
       
          do ip=1,Np
 
-            attempted = attempted+1
+            if (mod(istep,10)==0) then
+               attempted = attempted+1
+               call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+            end if
 
-            call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
-            
             do istag=1,Nstag
 
                stag_move = stag_move+1
 
-               call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-               call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-               call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
-            
+               if (sampling=="sta") then
+                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
+                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
+                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+               else
+                  call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
+                  call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
+                  call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
+               end if
+
             end do
                
          end do
@@ -421,15 +442,14 @@ do iblock=1,Nblock
       
       obdm_bl    = obdm_bl+1
       numz_block = real(idiag_aux)
-      !numz_block = real(ioffdiag_aux)
+      
       call NormalizeNr(density,numz_block,Nobdm,nrho)
       call AccumNr(nrho,AvNr,AvNr2)
       
       !Restarting counters
    
-      idiag_aux    = 0
-      ioffdiag_aux = 0
-      nrho         = 0.d0
+      idiag_aux = 0
+      nrho      = 0.d0
    
    end if
      
@@ -514,8 +534,6 @@ print *, ''
 print 102, '  > <Et> =',AvEt/Np,'+/-',VarEt/Np
 print 102, '  > <Kt> =',AvKt/Np,'+/-',VarKt/Np
 print 102, '  > <Vt> =',AvVt/Np,'+/-',VarVt/Np
-print *, 'Diagonal     =',real(idiag)/real(idiag+ioffdiag)
-print *, 'Off-diagonal =',real(ioffdiag)/real(idiag+ioffdiag)
 print *, ''
 print *, '=============================================================='
 print *, ''
