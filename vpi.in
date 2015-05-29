@@ -6,20 +6,20 @@
 
 2               # Dimensions
 32              # Number of particles
-128.d0          # Density
+192.d0          # Density
 0.6d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-5.00d-5         # Time step 
-18              # Number of beads 
+3.00d-5         # Time step 
+50              # Number of beads 
 1982            # Seed of the random number generator
 0.d0            # Parameters of the propagator decomposition (a_1 and t_0)
 0.d0
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
 staging         # Sampling method (sta=staging, bis=bisection)
-16              # Length of the Staging movements
+24              # Length of the Staging movements
 4               # Bisection level, implies that the length of movements is 2**Nlev
 5               # Number of staging movements per step
 
@@ -31,7 +31,7 @@ staging         # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
-1.0d0           # C0 constant of the WORM algorithm
+0.5d0           # C0 constant of the WORM algorithm
 10              # Number of evaluation of OBDM per step
 5               # Maximum angular momentum partial wave in OBDM
 
