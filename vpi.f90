@@ -198,9 +198,9 @@ diag_bl   = 0
 
 do iblock=1,Nblock
    
-   call cpu_time(begin)
-
    !Initializing block accumulators
+
+   call cpu_time(begin)
    
    try_open  = 0
    acc_open  = 0
@@ -248,7 +248,8 @@ do iblock=1,Nblock
    
    do istep=1,Nstep
 
-      !Open and Close updates... let's see what happens...
+      !Open and Close updates to determine if the system is in a diagonal
+      !or in an off-diagonal configuration
 
       iupdate = int(grnd()*2)
 
@@ -265,6 +266,8 @@ do iblock=1,Nblock
          end if
       end if
 
+      !Sampling of the paths 
+
       if (isopen) then
 
          do ip=1,Np
@@ -277,6 +280,7 @@ do iblock=1,Nblock
                end if
 
                do istag=1,Nstag
+                  
                   stag_move = stag_move+1
                   
                   if (sampling=="sta") then

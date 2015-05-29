@@ -31,13 +31,13 @@ staging         # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
-2.0d0           # C0 constant of the WORM algorithm
+0.5d0           # C0 constant of the WORM algorithm
 10              # Number of evaluation of OBDM per step
 5               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-200             # Number of blocks
+400             # Number of blocks
 100             # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

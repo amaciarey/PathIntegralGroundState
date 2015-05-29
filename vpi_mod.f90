@@ -2400,7 +2400,18 @@ contains
 
        ii = Nb-Ls
        ie = Nb
+
+       !Evaluation of the change in the kinetic action due to the fact
+       !that the link is broken
        
+       do k=1,dim
+          xij(k) = Path(k,ip,ii)-Path(k,ip,ie)
+       end do
+       
+       call MinimumImage(xij,rij2)
+       
+       DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
+              
        !Save the original positions of the piece of the chain
        !that will be displaced
       
@@ -2438,13 +2449,22 @@ contains
        
        call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-       !SumDeltaS = SumDeltaS+DeltaS
-
     else
 
        ii = Nb
        ie = Nb+Ls
 
+       !Evaluation of the change in the kinetic action due to the fact
+       !that the link is broken
+       
+       do k=1,dim
+          xij(k) = Path(k,ip,ii)-Path(k,ip,ie)
+       end do
+       
+       call MinimumImage(xij,rij2)
+       
+       DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
+       
        !Save the original positions of the piece of the chain
        !that will be displaced
       
@@ -2481,11 +2501,9 @@ contains
        
        call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
        
-       !SumDeltaS = SumDeltaS+DeltaS
-              
     end if
-
-    !SumDeltaS = SumDeltaS+DeltaS
+    
+    SumDeltaS = SumDeltaS+0.5d0*DeltaS
 
     !Reconstruction of the whole chain piece using Staging
 
@@ -2526,17 +2544,6 @@ contains
        
     end do
 
-    !Evaluation of the change in the kinetic action due to the fact
-    !that the link is broken
-
-    do k=1,dim
-       xij(k) = Path(k,ip,ii)-Path(k,ip,ie)
-    end do
-    
-    call MinimumImage(xij,rij2)
-    
-    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
-     
     !Metropolis question
     
     if (exp(-SumDeltaS-DeltaK)>=1.d0) then
@@ -2637,8 +2644,6 @@ contains
 
        call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-       !SumDeltaS = SumDeltaS+DeltaS
-
     else
        
        ii = Nb
@@ -2661,11 +2666,9 @@ contains
 
        call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
     
-       !SumDeltaS = SumDeltaS+DeltaS
-
     end if
 
-    !SumDeltaS = SumDeltaS+DeltaS
+    SumDeltaS = SumDeltaS+0.5d0*DeltaS
 
     !Reconstruction of the whole chain piece using Staging
 
@@ -2708,7 +2711,7 @@ contains
 
     !Evaluation of the change in the kinetic action due to the fact
     !that the link is broken
-
+    
     do k=1,dim
        xij(k) = Path(k,ip,ii)-Path(k,ip,ie)
     end do
