@@ -23,18 +23,32 @@ contains
 
     if (opt==0) then
 
-       if (mod(ib,2)==0) then
-          GreenFunction = dt*2.d0*(Pot+a_1*dt*dt*F2/6.d0)/3.d0
+       if (ib==0) then
+          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+       else if (ib==2*Nb) then
+          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
        else
-          GreenFunction = dt*4.d0*(Pot+(1.d0-a_1)*dt*dt*F2/12.d0)/3.d0
+          if (mod(ib,2)==0) then
+             !GreenFunction = dt*2.d0*(Pot+a_1*dt*dt*F2/6.d0)/3.d0
+             GreenFunction = dt*2.d0*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+          else
+             !GreenFunction = dt*4.d0*(Pot+(1.d0-a_1)*dt*dt*F2/12.d0)/3.d0
+             GreenFunction = dt*4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**3*F2/9.d0
+          end if
        end if
 
     else if (opt==1) then
        
-       if (mod(ib,2)==0) then
-          GreenFunction = 2.d0*(Pot+0.5d0*a_1*dt*dt*F2)/3.d0
+       if (ib==0) then
+          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+       else if (ib==2*Nb) then
+          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
        else
-          GreenFunction = 4.d0*(Pot+0.25d0*(1.d0-a_1)*dt*dt*F2)/3.d0
+          if (mod(ib,2)==0) then
+             GreenFunction = 2.d0*Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+          else
+             GreenFunction = 4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**2*F2/3.d0
+          end if
        end if
 
     end if
@@ -2509,7 +2523,7 @@ contains
     end if
     
     SumDeltaS = SumDeltaS+0.5d0*DeltaS
-
+    
     !Reconstruction of the whole chain piece using Staging
 
     do j=1,Ls-1
@@ -2674,7 +2688,7 @@ contains
     end if
 
     SumDeltaS = SumDeltaS+0.5d0*DeltaS
-
+    
     !Reconstruction of the whole chain piece using Staging
 
     do j=1,Ls-1
