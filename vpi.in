@@ -18,16 +18,16 @@
 0.16666667d0    # Parameters of the propagator decomposition (a_1 and t_0)
 0.d0
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
-staging         # Sampling method (sta=staging, bis=bisection)
+staging         # Path sampling method (sta=staging, bis=bisection)
 16              # Length of the Staging movements
 4               # Bisection level, implies that the length of movements is 2**Nlev
-5               # Number of staging movements per step
+5               # Number of sampling movements per step
 
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
 
 10000           # Grid points for the tabulation of the wave function
 0.07d0          # Variational parameter
-.false.         # .true. if tabulate the wave function, .false. otherwise
+.true.          # .true. if tabulate the wave function, .false. otherwise
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
@@ -37,7 +37,7 @@ staging         # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-200             # Number of blocks
+400             # Number of blocks
 100             # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

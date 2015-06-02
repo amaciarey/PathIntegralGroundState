@@ -28,8 +28,8 @@ real (kind=8)    :: AvEt2,AvKt2,AvVt2
 real (kind=8)    :: VarEt,VarKt,VarVt
 real (kind=8)    :: numz_block
 real (kind=8)    :: end,begin
-real (kind=8)    :: stag_move,stag_half
-real (kind=8)    :: attempted,attemp_half
+real (kind=8)    :: try_stag,try_stag_half
+real (kind=8)    :: try_cm,try_cm_half
 integer (kind=4) :: seed
 integer (kind=4) :: Lstag,Nlev
 integer (kind=4) :: k,j
@@ -163,9 +163,9 @@ AvE  = 0.d0
 AvK  = 0.d0
 AvV  = 0.d0
 
-AvEt  = 0.d0
-AvKt  = 0.d0
-AvVt  = 0.d0
+AvEt = 0.d0
+AvKt = 0.d0
+AvVt = 0.d0
 
 AvE2 = 0.d0
 AvK2 = 0.d0
@@ -208,18 +208,18 @@ do iblock=1,Nblock
    try_close = 0
    acc_close = 0
 
-   attempted = 0
-   acc_cm    = 0
+   try_cm = 0
+   acc_cm = 0
 
-   stag_move = 0
-   acc_bd    = 0
-   acc_head  = 0
-   acc_tail  = 0
+   try_stag = 0
+   acc_bd   = 0
+   acc_head = 0
+   acc_tail = 0
    
-   attemp_half = 0
+   try_cm_half = 0
    acc_cm_half = 0
    
-   stag_half     = 0
+   try_stag_half = 0
    acc_bd_half   = 0
    acc_head_half = 0
    acc_tail_half = 0
@@ -275,13 +275,13 @@ do iblock=1,Nblock
             if (ip/=iworm) then
                
                if (mod(istep,10)==0) then               
-                  attempted = attempted+1
+                  try_cm = try_cm+1
                   call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
                end if
 
                do istag=1,Nstag
                   
-                  stag_move = stag_move+1
+                  try_stag = try_stag+1
                   
                   if (sampling=="sta") then
                      call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
@@ -302,13 +302,13 @@ do iblock=1,Nblock
                   do j=1,2
                      
                      if (mod(istep,10)==0) then
-                        attemp_half = attemp_half+1
+                        try_cm_half = try_cm_half+1
                         call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
                      end if
 
                      do istag=1,Nstag
 
-                        stag_half = stag_half+1
+                        try_stag_half = try_stag_half+1
                         
                         if (sampling=="sta") then
                            call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
@@ -341,13 +341,13 @@ do iblock=1,Nblock
          do ip=1,Np
 
             if (mod(istep,10)==0) then
-               attempted = attempted+1
+               try_cm = try_cm+1
                call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
             end if
 
             do istag=1,Nstag
 
-               stag_move = stag_move+1
+               try_stag = try_stag+1
 
                if (sampling=="sta") then
                   call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
@@ -479,17 +479,17 @@ do iblock=1,Nblock
    print *,   ''
    print *,   '# Acceptance of diagonal movements:'
    print *,   ' '
-   print 101, '> CM movements      =',100*real(acc_cm)/attempted,'%'
-   print 101, '> Staging movements =',100*real(acc_bd)/stag_move,'%'
-   print 101, '> Head movements    =',100*real(acc_head)/stag_move,'%'
-   print 101, '> Tail movements    =',100*real(acc_tail)/stag_move,'%'
+   print 101, '> CM movements      =',100*real(acc_cm)/try_cm,'%'
+   print 101, '> Staging movements =',100*real(acc_bd)/try_stag,'%'
+   print 101, '> Head movements    =',100*real(acc_head)/try_stag,'%'
+   print 101, '> Tail movements    =',100*real(acc_tail)/try_stag,'%'
    print *,   ' '
    print *,   '# Acceptance of off-diagonal movements:'
    print *,   ' '
-   print 101, '> CM movements      =',100*real(acc_cm_half)/attemp_half,'%'
-   print 101, '> Staging movements =',100*real(acc_bd_half)/stag_half,'%'
-   print 101, '> Head movements    =',100*real(acc_head_half)/stag_half,'%'
-   print 101, '> Tail movements    =',100*real(acc_tail_half)/stag_half,'%'
+   print 101, '> CM movements      =',100*real(acc_cm_half)/try_cm_half,'%'
+   print 101, '> Staging movements =',100*real(acc_bd_half)/try_stag_half,'%'
+   print 101, '> Head movements    =',100*real(acc_head_half)/try_stag_half,'%'
+   print 101, '> Tail movements    =',100*real(acc_tail_half)/try_stag_half,'%'
    print *,   ' '
    print *,   '# Acceptance open/close updates:'
    print *,   ' '
