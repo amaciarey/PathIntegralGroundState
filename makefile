@@ -1,5 +1,5 @@
-f90=ifort -fast 
-#f90=gfortran -O3 -msse2 -flto -funroll-loops -fwhole-program -Wall -fno-range-check 
+#f90=ifort -fast 
+f90=gfortran -O3 -msse2 -flto -funroll-loops -fwhole-program -Wall -fno-range-check 
 
 vpi: random_mod.mod\
  	global_mod.mod\
