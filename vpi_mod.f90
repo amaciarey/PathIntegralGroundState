@@ -23,18 +23,30 @@ contains
 
     if (opt==0) then
 
-       if (mod(ib,2)==0) then
-          GreenFunction = dt*2.d0*(Pot+a_1*dt*dt*F2/6.d0)/3.d0
+       if (ib==0) then
+          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+       else if (ib==2*Nb) then
+          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
        else
-          GreenFunction = dt*4.d0*(Pot+(1.d0-a_1)*dt*dt*F2/12.d0)/3.d0
+          if (mod(ib,2)==0) then
+             GreenFunction = dt*2.d0*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+          else
+             GreenFunction = dt*4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**3*F2/9.d0
+          end if
        end if
 
     else if (opt==1) then
        
-       if (mod(ib,2)==0) then
-          GreenFunction = 2.d0*(Pot+0.5d0*a_1*dt*dt*F2)/3.d0
+       if (ib==0) then
+          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+       else if (ib==2*Nb) then
+          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
        else
-          GreenFunction = 4.d0*(Pot+0.25d0*(1.d0-a_1)*dt*dt*F2)/3.d0
+          if (mod(ib,2)==0) then
+             GreenFunction = 2.d0*Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+          else
+             GreenFunction = 4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**2*F2/3.d0
+          end if
        end if
 
     end if
@@ -504,8 +516,8 @@ contains
               if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
               xnext(k) = xold(k)-xnext(k)
               
-              xmid(k)  = 0.5d0*(xprev(k)+xnext(k))
-              sigma    = sqrt(0.5d0*dt)
+              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
+              sigma   = sqrt(0.5d0*dt)
            end if
 
            xnew(k) = xmid(k)+sigma*gauss1
@@ -594,9 +606,9 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k)  = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
-          sigma    = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
-          xnew(k)  = xmid(k)+sigma*gauss1
+          xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
+          sigma   = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
+          xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
           
@@ -804,9 +816,9 @@ contains
        if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
        xnext(k) = xold(k)-xnext(k)
        
-       xmid(k)  = xnext(k)
-       sigma    = sqrt(real(Ls)*dt)
-       xnew(k)  = xmid(k)+sigma*gauss1
+       xmid(k) = xnext(k)
+       sigma   = sqrt(real(Ls)*dt)
+       xnew(k) = xmid(k)+sigma*gauss1
        
        !Periodic boundary conditions
        
@@ -840,9 +852,9 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          xnew(k)  = xmid(k)+sigma*gauss1
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
           
@@ -963,7 +975,11 @@ contains
 
     call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
 
-    SumDeltaS = SumDeltaS+DeltaS
+    if (half==1) then
+       SumDeltaS = SumDeltaS+DeltaS
+    else
+       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+    end if
 
     !Reconstruction of the whole chain piece using Staging
 
@@ -985,9 +1001,9 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          xnew(k)  = xmid(k)+sigma*gauss1
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
           
@@ -1122,8 +1138,8 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
           
           xnew(k) = xmid(k)+sigma*gauss1
           
@@ -1246,7 +1262,11 @@ contains
     
     call UpdateAction(LogWF,Path,ip,ii+Ls,xnew,xold,dt,DeltaS) 
     
-    SumDeltaS = SumDeltaS+DeltaS
+    if (half==1) then
+       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+    else
+       SumDeltaS = SumDeltaS+DeltaS
+    end if
 
     !Reconstruction of the whole chain piece using Staging
 
@@ -1268,8 +1288,8 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
           
           xnew(k) = xmid(k)+sigma*gauss1
           
@@ -1367,9 +1387,9 @@ contains
 
     do ilev=1,Nlev
 
-       delta_ib  = 2**(Nlev-ilev+1)
-       dt_bis    = 0.5d0*real(delta_ib)*dt
-       sigma     = sqrt(0.5d0*dt_bis)
+       delta_ib = 2**(Nlev-ilev+1)
+       dt_bis   = 0.5d0*real(delta_ib)*dt
+       sigma    = sqrt(0.5d0*dt_bis)
           
        LevelDeltaS = 0.d0
     
@@ -1516,9 +1536,9 @@ contains
 
     do ilev=1,Nlev
 
-       delta_ib  = 2**(Nlev-ilev+1)
-       dt_bis    = 0.5d0*real(delta_ib)*dt
-       sigma     = sqrt(0.5d0*dt_bis)
+       delta_ib = 2**(Nlev-ilev+1)
+       dt_bis   = 0.5d0*real(delta_ib)*dt
+       sigma    = sqrt(0.5d0*dt_bis)
           
        LevelDeltaS = 0.d0
     
@@ -1666,8 +1686,8 @@ contains
        if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
        xnext(k) = xold(k)-xnext(k)
        
-       xmid(k)  = xnext(k)
-       sigma    = sqrt(2**Nlev*dt)
+       xmid(k) = xnext(k)
+       sigma   = sqrt(2**Nlev*dt)
        
        xnew(k) = xmid(k)+sigma*gauss1
        
@@ -1805,7 +1825,8 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = level
+    !Nlev = level
+    Nlev = int((level-1)*grnd())+2
 
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
@@ -1859,14 +1880,19 @@ contains
 
     call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)   
 
-    SumDeltaS  = SumDeltaS+DeltaS
+    if (half==1) then
+       SumDeltaS = SumDeltaS+DeltaS
+    else
+       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+    end if
+
     PrevDeltaS = 0.d0
     
     do ilev=1,Nlev
 
-       delta_ib  = 2**(Nlev-ilev+1)
-       dt_bis    = 0.5d0*real(delta_ib)*dt
-       sigma     = sqrt(0.5d0*dt_bis)
+       delta_ib = 2**(Nlev-ilev+1)
+       dt_bis   = 0.5d0*real(delta_ib)*dt
+       sigma    = sqrt(0.5d0*dt_bis)
           
        LevelDeltaS = 0.d0
     
@@ -1918,35 +1944,6 @@ contains
        !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
               
        if (ilev==Nlev) then
-          
-!!$          if (half==2) then
-!!$             
-!!$             do k=1,dim
-!!$                xij(k) = Path(k,ip,Nb)-xend(k,1)
-!!$             end do
-!!$             
-!!$             call MinimumImage(xij,rij2)
-!!$             
-!!$             if (rij2<=rcut2) then
-!!$                rij  = sqrt(rij2)
-!!$                Snew = log(OBDMGuess(rij)*rij**(dim-1))
-!!$             end if
-!!$             
-!!$             do k=1,dim
-!!$                xij(k) = OldChain(k,Nb)-xend(k,1)
-!!$             end do
-!!$             
-!!$             call MinimumImage(xij,rij2)
-!!$             
-!!$             if (rij2<=rcut2) then
-!!$                rij  = sqrt(rij2)
-!!$                Sold = log(OBDMGuess(rij)*rij**(dim-1))
-!!$             end if
-!!$             
-!!$             SumDeltaS = SumDeltaS+(Snew-Sold)
-!!$    
-!!$          end if
-          
           TotDeltaS = SumDeltaS-PrevDeltaS
        else
           TotDeltaS = LevelDeltaS-PrevDeltaS
@@ -2045,8 +2042,8 @@ contains
        if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
        xprev(k) = xold(k)+xprev(k)
        
-       xmid(k)  = xprev(k)
-       sigma    = sqrt(2**Nlev*dt)
+       xmid(k) = xprev(k)
+       sigma   = sqrt(2**Nlev*dt)
        
        xnew(k) = xmid(k)+sigma*gauss1
        
@@ -2065,9 +2062,9 @@ contains
     
     do ilev=1,Nlev
 
-       delta_ib  = 2**(Nlev-ilev+1)
-       dt_bis    = 0.5d0*real(delta_ib)*dt
-       sigma     = sqrt(0.5d0*dt_bis)
+       delta_ib = 2**(Nlev-ilev+1)
+       dt_bis   = 0.5d0*real(delta_ib)*dt
+       sigma    = sqrt(0.5d0*dt_bis)
           
        LevelDeltaS = 0.d0
     
@@ -2184,8 +2181,9 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    Nlev = level
-    
+    !Nlev = level
+    Nlev = int((level-1)*grnd())+2
+
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
     end do
@@ -2209,7 +2207,7 @@ contains
        end do
     end do
     
-    !Make an initial guess for the position of first bead
+    !Make an initial guess for the position of last bead
 
     SumDeltaS = 0.d0
 
@@ -2239,14 +2237,19 @@ contains
 
     call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)    
 
-    SumDeltaS  = SumDeltaS+DeltaS
+    if (half==1) then
+       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+    else
+       SumDeltaS = SumDeltaS+DeltaS
+    end if
+
     PrevDeltaS = 0.d0
     
     do ilev=1,Nlev
 
-       delta_ib  = 2**(Nlev-ilev+1)
-       dt_bis    = 0.5d0*real(delta_ib)*dt
-       sigma     = sqrt(0.5d0*dt_bis)
+       delta_ib = 2**(Nlev-ilev+1)
+       dt_bis   = 0.5d0*real(delta_ib)*dt
+       sigma    = sqrt(0.5d0*dt_bis)
           
        LevelDeltaS = 0.d0
     
@@ -2298,35 +2301,6 @@ contains
        !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
               
        if (ilev==Nlev) then
-          
-!!$          if (half==1) then
-!!$             
-!!$             do k=1,dim
-!!$                xij(k) = Path(k,ip,Nb)-xend(k,2)
-!!$             end do
-!!$             
-!!$             call MinimumImage(xij,rij2)
-!!$             
-!!$             if (rij2<=rcut2) then
-!!$                rij  = sqrt(rij2)
-!!$                Snew = log(OBDMGuess(rij)*rij**(dim-1))
-!!$             end if
-!!$             
-!!$             do k=1,dim
-!!$                xij(k) = OldChain(k,Nb)-xend(k,2)
-!!$             end do
-!!$             
-!!$             call MinimumImage(xij,rij2)
-!!$             
-!!$             if (rij2<=rcut2) then
-!!$                rij  = sqrt(rij2)
-!!$                Sold = log(OBDMGuess(rij)*rij**(dim-1))
-!!$             end if
-!!$             
-!!$             SumDeltaS = SumDeltaS+(Snew-Sold)
-!!$    
-!!$          end if
-          
           TotDeltaS = SumDeltaS-PrevDeltaS
        else
           TotDeltaS = LevelDeltaS-PrevDeltaS
@@ -2509,7 +2483,7 @@ contains
     end if
     
     SumDeltaS = SumDeltaS+0.5d0*DeltaS
-
+    
     !Reconstruction of the whole chain piece using Staging
 
     do j=1,Ls-1
@@ -2674,7 +2648,7 @@ contains
     end if
 
     SumDeltaS = SumDeltaS+0.5d0*DeltaS
-
+    
     !Reconstruction of the whole chain piece using Staging
 
     do j=1,Ls-1
