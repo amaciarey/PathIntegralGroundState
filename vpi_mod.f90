@@ -24,28 +24,28 @@ contains
     if (opt==0) then
 
        if (ib==0) then
-          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+          GreenFunction = dt*Pot/3.d0+a_1*dt**3*F2/18.d0
        else if (ib==2*Nb) then
-          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+          GreenFunction = dt*Pot/3.d0+a_1*dt**3*F2/18.d0
        else
           if (mod(ib,2)==0) then
-             GreenFunction = 2.d0*(dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0)
+             GreenFunction = 2.d0*(dt*Pot/3.d0+a_1*dt**3*F2/18.d0)
           else
-             GreenFunction = dt*4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**3*F2/9.d0
+             GreenFunction = dt*4.d0*Pot/3.d0+(1.d0-a_1)*dt**3*F2/9.d0
           end if
        end if
 
     else if (opt==1) then
        
        if (ib==0) then
-          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+          GreenFunction = Pot/3.d0+a_1*dt**2*F2/6.d0
        else if (ib==2*Nb) then
-          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+          GreenFunction = Pot/3.d0+a_1*dt**2*F2/6.d0
        else
           if (mod(ib,2)==0) then
-             GreenFunction = 2.d0*(Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0)
+             GreenFunction = 2.d0*(Pot/3.d0+a_1*dt**2*F2/6.d0)
           else
-             GreenFunction = 4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**2*F2/3.d0
+             GreenFunction = 4.d0*Pot/3.d0+(1.d0-a_1)*dt**2*F2/3.d0
           end if
        end if
 
