@@ -23,66 +23,36 @@ contains
 
     if (opt==0) then
 
-       if (mod(ib,2)==0) then
-          GreenFunction = dt*2.d0*(Pot+a_1*dt*dt*F2/6.d0)/3.d0
+       if (ib==0) then
+          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+       else if (ib==2*Nb) then
+          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
        else
-          GreenFunction = dt*4.d0*(Pot+(1.d0-a_1)*dt*dt*F2/12.d0)/3.d0
+          if (mod(ib,2)==0) then
+             GreenFunction = 2.d0*(dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0)
+          else
+             GreenFunction = dt*4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**3*F2/9.d0
+          end if
        end if
-
-       !GreenFunction = dt*Pot
 
     else if (opt==1) then
        
-       if (mod(ib,2)==0) then
-          GreenFunction = 2.d0*(Pot+0.5d0*a_1*dt*dt*F2)/3.d0
+       if (ib==0) then
+          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+       else if (ib==2*Nb) then
+          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
        else
-          GreenFunction = 4.d0*(Pot+0.25d0*(1.d0-a_1)*dt*dt*F2)/3.d0
+          if (mod(ib,2)==0) then
+             GreenFunction = 2.d0*(Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0)
+          else
+             GreenFunction = 4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**2*F2/3.d0
+          end if
        end if
 
     end if
        
     return
   end function GreenFunction
-
-!-----------------------------------------------------------------------
-
-  function Force(k,xij,rij)
-
-    implicit none 
-    
-    real (kind=8)    :: rij,Force
-    real (kind=8)    :: costheta
-    real (kind=8)    :: dVdr
-    integer (kind=4) :: k
-
-    real (kind=8),dimension (dim) :: xij
-    
-    costheta = xij(1)/rij
-
-    dVdr = -3.d0/rij**4
-
-    Force = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
-
-    if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)/rij 
-    
-    return 
-  end function Force
-
-!!$  function Force(k,xij,rij)
-!!$
-!!$    implicit none 
-!!$    
-!!$    real (kind=8)    :: rij,Force
-!!$    real (kind=8)    :: dVdr
-!!$    integer (kind=4) :: k
-!!$
-!!$    real (kind=8),dimension (dim) :: xij
-!!$    
-!!$    dVdr  = 0.5d0*(Potential(abs(rij+dr))-Potential(abs(rij-dr)))/dr
-!!$    Force = dVdr*xij(k)/rij
-!!$
-!!$    return 
-!!$  end function Force
 
 !-----------------------------------------------------------------------
 
@@ -1069,7 +1039,11 @@ contains
 
     call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
 
-    SumDeltaS = SumDeltaS+DeltaS
+    if (half==1) then
+       SumDeltaS = SumDeltaS+DeltaS
+    else
+       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+    end if
 
     !Reconstruction of the whole chain piece using Staging
 
@@ -1382,7 +1356,11 @@ contains
     
     call UpdateAction(LogWF,Path,ip,ii+Ls,xnew,xold,dt,DeltaS) 
     
-    SumDeltaS = SumDeltaS+DeltaS
+    if (half==1) then
+       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+    else
+       SumDeltaS = SumDeltaS+DeltaS
+    end if
 
     !Reconstruction of the whole chain piece using Staging
 
@@ -2029,7 +2007,12 @@ contains
 
     call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)   
 
-    SumDeltaS  = SumDeltaS+DeltaS
+    if (half==1) then
+       SumDeltaS = SumDeltaS+DeltaS
+    else
+       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+    end if
+
     PrevDeltaS = 0.d0
     
     do ilev=1,Nlev
@@ -2415,7 +2398,12 @@ contains
 
     call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)    
 
-    SumDeltaS  = SumDeltaS+DeltaS
+    if (half==1) then
+       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+    else
+       SumDeltaS = SumDeltaS+DeltaS
+    end if
+
     PrevDeltaS = 0.d0
     
     do ilev=1,Nlev
