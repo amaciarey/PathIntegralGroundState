@@ -29,7 +29,7 @@ contains
           GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
        else
           if (mod(ib,2)==0) then
-             GreenFunction = dt*2.d0*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+             GreenFunction = 2.d0*(dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0)
           else
              GreenFunction = dt*4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**3*F2/9.d0
           end if
@@ -43,7 +43,7 @@ contains
           GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
        else
           if (mod(ib,2)==0) then
-             GreenFunction = 2.d0*Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+             GreenFunction = 2.d0*(Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0)
           else
              GreenFunction = 4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**2*F2/3.d0
           end if

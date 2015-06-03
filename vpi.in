@@ -12,14 +12,14 @@
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-6.25d-3         # Time step 
-30              # Number of beads 
+1.20d-2         # Time step 
+12              # Number of beads 
 1982            # Seed of the random number generator
-0.0d0           # Parameters of the propagator decomposition (a_1 and t_0)
+0.d0            # Parameters of the propagator decomposition (a_1 and t_0)
 0.d0
 0.15d0		# Size of the CM movements (in units of density^(1/dim))
 staging         # Sampling method (sta=staging, bis=bisection)
-16              # Length of the Staging movements
+12              # Length of the Staging movements
 4               # Bisection level, implies that the length of movements is 2**Nlev
 5               # Number of staging movements per step
 
