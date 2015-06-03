@@ -279,13 +279,11 @@ contains
     write (3,*) iworm
 
     do ip=1,Np
-         
        do ib=0,2*Nb
 
           write (3,*) (Path(k,ip,ib),k=1,dim)
             
        end do
-
     end do
 
     do j=1,2
@@ -1196,7 +1194,6 @@ contains
     real (kind=8)    :: dt,sigma
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
-    real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: j
     integer (kind=4) :: ii,ie
@@ -1212,9 +1209,6 @@ contains
         
     Ls = int((Lmax-1)*grnd())+2
 
-    Sold = 0.d0
-    Snew = 0.d0
-    
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
     end do

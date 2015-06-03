@@ -116,12 +116,18 @@ contains
     real (kind=8),dimension (dim) :: xij
     
     costheta = xij(1)/rij
-
-    dVdr = -3.d0/rij**4
-
-    Force = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
+    dVdr     = -3.d0/rij**4
+    Force    = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
 
     if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)/rij 
+
+!!$    rij_i = 1.d0/rij
+!!$
+!!$    costheta = xij(1)*rij_i
+!!$    dVdr     = -3.d0*rij_i**4
+!!$    Force    = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)*rij_i
+!!$    
+!!$    if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)*rij_i
     
     return 
   end function Force
