@@ -17,35 +17,43 @@ contains
 
     real (kind=8)    :: GreenFunction
     real (kind=8)    :: dt,Pot,F2
+    real (kind=8)    :: Ve,dVe
+    real (kind=8)    :: Vc,dVc
     integer (kind=4) :: ib,opt
 
     GreenFunction = 0.d0
 
     if (opt==0) then
 
+       Ve = Pot+a_1*dt**2*F2/6.d0
+       Vc = Pot+(1.d0-a_1)*dt**2*F2/6.d0
+
        if (ib==0) then
-          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+          GreenFunction = dt*Ve/3.d0
        else if (ib==2*Nb) then
-          GreenFunction = dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0
+          GreenFunction = dt*Ve/3.d0
        else
           if (mod(ib,2)==0) then
-             GreenFunction = 2.d0*(dt*Pot/3.d0+2.d0*a_1*dt**3*F2/9.d0)
+             GreenFunction = 2.d0*dt*Ve/3.d0
           else
-             GreenFunction = dt*4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**3*F2/9.d0
+             GreenFunction = 4.d0*dt*Vc/3.d0
           end if
        end if
 
     else if (opt==1) then
        
+       dVe = Pot+a_1*dt**2*F2/2.d0
+       dVc = Pot+(1-a_1)*dt**2*F2/2.d0
+
        if (ib==0) then
-          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+          GreenFunction = dVe/3.d0
        else if (ib==2*Nb) then
-          GreenFunction = Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0
+          GreenFunction = dVe/3.d0
        else
           if (mod(ib,2)==0) then
-             GreenFunction = 2.d0*(Pot/3.d0+2.d0*a_1*dt**2*F2/3.d0)
+             GreenFunction = 2.d0*dVe/3.d0
           else
-             GreenFunction = 4.d0*Pot/3.d0+(1.d0-2.d0*a_1)*dt**2*F2/3.d0
+             GreenFunction = 4.d0*dVc/3.d0
           end if
        end if
 
@@ -279,13 +287,11 @@ contains
     write (3,*) iworm
 
     do ip=1,Np
-         
        do ib=0,2*Nb
 
           write (3,*) (Path(k,ip,ib),k=1,dim)
             
        end do
-
     end do
 
     do j=1,2
@@ -1196,7 +1202,6 @@ contains
     real (kind=8)    :: dt,sigma
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
-    real (kind=8)    :: Snew,Sold
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: j
     integer (kind=4) :: ii,ie
@@ -1212,9 +1217,6 @@ contains
         
     Ls = int((Lmax-1)*grnd())+2
 
-    Sold = 0.d0
-    Snew = 0.d0
-    
     do k=1,dim
        Path(k,ip,Nb) = xend(k,half)
     end do
