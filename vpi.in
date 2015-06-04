@@ -15,7 +15,7 @@
 3.00d-5         # Time step 
 50              # Number of beads 
 1982            # Seed of the random number generator
-0.1666666667d0  # Parameters of the propagator decomposition (a_1 and t_0)
+0.0d0           # Parameters of the propagator decomposition (a_1 and t_0)
 0.d0
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
 staging         # Path sampling method (sta=staging, bis=bisection)
@@ -37,7 +37,7 @@ staging         # Path sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-800             # Number of blocks
+200             # Number of blocks
 100             # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
