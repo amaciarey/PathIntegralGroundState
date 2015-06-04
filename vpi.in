@@ -13,7 +13,7 @@
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
 3.00d-5         # Time step 
-50              # Number of beads 
+20              # Number of beads 
 1982            # Seed of the random number generator
 0.0d0           # Parameters of the propagator decomposition (a_1 and t_0)
 0.d0
