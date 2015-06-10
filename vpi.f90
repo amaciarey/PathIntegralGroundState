@@ -318,10 +318,10 @@ do iblock=1,Nblock
 
                   end do
 
-                  call Swap(LogWF,dt,Lstag,iworm,Path,xend,acc_swap)
+                  call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
 
                   call OBDM(xend,nrho)
-
+                  
                end do
 
             end if

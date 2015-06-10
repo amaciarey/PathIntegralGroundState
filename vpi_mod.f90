@@ -2752,9 +2752,9 @@ contains
     real (kind=8)    :: gauss1,gauss2,prob
     real (kind=8)    :: DeltaS,SumDeltaS
     real (kind=8)    :: rij2
-    real (kind=8)    :: Sk,Sw
+    real (kind=8)    :: Sk,Sw,sum2
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: j,ik,iw
+    integer (kind=4) :: j,ik,iw,count
     integer (kind=4) :: ii,ie
     integer (kind=4) :: Lmax,Ls
 
@@ -2771,9 +2771,9 @@ contains
     ii = Nb-Ls
     ie = Nb
 
-    do k=1,dim
-       Path(k,iw,ie) = xend(k,2)
-    end do
+!!$    do k=1,dim
+!!$       Path(k,iw,ie) = xend(k,2)
+!!$    end do
 
     Sw = 0.d0
     Pp = 0.d0
@@ -2781,7 +2781,7 @@ contains
     do ip=1,Np
 
        do k=1,dim
-          xij(k) = Path(k,ip,ii)-Path(k,iw,ie)
+          xij(k) = Path(k,ip,ii)-xend(k,2)
        end do
 
        call MinimumImage(xij,rij2)
@@ -2791,25 +2791,23 @@ contains
 
     end do
 
-    prob = grnd()
-    ik   = 0
-    
-    do 
-       ik = ik+1
-       if (prob <= Pp(ik)/Sw) then
-          exit
+    prob  = grnd()
+
+    do ip=1,Np
+       if (prob <= sum2) then
+          count = 0
        end if
     end do
 
     if (ik==iw) then
        accept = .false.
     else
-       
+
        Sk = 0.d0
        do ip=1,Np
           
           do k=1,dim
-             xij(k) = Path(k,ip,ii)-Path(k,ik,ie)
+             xij(k) = Path(k,ik,ie)-Path(k,ip,ii)
           end do
 
           call MinimumImage(xij,rij2)
@@ -2837,6 +2835,8 @@ contains
 
           !Reconstruction of the whole chain piece using Staging
 
+          SumDeltaS = 0.d0
+
           do j=1,Ls-1
        
              do k=1,dim
@@ -2855,9 +2855,8 @@ contains
                 if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
                 xnext(k) = xold(k)-xnext(k)
                 
-                xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-                sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-                
+                xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+                sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
                 xnew(k) = xmid(k)+sigma*gauss1
                 
                 !Periodic boundary conditions
@@ -2886,45 +2885,45 @@ contains
              end if
           end if
 
-          if (accept) then
-             
-             accepted = accepted+1
-
-             do ib=0,Nb
-                do k=1,dim
-                   AuxChain(k,ib) = Path(k,ik,ib)
-                   Path(k,ik,ib)  = Path(k,iw,ib)
-                   Path(k,iw,ib)  = AuxChain(k,ib)
-                end do
-             end do
-
-             do k=1,dim
-                xend(k,1) = Path(k,iw,Nb)
-             end do
-
-             do ib=0,2*Nb
-                write (98,*) OldChain(1,ib),OldChain(2,ib)
-                write (99,*) Path(1,ik,ib),Path(2,ik,ib)
-                write (100,*) OldWorm(1,ib),OldWorm(2,ib)
-                write (101,*) Path(1,iw,ib),Path(2,iw,ib)
-             end do
-
-             stop
-
-          else
-             
-             do ib=ii,ie
-                do k=1,dim
-                   Path(k,ik,ib) = OldChain(k,ib)
-                end do
-             end do
-
-          end if
-
        end if
 
     end if
-    
+
+    if (accept) then
+
+       accepted = accepted+1
+
+       do ib=0,Nb
+          do k=1,dim
+             AuxChain(k,ib) = Path(k,ik,ib)
+             Path(k,ik,ib)  = Path(k,iw,ib)
+             Path(k,iw,ib)  = AuxChain(k,ib)
+          end do
+       end do
+       
+       do k=1,dim
+          xend(k,1) = Path(k,iw,Nb)
+       end do
+       
+       do ib=0,2*Nb
+          write (98,*) OldChain(1,ib),OldChain(2,ib)
+          write (99,*) Path(1,ik,ib),Path(2,ik,ib)
+          write (100,*) OldWorm(1,ib),OldWorm(2,ib)
+          write (101,*) Path(1,iw,ib),Path(2,iw,ib)
+       end do
+
+       stop
+       
+    else
+             
+       do ib=ii,ie
+          do k=1,dim
+             Path(k,ik,ib) = OldChain(k,ib)
+          end do
+       end do
+       
+    end if
+        
     return
   end subroutine Swap
 
