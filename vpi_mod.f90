@@ -2836,6 +2836,8 @@ contains
 
           !call UpdateAction(LogWF,Path,ik,ie,xnew,xold,dt,DeltaS)       
 
+          !print *, DeltaS
+
           !SumDeltaS = SumDeltaS+0.5d0*DeltaS
 
           !Reconstruction of the whole chain piece using Staging
@@ -2922,8 +2924,8 @@ contains
              end do
              
              do k=1,dim
-                Path(k,ik,Nb) = xend(k,2)
-                xend(k,2)     = Path(k,iw,Nb)
+                !Path(k,ik,Nb) = xend(k,2)
+                xend(k,2)     = OldChain(k,Nb)
              end do
              
           else

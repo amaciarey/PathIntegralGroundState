@@ -334,7 +334,7 @@ do iblock=1,Nblock
 
                   call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
 
-                  print *, xend(:,1),xend(:,2)
+!                  print *, xend(:,1),xend(:,2)
    
 !!$                  do i1=1,Np
 !!$                     do j1=0,2*Nb
