@@ -45,10 +45,11 @@ integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 integer (kind=4) :: acc_bd_half,acc_cm_half,acc_head_half,acc_tail_half
 integer (kind=4) :: acc_open,try_open
 integer (kind=4) :: acc_close,try_close
-integer (kind=4) :: acc_swap
+integer (kind=4) :: acc_swap,try_swap
 integer (kind=4) :: iworm,iupdate
 integer (kind=4) :: idiag,idiag_block,idiag_aux
 integer (kind=4) :: obdm_bl,diag_bl
+integer (kind=4) :: i1,j1,k1
 
 character (len=3) :: sampling
 
@@ -218,6 +219,9 @@ do iblock=1,Nblock
    acc_head_half = 0
    acc_tail_half = 0
 
+   try_swap = 0
+   acc_swap = 0
+
    idiag_block   = 0 
 
    ngr = 0
@@ -294,7 +298,7 @@ do iblock=1,Nblock
                do iobdm=1,Nobdm
                
                   do j=1,2
-                     
+                  
                      if (mod(istep,CMFreq)==0) then
                         try_cm_half = try_cm_half+1
                         call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
@@ -318,8 +322,30 @@ do iblock=1,Nblock
 
                   end do
 
+!!$                  do i1=1,Np
+!!$                     do j1=0,2*Nb
+!!$                        
+!!$                        if (i1==ip) write (98,*) (Path(k1,i1,j1),k1=1,dim)
+!!$            
+!!$                     end do
+!!$                  end do
+
+                  try_swap = try_swap+1
+
                   call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
 
+                  print *, xend(:,1),xend(:,2)
+   
+!!$                  do i1=1,Np
+!!$                     do j1=0,2*Nb
+!!$
+!!$                        if (i1==ip) write (99,*) (Path(k1,i1,j1),k1=1,dim)
+!!$            
+!!$                     end do
+!!$                  end do
+
+                  !stop
+                  
                   call OBDM(xend,nrho)
                   
                end do
@@ -490,7 +516,8 @@ do iblock=1,Nblock
    print 101, '> Diagonal conf.    =',100.d0*real(idiag_block)/real(Nstep),'%'
    print 101, '> Open acc          =',100.d0*real(acc_open)/real(try_open),'%'
    print 101, '> Close acc         =',100.d0*real(acc_close)/real(try_close),'%'
-   print *,   ' '
+   print 101, '> Swap acc          =',100.d0*real(acc_swap)/real(try_swap),'%'
+   print 101, ' '
    print 101, '# Time per block    =',end-begin,'seconds'
   
 end do

@@ -2749,12 +2749,12 @@ contains
 
     logical          :: accept
     real (kind=8)    :: dt,sigma
-    real (kind=8)    :: gauss1,gauss2,prob
+    real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
     real (kind=8)    :: rij2
-    real (kind=8)    :: Sk,Sw,sum2
+    real (kind=8)    :: Sk,Sw
     integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: j,ik,iw,count
+    integer (kind=4) :: j,ik,iw
     integer (kind=4) :: ii,ie
     integer (kind=4) :: Lmax,Ls
 
@@ -2767,13 +2767,9 @@ contains
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain,AuxChain,OldWorm 
     
     Ls = 2*int(((Lmax-2)/2)*grnd())+2
-
+    
     ii = Nb-Ls
     ie = Nb
-
-!!$    do k=1,dim
-!!$       Path(k,iw,ie) = xend(k,2)
-!!$    end do
 
     Sw = 0.d0
     Pp = 0.d0
@@ -2790,52 +2786,59 @@ contains
        Sw     = Sw+Pp(ip)
 
     end do
-
-    prob  = grnd()
-
-    do ip=1,Np
-       if (prob <= sum2) then
-          count = 0
+ 
+    do 
+       ip = int(Np*grnd()+1)
+       if (grnd() <= Pp(ip)/Sw) then
+          ik = ip
+          exit
        end if
     end do
 
-    if (ik==iw) then
-       accept = .false.
-    else
-
+    if (ik /= iw) then
+   
        Sk = 0.d0
+
        do ip=1,Np
           
           do k=1,dim
-             xij(k) = Path(k,ik,ie)-Path(k,ip,ii)
+             xij(k) = Path(k,ip,ii)-Path(k,ik,ie)
           end do
 
           call MinimumImage(xij,rij2)
 
           Sk = Sk+exp(-0.5d0*rij2/(real(Ls)*dt))
-       
-       end do
 
-       if (grnd() >= Sw/Sk) then
-          accept = .false.
-       else
+       end do
+       
+       if (grnd() <= Sw/Sk) then
+          
+          SumDeltaS = 0.d0
 
           !Saving configuration of the partner of the Worm
+
+          !print *, ik,iw
 
           do ib=0,2*Nb
              do k=1,dim
                 OldChain(k,ib) = Path(k,ik,ib)
                 OldWorm(k,ib)  = Path(k,iw,ib)
              end do
+             !write (98,*) OldChain(1,ib),OldChain(2,ib)
+             !write (99,*) OldWorm(1,ib),OldWorm(2,ib)
           end do
 
           do k=1,dim
-             Path(k,ik,ie) = Path(k,iw,ie)
+             Path(k,ik,ie) = xend(k,2)
+             xold(k)       = OldChain(k,ie)
+             xnew(k)       = Path(k,ik,ie)
           end do
 
-          !Reconstruction of the whole chain piece using Staging
+          !call UpdateAction(LogWF,Path,ik,ie,xnew,xold,dt,DeltaS)       
 
-          SumDeltaS = 0.d0
+          !SumDeltaS = SumDeltaS+0.5d0*DeltaS
+
+          !Reconstruction of the whole chain piece using Staging
 
           do j=1,Ls-1
        
@@ -2867,13 +2870,34 @@ contains
                 
              end do
        
-             call UpdateAction(LogWF,Path,ik,ii+j,xnew,xold,dt,DeltaS)       
+             call UpdateAction(LogWF,Path,ik,ii+j,xnew,xold,dt,DeltaS)  
+
+             !print *, DeltaS
        
              SumDeltaS = SumDeltaS+DeltaS
        
           end do
-          
+
+!!$          !Only for debugging
+!!$
+!!$          do ib=Nb,2*Nb
+!!$             do k=1,dim
+!!$                Path(k,iw,ib) = Path(k,ik,ib)
+!!$                Path(k,ik,ib) = OldWorm(k,ib)
+!!$                !Path(k,ik,ib) = OldWorm(k,ib)
+!!$             end do
+!!$          end do
+!!$
+!!$          !Only for debugging
+!!$
+!!$          do ib=0,2*Nb
+!!$             write (100,*) Path(1,ik,ib),Path(2,ik,ib)
+!!$             write (101,*) Path(1,iw,ib),Path(2,iw,ib)
+!!$          end do
+
           !Metropolis question
+
+          !print *, exp(-SumDeltaS)
     
           if (exp(-SumDeltaS)>=1.d0) then
              accept = .True.
@@ -2885,45 +2909,39 @@ contains
              end if
           end if
 
+          if (accept) then
+
+             accepted = accepted+1
+
+             do ib=Nb,2*Nb
+                do k=1,dim
+                   Path(k,iw,ib) = Path(k,ik,ib)
+                   Path(k,ik,ib) = OldWorm(k,ib)
+                   !Path(k,ik,ib) = OldWorm(k,ib)
+                end do
+             end do
+             
+             do k=1,dim
+                Path(k,ik,Nb) = xend(k,2)
+                xend(k,2)     = Path(k,iw,Nb)
+             end do
+             
+          else
+             
+             do ib=0,2*Nb
+                do k=1,dim
+                   Path(k,ik,ib) = OldChain(k,ib)
+                end do
+             end do
+             
+          end if
+
+          !stop
+
        end if
 
     end if
 
-    if (accept) then
-
-       accepted = accepted+1
-
-       do ib=0,Nb
-          do k=1,dim
-             AuxChain(k,ib) = Path(k,ik,ib)
-             Path(k,ik,ib)  = Path(k,iw,ib)
-             Path(k,iw,ib)  = AuxChain(k,ib)
-          end do
-       end do
-       
-       do k=1,dim
-          xend(k,1) = Path(k,iw,Nb)
-       end do
-       
-       do ib=0,2*Nb
-          write (98,*) OldChain(1,ib),OldChain(2,ib)
-          write (99,*) Path(1,ik,ib),Path(2,ik,ib)
-          write (100,*) OldWorm(1,ib),OldWorm(2,ib)
-          write (101,*) Path(1,iw,ib),Path(2,iw,ib)
-       end do
-
-       stop
-       
-    else
-             
-       do ib=ii,ie
-          do k=1,dim
-             Path(k,ik,ib) = OldChain(k,ib)
-          end do
-       end do
-       
-    end if
-        
     return
   end subroutine Swap
 

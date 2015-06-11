@@ -13,13 +13,13 @@
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
 1.00d-4         # Time step 
-4               # Number of beads 
+8               # Number of beads 
 1982            # Seed of the random number generator
 0.0d0           # Parameters of the propagator decomposition (a_1 and t_0)
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
 1               # Frequency of CM updates 
 staging         # Path sampling method (sta=staging, bis=bisection)
-4              # Length of the Staging movements
+8               # Length of the Staging movements
 4               # Bisection level, implies that the length of movements is 2**Nlev
 5               # Number of sampling movements per step
 
@@ -31,13 +31,13 @@ staging         # Path sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
-0.1d0           # C0 constant of the WORM algorithm
+5.d-3           # C0 constant of the WORM algorithm
 10              # Number of evaluation of OBDM per step
 5               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-200             # Number of blocks
+10              # Number of blocks
 100             # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
