@@ -52,12 +52,14 @@ contains
              
              Pot = Pot+Potential(xij,rij)
              
-             do k=1,dim
-          
-                F(k,ip) = F(k,ip)+Force(k,xij,rij)
-                F(k,jp) = F(k,jp)-Force(k,xij,rij)
+             if (present(F2)) then
+                do k=1,dim
+                   
+                   F(k,ip) = F(k,ip)+Force(k,xij,rij)
+                   F(k,jp) = F(k,jp)-Force(k,xij,rij)
 
-             end do
+                end do
+             end if
              
           end if
           
@@ -213,14 +215,19 @@ contains
     
     do ib=0,2*Nb-1
        
-       call PotentialEnergy(Path(:,:,ib),Pot,F2)
-       
+       if (mod(ib,2)==0) then
+          call PotentialEnergy(Path(:,:,ib),Pot)
+          F2 = 0.d0
+       else
+          call PotentialEnergy(Path(:,:,ib),Pot,F2)
+       end if
+
        if (ib==Nb) then
           Ep = Pot
        end if
        
-       E = E+0.5d0*real(dim*Np)/dt+GreenFunction(1,ib,dt,Pot,F2)
-       
+       E = E+GreenFunction(1,ib,dt,Pot,F2)
+              
        do ip=1,Np
           
           rij2 = 0.d0
@@ -238,8 +245,11 @@ contains
        end do
        
     end do
+
+    call PotentialEnergy(Path(:,:,2*Nb),Pot)
     
-    E  = 0.5d0*E/real(Nb)
+    E  = E+GreenFunction(1,2*Nb,dt,Pot,0.d0)
+    E  = 0.5d0*(E/real(Nb)+real(dim*Np)/dt)
     Ec = E-Ep
     
     return

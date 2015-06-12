@@ -65,17 +65,17 @@ contains
 !-----------------------------------------------------------------------
 
   subroutine ReadParameters(resume,crystal,wf_table,sampling,&
-       & density,alpha,dt,a_1,t_0,delta_cm,Rm,dim,Np,Nb,seed,&
-       & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
+       & density,alpha,dt,a_1,delta_cm,Rm,dim,Np,Nb,seed,&
+       & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
 
     logical           :: resume, crystal, wf_table
     character (len=3) :: sampling
-    real (kind=8)     :: density, alpha, dt, a_1, t_0, delta_cm
+    real (kind=8)     :: density, alpha, dt, a_1, delta_cm
     real (kind=8)     :: Rm
     integer (kind=4)  :: dim, Np, Nb, seed, Lstag, Nstag, Nmax
-    integer (kind=4)  :: Nobdm, Nblock, Nstep, Nbin, Nk, Nlev
+    integer (kind=4)  :: Nobdm, Nblock, Nstep, Nbin, Nk, Nlev, CMFreq
 
     open (unit=1, file='vpi.in', status='old')
 
@@ -97,15 +97,15 @@ contains
     read (1,*) Nb
     read (1,*) seed
     read (1,*) a_1
-    read (1,*) t_0
     read (1,*) delta_cm
+    read (1,*) CMFreq
     read (1,*) sampling
     if (sampling=="sta") then
        read (1,*) Lstag
-       read (1,*) 
+       read (1,*) Nlev
     else
        if (sampling=="bis") then
-          read (1,*) 
+          read (1,*) Lstag
           read (1,*) Nlev
        else
           print *, ' '
@@ -204,17 +204,13 @@ contains
        do ip=1,Np
 
           do ib=0,2*Nb
-
              read (2,*) (Path(k,ip,ib),k=1,dim)
-
           end do
           
        end do
 
        do j=1,2
-          
           read (2,*) (xend(k,j),k=1,dim)
-
        end do
 
        call mtgetf('rand_state','u')
@@ -255,7 +251,7 @@ contains
 
        do j=1,2
           do k=1,dim
-             xend(k,j) = Path(k,Np,Nb)+1.d-5*(2.d0*grnd()-1.d0)
+             xend(k,j) = Path(k,Np,Nb)
           end do
        end do
 
@@ -614,6 +610,7 @@ contains
           
           xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
           sigma   = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
+
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -2371,7 +2368,6 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
 
-    !Ls   = int((Lmax-1)*grnd())+2
     Ls   = 2*int(((Lmax-2)/2)*grnd())+2
     half = int(grnd()*2)+1
     
@@ -2391,7 +2387,8 @@ contains
        
        call MinimumImage(xij,rij2)
        
-       DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
+       DeltaK = -0.5d0*rij2/(real(Ls)*dt)-&
+              & 0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
               
        !Save the original positions of the piece of the chain
        !that will be displaced
@@ -2444,7 +2441,8 @@ contains
        
        call MinimumImage(xij,rij2)
        
-       DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
+       DeltaK = -0.5d0*rij2/(real(Ls)*dt)-&
+              & 0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
        
        !Save the original positions of the piece of the chain
        !that will be displaced
@@ -2597,7 +2595,6 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
 
-    !Ls = int((Lmax-1)*grnd())+2
     Ls   = 2*int(((Lmax-2)/2)*grnd())+2
     half = int(grnd()*2)+1
     
@@ -2699,7 +2696,8 @@ contains
     
     call MinimumImage(xij,rij2)
     
-    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
+    DeltaK = -0.5d0*rij2/(real(Ls)*dt)-&
+           & 0.5d0*real(dim)*log(2.d0*pi*real(Ls)*dt)
     
     !Metropolis question
     
@@ -2746,6 +2744,217 @@ contains
 
 !-----------------------------------------------------------------------
 
+  subroutine Swap(LogWF,dt,Lmax,iw,Path,xend,accepted)
+    implicit none
+
+    logical          :: accept
+    real (kind=8)    :: dt,sigma
+    real (kind=8)    :: gauss1,gauss2
+    real (kind=8)    :: DeltaS,SumDeltaS
+    real (kind=8)    :: rij2
+    real (kind=8)    :: Sk,Sw
+    integer (kind=4) :: ip,ib,k,accepted
+    integer (kind=4) :: j,ik,iw
+    integer (kind=4) :: ii,ie
+    integer (kind=4) :: Lmax,Ls
+
+    real (kind=8),dimension (Np)            :: Pp
+    real (kind=8),dimension (dim,2)         :: xend
+    real (kind=8),dimension (dim)           :: xnew,xold,xij
+    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain,OldWorm 
+    
+    Ls = 2*int(((Lmax-2)/2)*grnd())+2
+    
+    ii = Nb-Ls
+    ie = Nb
+
+    !The first step is to select the particle that will become the 
+    !partner of the Worm in the swap update
+
+    Sw = 0.d0
+    Pp = 0.d0
+
+    do ip=1,Np
+
+       do k=1,dim
+          xij(k) = Path(k,ip,ii)-xend(k,2)
+       end do
+
+       call MinimumImage(xij,rij2)
+
+       Pp(ip) = exp(-0.5d0*rij2/(real(Ls)*dt))
+       Sw     = Sw+Pp(ip)
+
+    end do
+ 
+    !Selecting a random particle according to the probabilities that
+    !we have defined above
+
+    do 
+       ip = int(Np*grnd())+1
+       if (grnd() <= Pp(ip)/Sw) then
+          ik = ip
+          exit
+       end if
+    end do
+
+    !Check if the chosen partner is different from the Worm itself, 
+    !otherwise the update is automatically rejected.
+
+    if (ik /= iw) then
+   
+       Sk = 0.d0
+
+       do ip=1,Np
+          
+          do k=1,dim
+             xij(k) = Path(k,ip,ii)-Path(k,ik,ie)
+          end do
+
+          call MinimumImage(xij,rij2)
+
+          Sk = Sk+exp(-0.5d0*rij2/(real(Ls)*dt))
+
+       end do
+       
+       if (grnd() <= Sw/Sk) then
+
+          !Saving configuration of the partner of the Worm and of the
+          !Worm itself
+
+          do ib=0,2*Nb
+             do k=1,dim
+                OldChain(k,ib) = Path(k,ik,ib)
+                OldWorm(k,ib)  = Path(k,iw,ib)
+             end do
+          end do
+
+          !do k=1,dim
+          !   OldWorm(k,Nb) = xend(k,2)
+          !end do
+
+          !Set the new position of the bead Nb of chain ik to the tail of the 
+          !Worm (xend(k,2))
+
+          do k=1,dim
+             !xold(k)       = OldChain(k,ie)
+             !xnew(k)       = xend(k,2)
+             Path(k,ik,ie) = xend(k,2)
+          end do
+
+!!!!!!!!!!!!This part of the code is under study
+
+          !do k=1,dim
+          !   Path(k,iw,Nb) = xend(k,1)
+          !end do
+
+          !call UpdateAction(LogWF,Path,ik,ie,xnew,xold,dt,DeltaS)  
+
+          !SumDeltaS = SumDeltaS+0.5d0*DeltaS
+
+!!!!!!!!!!!!!!
+
+          !Reconstruction of the whole chain piece using Staging
+
+          SumDeltaS = 0.d0
+
+          do j=1,Ls-1
+       
+             do k=1,dim
+          
+                xold(k) = Path(k,ik,ii+j)               
+          
+                call rangauss(1.d0,0.d0,gauss1,gauss2)
+          
+                xprev(k) = Path(k,ik,ii+j-1)-xold(k)
+                if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+                if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+                xprev(k) = xold(k)+xprev(k)
+                
+                xnext(k) = xold(k)-Path(k,ik,ie)
+                if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+                if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+                xnext(k) = xold(k)-xnext(k)
+                
+                xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+                sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+                xnew(k) = xmid(k)+sigma*gauss1
+                
+                !Periodic boundary conditions
+                
+                call BoundaryConditions(k,xnew(k))
+                
+                Path(k,ik,ii+j) = xnew(k)
+                
+             end do
+       
+             call UpdateAction(LogWF,Path,ik,ii+j,xnew,xold,dt,DeltaS)  
+
+             SumDeltaS = SumDeltaS+DeltaS
+       
+          end do
+
+          !Metropolis question
+
+          if (exp(-SumDeltaS)>=1.d0) then
+             accept = .True.
+          else
+             if (exp(-SumDeltaS)>=grnd()) then
+                accept = .True.
+             else
+                accept = .False.
+             end if
+          end if
+
+          if (accept) then
+
+!!$             print *, xend(:,1),xend(:,2)
+!!$             print *, OldWorm(:,Nb)
+!!$             print *, OldChain(:,Nb)
+
+             accepted = accepted+1
+
+             do ib=Nb,2*Nb
+                do k=1,dim
+                   Path(k,iw,ib) = Path(k,ik,ib)
+                   Path(k,ik,ib) = OldWorm(k,ib)
+                end do
+             end do
+             
+             do k=1,dim
+                xend(k,2)     = OldChain(k,Nb)
+                Path(k,iw,Nb) = xend(k,2)
+             end do
+
+!!$             print *, xend(:,1),xend(:,2)
+!!$             print *, Path(:,iw,Nb)
+!!$             print *, Path(:,ik,Nb)
+!!$             
+!!$             stop
+
+          else
+             
+             do ib=0,2*Nb
+                do k=1,dim
+                   Path(k,ik,ib) = OldChain(k,ib)
+                   Path(k,iw,ib) = OldWorm(k,ib)
+                end do
+             end do
+             
+          end if
+
+       end if
+
+    end if
+
+    return
+  end subroutine Swap
+
+!-----------------------------------------------------------------------
+
   subroutine UpdateAction(LogWF,Path,ip,ib,xnew,xold,dt,DeltaS)
 
     implicit none
@@ -2754,31 +2963,31 @@ contains
     real (kind=8)    :: DeltaLogPsi
     real (kind=8)    :: DeltaPot,DeltaF2
     integer (kind=4) :: ib
-    integer (kind=4) :: k
-    integer (kind=4) :: ip,jp
+    integer (kind=4) :: ip
         
     real (kind=8),dimension(0:Nmax+1)      :: LogWF
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
-    real (kind=8),dimension(dim,Np)        :: R
     real (kind=8),dimension(dim)           :: xnew,xold
     
     !Evaluating the difference of the potential energy between the new
     !and old configuration of the displaced bead
     
-    do jp=1,Np
-       do k=1,dim
-          R(k,jp) = Path(k,jp,ib)
-       end do
-    end do
-    
-    call UpdatePot(ip,R,xnew,xold,DeltaPot,DeltaF2)
-    
-    DeltaLogPsi = 0.d0
+    if (mod(ib,2)==0) then
+       call UpdatePot(ip,Path(:,:,ib),xnew,xold,DeltaPot)
+       DeltaF2 = 0.d0
+    else
+       call UpdatePot(ip,Path(:,:,ib),xnew,xold,DeltaPot,DeltaF2)
+    end if
+
+    !Contribution of the wave function at the begining and the end of the 
+    !chain
 
     if (ib==0) then
-       call UpdateWf(LogWF,ip,R,xnew,xold,DeltaLogPsi)
+       call UpdateWf(LogWF,ip,Path(:,:,ib),xnew,xold,DeltaLogPsi)
     else if (ib==2*Nb) then
-       call UpdateWf(LogWF,ip,R,xnew,xold,DeltaLogPsi)
+       call UpdateWf(LogWF,ip,Path(:,:,ib),xnew,xold,DeltaLogPsi)
+    else
+       DeltaLogPsi = 0.d0
     end if
 
     DeltaS = -DeltaLogPsi+GreenFunction(0,ib,dt,DeltaPot,DeltaF2)
@@ -2874,13 +3083,15 @@ contains
 
     implicit none
 
-    real (kind=8)    :: DeltaPot,DeltaF2
+    real (kind=8)    :: DeltaPot
     real (kind=8)    :: PotOld,PotNew
     real (kind=8)    :: Fnew2,Fold2
     real (kind=8)    :: rijnew2,rijold2
     real (kind=8)    :: rijnew,rijold
     integer (kind=4) :: ip,jp
     integer (kind=4) :: k
+
+    real (kind=8), optional :: DeltaF2
         
     real (kind=8),dimension(dim,Np) :: R
     real (kind=8),dimension(dim)    :: xnew,xold
@@ -2892,7 +3103,7 @@ contains
     
     Fnew   = 0.d0
     Fold   = 0.d0
-    
+
     do jp=1,Np
        
        if (jp/=ip) then
@@ -2914,26 +3125,27 @@ contains
              
              rijnew = sqrt(rijnew2)
              PotNew = PotNew+Potential(xijnew,rijnew)
-             
-             do k=1,dim
-                
-                Fnew(k) = Fnew(k)+Force(k,xijnew,rijnew)
-                
-             end do
-             
+
+
+             if (present(DeltaF2)) then
+                do k=1,dim
+                   Fnew(k) = Fnew(k)+Force(k,xijnew,rijnew)
+                end do
+             end if
+
           end if
-          
+
           if (rijold2<=rcut2) then
              
              rijold = sqrt(rijold2)
              PotOld = PotOld+Potential(xijold,rijold)
-             
-             do k=1,dim
-                
-                Fold(k) = Fold(k)+Force(k,xijold,rijold)
-                
-             end do
-             
+
+             if (present(DeltaF2)) then
+                do k=1,dim
+                   Fold(k) = Fold(k)+Force(k,xijold,rijold)
+                end do
+             end if
+
           end if
           
        end if
@@ -2942,17 +3154,19 @@ contains
     
     Fnew2 = 0.d0
     Fold2 = 0.d0
-    
-    do k=1,dim
-       
-       Fnew2 = Fnew2+Fnew(k)*Fnew(k)
-       Fold2 = Fold2+Fold(k)*Fold(k)
-       
-    end do
-    
+
+    if (present(DeltaF2))then
+       do k=1,dim
+          
+          Fnew2 = Fnew2+Fnew(k)*Fnew(k)
+          Fold2 = Fold2+Fold(k)*Fold(k)
+          
+       end do
+       DeltaF2  = Fnew2-Fold2
+    end if
+
     DeltaPot = PotNew-PotOld
-    DeltaF2  = Fnew2-Fold2
-    
+   
     return 
   end subroutine UpdatePot
   

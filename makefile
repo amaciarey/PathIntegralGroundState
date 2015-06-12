@@ -1,3 +1,4 @@
+#f90=gfortran -Wall -fno-range-check
 f90=ifort -fast 
 #f90=gfortran -O3 -msse2 -flto -funroll-loops -fwhole-program -Wall -fno-range-check 
 
@@ -64,4 +65,4 @@ interpolate.o: interpolate.f90
 	$(f90) -c interpolate.f90
 
 clean:
-	rm -f *.o *.mod 
+	rm -f *.o *.mod

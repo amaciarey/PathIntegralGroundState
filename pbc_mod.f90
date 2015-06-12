@@ -42,7 +42,7 @@ contains
        rij2 = rij2+xij(k)*xij(k)
        
     end do
-    
+
     return
   end subroutine MinimumImage
 

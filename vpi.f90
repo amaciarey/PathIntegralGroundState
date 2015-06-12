@@ -37,6 +37,7 @@ integer (kind=4) :: ip
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
 integer (kind=4) :: istag,Nstag
+integer (kind=4) :: CMFreq
 integer (kind=4) :: ngr
 integer (kind=4) :: Nobdm,iobdm
 integer (kind=4) :: Nk
@@ -44,6 +45,7 @@ integer (kind=4) :: acc_bd,acc_cm,acc_head,acc_tail
 integer (kind=4) :: acc_bd_half,acc_cm_half,acc_head_half,acc_tail_half
 integer (kind=4) :: acc_open,try_open
 integer (kind=4) :: acc_close,try_close
+integer (kind=4) :: acc_swap,try_swap
 integer (kind=4) :: iworm,iupdate
 integer (kind=4) :: idiag,idiag_block,idiag_aux
 integer (kind=4) :: obdm_bl,diag_bl
@@ -60,8 +62,8 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 !Reading input parameters
 
 call ReadParameters(resume,crystal,wf_table,sampling,&
-     & density,alpha,dt,a_1,t_0,delta_cm,Rm,dim,Np,Nb,seed,&
-     & Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
+     & density,alpha,dt,a_1,delta_cm,Rm,dim,Np,Nb,seed,&
+     & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
 pi = acos(-1.d0)
 V0 = (sin(alpha))**2
@@ -97,14 +99,6 @@ rbin     = rcut/real(Nbin)
 delta_cm = delta_cm/density**(1.d0/real(dim))
 isopen   = .false.
 iworm    = 0
-
-
-!Definition of the parameters of the propagator
-
-t_1 = 0.5d0-t_0
-u_0 = (1.d0-1.d0/(1.d0-2.d0*t_0)+1.d0/(6.d0*(1.d0-2.d0*t_0)**3))/12.d0
-v_1 = 1.d0/(6.d0*(1.d0-2.d0*t_0)**2)
-v_2 = 1.d0-2.d0*v_1
 
 !Generate an initial Path
 
@@ -224,6 +218,9 @@ do iblock=1,Nblock
    acc_head_half = 0
    acc_tail_half = 0
 
+   try_swap = 0
+   acc_swap = 0
+
    idiag_block   = 0 
 
    ngr = 0
@@ -274,7 +271,7 @@ do iblock=1,Nblock
 
             if (ip/=iworm) then
                
-               if (mod(istep,10)==0) then               
+               if (mod(istep,CMFreq)==0) then               
                   try_cm = try_cm+1
                   call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
                end if
@@ -300,8 +297,8 @@ do iblock=1,Nblock
                do iobdm=1,Nobdm
                
                   do j=1,2
-                     
-                     if (mod(istep,10)==0) then
+                  
+                     if (mod(istep,CMFreq)==0) then
                         try_cm_half = try_cm_half+1
                         call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
                      end if
@@ -310,22 +307,20 @@ do iblock=1,Nblock
 
                         try_stag_half = try_stag_half+1
                         
-                        if (sampling=="sta") then
-                           call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
-                           call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
-                           call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
-                        else
-                           call MoveHeadHalfBisection(j,LogWF,dt,Nlev,ip,Path,xend,acc_head_half)
-                           call MoveHeadHalfBisection(j,LogWF,dt,Nlev,ip,Path,xend,acc_tail_half)
-                           call BisectionHalf(j,LogWF,dt,Nlev,ip,Path,xend,acc_bd_half)
-                        end if
-
+                        call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
+                        call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
+                        call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
+                        
                      end do
 
                   end do
 
-                  call OBDM(xend,nrho)
+                  try_swap = try_swap+1
 
+                  call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
+
+                  call OBDM(xend,nrho)
+                  
                end do
 
             end if
@@ -340,7 +335,7 @@ do iblock=1,Nblock
       
          do ip=1,Np
 
-            if (mod(istep,10)==0) then
+            if (mod(istep,CMFreq)==0) then
                try_cm = try_cm+1
                call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
             end if
@@ -370,8 +365,6 @@ do iblock=1,Nblock
 
          E = 0.5d0*(E1+E2)
 
-         !call PotentialEnergy(Path(:,:,Nb),Pot)
-      
          !Energy evaluation using thermodynamic estimator
 
          call ThermEnergy(Path,dt,Et,Kt,Pot)
@@ -495,10 +488,11 @@ do iblock=1,Nblock
    print *,   ' '
    print 101, '> Diagonal conf.    =',100.d0*real(idiag_block)/real(Nstep),'%'
    print 101, '> Open acc          =',100.d0*real(acc_open)/real(try_open),'%'
-   print 101, '> Close try         =',100.d0*real(acc_close)/real(try_close),'%'
-   print *,   ' '
+   print 101, '> Close acc         =',100.d0*real(acc_close)/real(try_close),'%'
+   print 101, '> Swap acc          =',100.d0*real(acc_swap)/real(try_swap),'%'
+   print 101, ' '
    print 101, '# Time per block    =',end-begin,'seconds'
-  
+
 end do
 
 close (unit=1)
