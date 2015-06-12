@@ -13,14 +13,14 @@
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
 1.00d-4         # Time step 
-6               # Number of beads 
+8               # Number of beads 
 1982            # Seed of the random number generator
 0.0d0           # Parameters of the propagator decomposition (a_1 and t_0)
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
 1               # Frequency of CM updates 
-staging         # Path sampling method (sta=staging, bis=bisection)
-6               # Length of the Staging movements
-4               # Bisection level, implies that the length of movements is 2**Nlev
+staging         # Sampling method for the diagonal movements (sta=staging, bis=bisection)
+8               # Length of the Staging movements
+3               # Bisection level, implies that the length of movements is 2**Nlev
 5               # Number of sampling movements per step
 
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
@@ -37,7 +37,7 @@ staging         # Path sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-400              # Number of blocks
+800             # Number of blocks
 100             # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

@@ -49,7 +49,6 @@ integer (kind=4) :: acc_swap,try_swap
 integer (kind=4) :: iworm,iupdate
 integer (kind=4) :: idiag,idiag_block,idiag_aux
 integer (kind=4) :: obdm_bl,diag_bl
-integer (kind=4) :: i1,j1,k1
 
 character (len=3) :: sampling
 
@@ -308,44 +307,18 @@ do iblock=1,Nblock
 
                         try_stag_half = try_stag_half+1
                         
-                        !if (.true.) then
-                           call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
-                           call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
-                           call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
-                        !else
-                        !   call MoveHeadHalfBisection(j,LogWF,dt,Nlev,ip,Path,xend,acc_head_half)
-                        !   call MoveHeadHalfBisection(j,LogWF,dt,Nlev,ip,Path,xend,acc_tail_half)
-                        !   call BisectionHalf(j,LogWF,dt,Nlev,ip,Path,xend,acc_bd_half)
-                        !end if
-
+                        call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
+                        call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
+                        call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
+                        
                      end do
 
                   end do
-
-!!$                  do i1=1,Np
-!!$                     do j1=0,2*Nb
-!!$                        
-!!$                        if (i1==ip) write (98,*) (Path(k1,i1,j1),k1=1,dim)
-!!$            
-!!$                     end do
-!!$                  end do
 
                   try_swap = try_swap+1
 
                   call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
 
-!                  print *, xend(:,1),xend(:,2)
-   
-!!$                  do i1=1,Np
-!!$                     do j1=0,2*Nb
-!!$
-!!$                        if (i1==ip) write (99,*) (Path(k1,i1,j1),k1=1,dim)
-!!$            
-!!$                     end do
-!!$                  end do
-
-                  !stop
-                  
                   call OBDM(xend,nrho)
                   
                end do
@@ -519,7 +492,7 @@ do iblock=1,Nblock
    print 101, '> Swap acc          =',100.d0*real(acc_swap)/real(try_swap),'%'
    print 101, ' '
    print 101, '# Time per block    =',end-begin,'seconds'
-  
+
 end do
 
 close (unit=1)

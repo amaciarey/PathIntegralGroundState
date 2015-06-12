@@ -2764,16 +2764,19 @@ contains
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
     real (kind=8),dimension (0:Nmax+1)      :: LogWF
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
-    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain,AuxChain,OldWorm 
+    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain,OldWorm 
     
     Ls = 2*int(((Lmax-2)/2)*grnd())+2
     
     ii = Nb-Ls
     ie = Nb
 
+    !The first step is to select the particle that will become the 
+    !partner of the Worm in the swap update
+
     Sw = 0.d0
     Pp = 0.d0
-    
+
     do ip=1,Np
 
        do k=1,dim
@@ -2787,13 +2790,19 @@ contains
 
     end do
  
+    !Selecting a random particle according to the probabilities that
+    !we have defined above
+
     do 
-       ip = int(Np*grnd()+1)
+       ip = int(Np*grnd())+1
        if (grnd() <= Pp(ip)/Sw) then
           ik = ip
           exit
        end if
     end do
+
+    !Check if the chosen partner is different from the Worm itself, 
+    !otherwise the update is automatically rejected.
 
     if (ik /= iw) then
    
@@ -2815,30 +2824,36 @@ contains
           
           SumDeltaS = 0.d0
 
-          !Saving configuration of the partner of the Worm
-
-          !print *, ik,iw
+          !Saving configuration of the partner of the Worm and of the
+          !Worm itself
 
           do ib=0,2*Nb
              do k=1,dim
                 OldChain(k,ib) = Path(k,ik,ib)
                 OldWorm(k,ib)  = Path(k,iw,ib)
              end do
-             !write (98,*) OldChain(1,ib),OldChain(2,ib)
-             !write (99,*) OldWorm(1,ib),OldWorm(2,ib)
           end do
 
           do k=1,dim
-             Path(k,ik,ie) = xend(k,2)
-             xold(k)       = OldChain(k,ie)
-             xnew(k)       = Path(k,ik,ie)
+             OldWorm(k,Nb) = xend(k,2)
           end do
 
-          !call UpdateAction(LogWF,Path,ik,ie,xnew,xold,dt,DeltaS)       
+          !Set the new position of the bead Nb of chain ik to the tail of the 
+          !Worm (xend(k,2))
 
-          !print *, DeltaS
+          do k=1,dim
+             xold(k)       = OldChain(k,ie)
+             xnew(k)       = xend(k,2)
+             Path(k,ik,ie) = xend(k,2)
+          end do
 
-          !SumDeltaS = SumDeltaS+0.5d0*DeltaS
+          do k=1,dim
+             Path(k,iw,Nb) = xend(k,1)
+          end do
+
+          call UpdateAction(LogWF,Path,ik,ie,xnew,xold,dt,DeltaS)  
+
+          SumDeltaS = SumDeltaS+0.5d0*DeltaS
 
           !Reconstruction of the whole chain piece using Staging
 
@@ -2874,33 +2889,12 @@ contains
        
              call UpdateAction(LogWF,Path,ik,ii+j,xnew,xold,dt,DeltaS)  
 
-             !print *, DeltaS
-       
              SumDeltaS = SumDeltaS+DeltaS
        
           end do
 
-!!$          !Only for debugging
-!!$
-!!$          do ib=Nb,2*Nb
-!!$             do k=1,dim
-!!$                Path(k,iw,ib) = Path(k,ik,ib)
-!!$                Path(k,ik,ib) = OldWorm(k,ib)
-!!$                !Path(k,ik,ib) = OldWorm(k,ib)
-!!$             end do
-!!$          end do
-!!$
-!!$          !Only for debugging
-!!$
-!!$          do ib=0,2*Nb
-!!$             write (100,*) Path(1,ik,ib),Path(2,ik,ib)
-!!$             write (101,*) Path(1,iw,ib),Path(2,iw,ib)
-!!$          end do
-
           !Metropolis question
 
-          !print *, exp(-SumDeltaS)
-    
           if (exp(-SumDeltaS)>=1.d0) then
              accept = .True.
           else
@@ -2919,13 +2913,11 @@ contains
                 do k=1,dim
                    Path(k,iw,ib) = Path(k,ik,ib)
                    Path(k,ik,ib) = OldWorm(k,ib)
-                   !Path(k,ik,ib) = OldWorm(k,ib)
                 end do
              end do
              
              do k=1,dim
-                !Path(k,ik,Nb) = xend(k,2)
-                xend(k,2)     = OldChain(k,Nb)
+                xend(k,2) = OldChain(k,Nb)
              end do
              
           else
@@ -2933,12 +2925,11 @@ contains
              do ib=0,2*Nb
                 do k=1,dim
                    Path(k,ik,ib) = OldChain(k,ib)
+                   Path(k,iw,ib) = OldWorm(k,ib)
                 end do
              end do
              
           end if
-
-          !stop
 
        end if
 
@@ -2957,23 +2948,15 @@ contains
     real (kind=8)    :: DeltaLogPsi
     real (kind=8)    :: DeltaPot,DeltaF2
     integer (kind=4) :: ib
-    integer (kind=4) :: k
-    integer (kind=4) :: ip,jp
+    integer (kind=4) :: ip
         
     real (kind=8),dimension(0:Nmax+1)      :: LogWF
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
-    real (kind=8),dimension(dim,Np)        :: R
     real (kind=8),dimension(dim)           :: xnew,xold
     
     !Evaluating the difference of the potential energy between the new
     !and old configuration of the displaced bead
     
-    !do jp=1,Np
-    !   do k=1,dim
-    !      R(k,jp) = Path(k,jp,ib)
-    !   end do
-    !end do
-
     if (mod(ib,2)==0) then
        call UpdatePot(ip,Path(:,:,ib),xnew,xold,DeltaPot)
        DeltaF2 = 0.d0
@@ -3168,8 +3151,7 @@ contains
     end if
 
     DeltaPot = PotNew-PotOld
-    
-    
+   
     return 
   end subroutine UpdatePot
   
