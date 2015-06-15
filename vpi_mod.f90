@@ -64,13 +64,13 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine ReadParameters(resume,crystal,wf_table,sampling,&
+  subroutine ReadParameters(resume,crystal,wf_table,swapping,sampling,&
        & density,alpha,dt,a_1,delta_cm,Rm,dim,Np,Nb,seed,&
        & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
 
-    logical           :: resume, crystal, wf_table
+    logical           :: resume, crystal, wf_table, swapping
     character (len=3) :: sampling
     real (kind=8)     :: density, alpha, dt, a_1, delta_cm
     real (kind=8)     :: Rm
@@ -132,6 +132,7 @@ contains
     read (1,*)
     read (1,*)
     read (1,*) 
+    read (1,*) swapping
     read (1,*) CWorm
     read (1,*) Nobdm
     read (1,*) Npw
@@ -2180,7 +2181,6 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    !Nlev = level
     Nlev = int((level-1)*grnd())+2
 
     do k=1,dim
@@ -2832,16 +2832,10 @@ contains
              end do
           end do
 
-          !do k=1,dim
-          !   OldWorm(k,Nb) = xend(k,2)
-          !end do
-
           !Set the new position of the bead Nb of chain ik to the tail of the 
           !Worm (xend(k,2))
 
           do k=1,dim
-             !xold(k)       = OldChain(k,ie)
-             !xnew(k)       = xend(k,2)
              Path(k,ik,ie) = xend(k,2)
           end do
 
@@ -2911,10 +2905,6 @@ contains
 
           if (accept) then
 
-!!$             print *, xend(:,1),xend(:,2)
-!!$             print *, OldWorm(:,Nb)
-!!$             print *, OldChain(:,Nb)
-
              accepted = accepted+1
 
              do ib=Nb,2*Nb
@@ -2928,12 +2918,6 @@ contains
                 xend(k,2)     = OldChain(k,Nb)
                 Path(k,iw,Nb) = xend(k,2)
              end do
-
-!!$             print *, xend(:,1),xend(:,2)
-!!$             print *, Path(:,iw,Nb)
-!!$             print *, Path(:,ik,Nb)
-!!$             
-!!$             stop
 
           else
              
