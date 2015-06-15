@@ -8,7 +8,8 @@ use vpi_mod
 
 implicit none 
 
-logical          :: crystal,resume,isopen
+logical          :: crystal,resume
+logical          :: isopen,swapping
 real (kind=8)    :: dt,delta_cm
 real (kind=8)    :: density,alpha
 real (kind=8)    :: E1,E2
@@ -61,7 +62,7 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 
 !Reading input parameters
 
-call ReadParameters(resume,crystal,wf_table,sampling,&
+call ReadParameters(resume,crystal,wf_table,swapping,sampling,&
      & density,alpha,dt,a_1,delta_cm,Rm,dim,Np,Nb,seed,&
      & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
@@ -129,6 +130,11 @@ if (sampling=="sta") then
 else
    print *, '# The Monte Carlo sampling will be performed using BISECTION'
    print *, '  algorithm'
+end if
+if (swapping) then
+   print *, '# The Monte Carlo sampling will use swap updates'
+else
+   print *, '# The Monte Carlo sampling will not use swap updates'
 end if
 print *,    ' '
 print *,    '# Simulation parameters:'
@@ -315,9 +321,13 @@ do iblock=1,Nblock
 
                   end do
 
-                  try_swap = try_swap+1
+                  if (swapping) then
 
-                  call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
+                     try_swap = try_swap+1
+
+                     call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
+
+                  end if
 
                   call OBDM(xend,nrho)
                   

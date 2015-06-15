@@ -64,13 +64,13 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine ReadParameters(resume,crystal,wf_table,sampling,&
+  subroutine ReadParameters(resume,crystal,wf_table,swapping,sampling,&
        & density,alpha,dt,a_1,delta_cm,Rm,dim,Np,Nb,seed,&
        & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
 
-    logical           :: resume, crystal, wf_table
+    logical           :: resume, crystal, wf_table, swapping
     character (len=3) :: sampling
     real (kind=8)     :: density, alpha, dt, a_1, delta_cm
     real (kind=8)     :: Rm
@@ -132,6 +132,7 @@ contains
     read (1,*)
     read (1,*)
     read (1,*) 
+    read (1,*) swapping
     read (1,*) CWorm
     read (1,*) Nobdm
     read (1,*) Npw
@@ -2180,7 +2181,6 @@ contains
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
-    !Nlev = level
     Nlev = int((level-1)*grnd())+2
 
     do k=1,dim
@@ -2821,8 +2821,6 @@ contains
        end do
        
        if (grnd() <= Sw/Sk) then
-          
-          SumDeltaS = 0.d0
 
           !Saving configuration of the partner of the Worm and of the
           !Worm itself
@@ -2834,28 +2832,28 @@ contains
              end do
           end do
 
-          do k=1,dim
-             OldWorm(k,Nb) = xend(k,2)
-          end do
-
           !Set the new position of the bead Nb of chain ik to the tail of the 
           !Worm (xend(k,2))
 
           do k=1,dim
-             xold(k)       = OldChain(k,ie)
-             xnew(k)       = xend(k,2)
              Path(k,ik,ie) = xend(k,2)
           end do
 
-          do k=1,dim
-             Path(k,iw,Nb) = xend(k,1)
-          end do
+!!!!!!!!!!!!This part of the code is under study
 
-          call UpdateAction(LogWF,Path,ik,ie,xnew,xold,dt,DeltaS)  
+          !do k=1,dim
+          !   Path(k,iw,Nb) = xend(k,1)
+          !end do
 
-          SumDeltaS = SumDeltaS+0.5d0*DeltaS
+          !call UpdateAction(LogWF,Path,ik,ie,xnew,xold,dt,DeltaS)  
+
+          !SumDeltaS = SumDeltaS+0.5d0*DeltaS
+
+!!!!!!!!!!!!!!
 
           !Reconstruction of the whole chain piece using Staging
+
+          SumDeltaS = 0.d0
 
           do j=1,Ls-1
        
@@ -2917,9 +2915,10 @@ contains
              end do
              
              do k=1,dim
-                xend(k,2) = OldChain(k,Nb)
+                xend(k,2)     = OldChain(k,Nb)
+                Path(k,iw,Nb) = xend(k,2)
              end do
-             
+
           else
              
              do ib=0,2*Nb
