@@ -1,4 +1,4 @@
-#f90=gfortran -Wall -fno-range-check
+#f90=gfortran -fno-range-check -O3 -flto -fno-protect-parens -ffast-math -funroll-loops -march=native
 f90=ifort -fast 
 #f90=gfortran -O3 -msse2 -flto -funroll-loops -fwhole-program -Wall -fno-range-check 
 

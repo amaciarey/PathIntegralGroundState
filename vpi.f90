@@ -63,7 +63,7 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 !Reading input parameters
 
 call ReadParameters(resume,crystal,wf_table,swapping,sampling,&
-     & density,alpha,dt,a_1,delta_cm,Rm,dim,Np,Nb,seed,&
+     & density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
      & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
 pi = acos(-1.d0)

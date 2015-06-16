@@ -25,8 +25,8 @@ contains
 
     if (opt==0) then
 
-       Ve = Pot+a_1*dt**2*F2/6.d0
-       Vc = Pot+(1.d0-a_1)*dt**2*F2/6.d0
+       Ve = Pot
+       Vc = Pot+dt**2*F2/6.d0
 
        if (ib==0) then
           GreenFunction = dt*Ve/3.d0
@@ -42,8 +42,8 @@ contains
 
     else if (opt==1) then
        
-       dVe = Pot+a_1*dt**2*F2/2.d0
-       dVc = Pot+(1-a_1)*dt**2*F2/2.d0
+       dVe = Pot
+       dVc = Pot+dt**2*F2/2.d0
 
        if (ib==0) then
           GreenFunction = dVe/3.d0
@@ -65,14 +65,14 @@ contains
 !-----------------------------------------------------------------------
 
   subroutine ReadParameters(resume,crystal,wf_table,swapping,sampling,&
-       & density,alpha,dt,a_1,delta_cm,Rm,dim,Np,Nb,seed,&
+       & density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
        & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
 
     logical           :: resume, crystal, wf_table, swapping
     character (len=3) :: sampling
-    real (kind=8)     :: density, alpha, dt, a_1, delta_cm
+    real (kind=8)     :: density, alpha, dt, delta_cm
     real (kind=8)     :: Rm
     integer (kind=4)  :: dim, Np, Nb, seed, Lstag, Nstag, Nmax
     integer (kind=4)  :: Nobdm, Nblock, Nstep, Nbin, Nk, Nlev, CMFreq
@@ -96,7 +96,6 @@ contains
     read (1,*) dt
     read (1,*) Nb
     read (1,*) seed
-    read (1,*) a_1
     read (1,*) delta_cm
     read (1,*) CMFreq
     read (1,*) sampling
@@ -467,98 +466,98 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine BeadSampling(LogWF,dt,ip,Path,accepted)
-
-    implicit none
-
-    logical          :: accept
-    real (kind=8)    :: dt
-    real (kind=8)    :: gauss1,gauss2
-    real (kind=8)    :: DeltaS,sigma
-    integer (kind=4) :: ip,ib,k,accepted
-
-    real (kind=8),dimension (dim)           :: xnew,xold
-    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
-    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
-
-    do ib=0,2*Nb
-
-        !Free particle sampling
-
-        do k=1,dim
-
-           xold(k) = Path(k,ip,ib)               
-           
-           call rangauss(1.d0,0.d0,gauss1,gauss2)
-               
-           if (ib==0) then
-              xnext(k) = xold(k)-Path(k,ip,ib+1)
-              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-              xnext(k) = xold(k)-xnext(k)
-
-              xmid(k) = xnext(k)
-              sigma   = sqrt(dt)
-           else if (ib==2*Nb) then
-              xprev(k) = Path(k,ip,ib-1)-xold(k)
-              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-              xprev(k) = xold(k)+xprev(k)
-              
-              xmid(k) = xprev(k)
-              sigma   = sqrt(dt)
-           else
-              xprev(k) = Path(k,ip,ib-1)-xold(k)
-              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-              xprev(k) = xold(k)+xprev(k)
-              
-              xnext(k) = xold(k)-Path(k,ip,ib+1)
-              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-              xnext(k) = xold(k)-xnext(k)
-              
-              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
-              sigma   = sqrt(0.5d0*dt)
-           end if
-
-           xnew(k) = xmid(k)+sigma*gauss1
-           
-           !Periodic boundary conditions
-           
-           call BoundaryConditions(k,xnew(k))
-
-        end do
-        
-        call UpdateAction(LogWF,Path,ip,ib,xnew,xold,dt,DeltaS)
-        
-        !Metropolis question
-        
-        if (exp(-DeltaS)>=1.d0) then
-           accept = .True.
-        else
-           if (exp(-DeltaS)>=grnd()) then
-              accept = .True.
-           else
-              accept = .False.
-           end if
-        end if
-        
-        if (accept) then
-           
-           accepted = accepted+1
-           
-           do k=1,dim
-              Path(k,ip,ib) = xnew(k)
-           end do
-           
-        end if
-        
-     end do
-     
-    return
-  end subroutine BeadSampling
+!!$  subroutine BeadSampling(LogWF,dt,ip,Path,accepted)
+!!$
+!!$    implicit none
+!!$
+!!$    logical          :: accept
+!!$    real (kind=8)    :: dt
+!!$    real (kind=8)    :: gauss1,gauss2
+!!$    real (kind=8)    :: DeltaS,sigma
+!!$    integer (kind=4) :: ip,ib,k,accepted
+!!$
+!!$    real (kind=8),dimension (dim)           :: xnew,xold
+!!$    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+!!$    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+!!$    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+!!$
+!!$    do ib=0,2*Nb
+!!$
+!!$        !Free particle sampling
+!!$
+!!$        do k=1,dim
+!!$
+!!$           xold(k) = Path(k,ip,ib)               
+!!$           
+!!$           call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$               
+!!$           if (ib==0) then
+!!$              xnext(k) = xold(k)-Path(k,ip,ib+1)
+!!$              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$              xnext(k) = xold(k)-xnext(k)
+!!$
+!!$              xmid(k) = xnext(k)
+!!$              sigma   = sqrt(dt)
+!!$           else if (ib==2*Nb) then
+!!$              xprev(k) = Path(k,ip,ib-1)-xold(k)
+!!$              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$              xprev(k) = xold(k)+xprev(k)
+!!$              
+!!$              xmid(k) = xprev(k)
+!!$              sigma   = sqrt(dt)
+!!$           else
+!!$              xprev(k) = Path(k,ip,ib-1)-xold(k)
+!!$              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$              xprev(k) = xold(k)+xprev(k)
+!!$              
+!!$              xnext(k) = xold(k)-Path(k,ip,ib+1)
+!!$              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$              xnext(k) = xold(k)-xnext(k)
+!!$              
+!!$              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
+!!$              sigma   = sqrt(0.5d0*dt)
+!!$           end if
+!!$
+!!$           xnew(k) = xmid(k)+sigma*gauss1
+!!$           
+!!$           !Periodic boundary conditions
+!!$           
+!!$           call BoundaryConditions(k,xnew(k))
+!!$
+!!$        end do
+!!$        
+!!$        call UpdateAction(LogWF,Path,ip,ib,xnew,xold,dt,DeltaS)
+!!$        
+!!$        !Metropolis question
+!!$        
+!!$        if (exp(-DeltaS)>=1.d0) then
+!!$           accept = .True.
+!!$        else
+!!$           if (exp(-DeltaS)>=grnd()) then
+!!$              accept = .True.
+!!$           else
+!!$              accept = .False.
+!!$           end if
+!!$        end if
+!!$        
+!!$        if (accept) then
+!!$           
+!!$           accepted = accepted+1
+!!$           
+!!$           do k=1,dim
+!!$              Path(k,ip,ib) = xnew(k)
+!!$           end do
+!!$           
+!!$        end if
+!!$        
+!!$     end do
+!!$     
+!!$    return
+!!$  end subroutine BeadSampling
 
 !-----------------------------------------------------------------------
 
@@ -609,9 +608,8 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
           sigma   = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
-
+          xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -717,8 +715,8 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
           sigma   = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
+          xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -820,8 +818,8 @@ contains
        if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
        xnext(k) = xold(k)-xnext(k)
        
-       xmid(k) = xnext(k)
        sigma   = sqrt(real(Ls)*dt)
+       xmid(k) = xnext(k)
        xnew(k) = xmid(k)+sigma*gauss1
        
        !Periodic boundary conditions
@@ -855,9 +853,9 @@ contains
           if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
-          
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+       
           sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -965,8 +963,8 @@ contains
        if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
        xnext(k) = xold(k)-xnext(k)
        
-       xmid(k) = xnext(k)
        sigma   = sqrt(real(Ls)*dt)
+       xmid(k) = xnext(k)
        xnew(k) = xmid(k)+sigma*gauss1
        
        !Periodic boundary conditions
@@ -1004,9 +1002,9 @@ contains
           if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
-          
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+       
           sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -1105,9 +1103,8 @@ contains
        if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
        xprev(k) = xold(k)+xprev(k)
        
-       xmid(k)  = xprev(k)
-       sigma    = sqrt(real(Ls)*dt)
-       
+       sigma   = sqrt(real(Ls)*dt)
+       xmid(k) = xprev(k)
        xnew(k) = xmid(k)+sigma*gauss1
        
        !Periodic boundary conditions
@@ -1142,9 +1139,8 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
           sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -1248,8 +1244,8 @@ contains
        if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
        xprev(k) = xold(k)+xprev(k)
        
-       xmid(k) = xprev(k)
        sigma   = sqrt(real(Ls)*dt)
+       xmid(k) = xprev(k)
        xnew(k) = xmid(k)+sigma*gauss1
        
        !Periodic boundary conditions
@@ -1288,9 +1284,8 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
           sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -1482,156 +1477,156 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine BisectionHalf(half,LogWF,dt,level,ip,Path,xend,accepted)
-
-    implicit none
-
-    logical          :: accept
-    real (kind=8)    :: dt,dt_bis
-    real (kind=8)    :: gauss1,gauss2
-    real (kind=8)    :: DeltaS,sigma
-    real (kind=8)    :: SumDeltaS,TotDeltaS
-    real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    integer (kind=4) :: j
-    integer (kind=4) :: ii,ie
-    integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,level,delta_ib
-    integer (kind=4) :: iprev,inext,icurr
-    integer (kind=4) :: half
-        
-    real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (dim)           :: xnew,xold
-    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
-    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
-    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
-    
-    Nlev = level
-
-    do k=1,dim
-       Path(k,ip,Nb) = xend(k,half)
-    end do
-
-    !Pick a random bead that is the starting point of the displaced 
-    !piece of chain
-    
-    if (half==1) then
-       ii = int((Nb-2**(Nlev)+1)*grnd())
-       ie = ii+2**Nlev
-    else
-       ii = int((Nb-2**(Nlev)+1)*grnd())+Nb
-       ie = ii+2**Nlev
-    end if
-
-    !Save the original chain
-
-    do ib=ii,ie
-       do k=1,dim
-          OldChain(k,ib) = Path(k,ip,ib)
-       end do
-    end do
-    
-    PrevDeltaS = 0.d0
-    SumDeltaS  = 0.d0
-
-    do ilev=1,Nlev
-
-       delta_ib = 2**(Nlev-ilev+1)
-       dt_bis   = 0.5d0*real(delta_ib)*dt
-       sigma    = sqrt(0.5d0*dt_bis)
-          
-       LevelDeltaS = 0.d0
-    
-       do j=1,2**(ilev-1)
-
-          iprev = ii+(j-1)*delta_ib
-          inext = ii+j*delta_ib
-          icurr = (iprev+inext)/2
-
-          !Free particle sampling
-
-          do k=1,dim
-
-             xold(k) = Path(k,ip,icurr)               
-
-             call rangauss(1.d0,0.d0,gauss1,gauss2)
-
-             xprev(k) = Path(k,ip,iprev)-xold(k)
-             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-             xprev(k) = xold(k)+xprev(k)
-             
-             xnext(k) = xold(k)-Path(k,ip,inext)
-             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-             xnext(k) = xold(k)-xnext(k)
-             
-             xmid(k) = 0.5d0*(xprev(k)+xnext(k))
-             xnew(k) = xmid(k)+sigma*gauss1
-
-             !Periodic boundary conditions
-
-             call BoundaryConditions(k,xnew(k))
-
-             Path(k,ip,icurr) = xnew(k)
-             
-          end do
-
-          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
-          
-          LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
-          SumDeltaS   = SumDeltaS+DeltaS
-
-       end do
-
-       !Evaluation of the action corresponding to the current bisection
-       !level. It is important to note that the "exact" action is only
-       !evaluated at the last level, in the rest of the levels of sampling
-       !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
-              
-       if (ilev==Nlev) then
-          TotDeltaS = SumDeltaS-PrevDeltaS
-       else
-          TotDeltaS = LevelDeltaS-PrevDeltaS
-       end if
-       
-       !Metropolis question
-
-       if (exp(-TotDeltaS)>=1.d0) then
-          accept     = .True.
-          PrevDeltaS = LevelDeltaS
-       else
-          if (exp(-TotDeltaS)>=grnd()) then
-             accept     = .True.
-             PrevDeltaS = LevelDeltaS
-          else
-             accept = .False.
-             exit             
-          end if
-       end if
-
-    end do
-
-    if (accept) then
-    
-       accepted = accepted+1
-
-       do k=1,dim
-          xend(k,half) = Path(k,ip,Nb)
-       end do
-    
-    else
-    
-       do ib=ii,ie
-          do k=1,dim
-             Path(k,ip,ib) = OldChain(k,ib)
-          end do
-       end do
-    
-    end if
-   
-    return
-  end subroutine BisectionHalf
+!!$  subroutine BisectionHalf(half,LogWF,dt,level,ip,Path,xend,accepted)
+!!$
+!!$    implicit none
+!!$
+!!$    logical          :: accept
+!!$    real (kind=8)    :: dt,dt_bis
+!!$    real (kind=8)    :: gauss1,gauss2
+!!$    real (kind=8)    :: DeltaS,sigma
+!!$    real (kind=8)    :: SumDeltaS,TotDeltaS
+!!$    real (kind=8)    :: LevelDeltaS,PrevDeltaS
+!!$    integer (kind=4) :: j
+!!$    integer (kind=4) :: ii,ie
+!!$    integer (kind=4) :: ip,ib,k,accepted
+!!$    integer (kind=4) :: ilev,Nlev,level,delta_ib
+!!$    integer (kind=4) :: iprev,inext,icurr
+!!$    integer (kind=4) :: half
+!!$        
+!!$    real (kind=8),dimension (dim,2)         :: xend
+!!$    real (kind=8),dimension (dim)           :: xnew,xold
+!!$    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+!!$    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+!!$    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+!!$    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
+!!$    
+!!$    Nlev = level
+!!$
+!!$    do k=1,dim
+!!$       Path(k,ip,Nb) = xend(k,half)
+!!$    end do
+!!$
+!!$    !Pick a random bead that is the starting point of the displaced 
+!!$    !piece of chain
+!!$    
+!!$    if (half==1) then
+!!$       ii = int((Nb-2**(Nlev)+1)*grnd())
+!!$       ie = ii+2**Nlev
+!!$    else
+!!$       ii = int((Nb-2**(Nlev)+1)*grnd())+Nb
+!!$       ie = ii+2**Nlev
+!!$    end if
+!!$
+!!$    !Save the original chain
+!!$
+!!$    do ib=ii,ie
+!!$       do k=1,dim
+!!$          OldChain(k,ib) = Path(k,ip,ib)
+!!$       end do
+!!$    end do
+!!$    
+!!$    PrevDeltaS = 0.d0
+!!$    SumDeltaS  = 0.d0
+!!$
+!!$    do ilev=1,Nlev
+!!$
+!!$       delta_ib = 2**(Nlev-ilev+1)
+!!$       dt_bis   = 0.5d0*real(delta_ib)*dt
+!!$       sigma    = sqrt(0.5d0*dt_bis)
+!!$          
+!!$       LevelDeltaS = 0.d0
+!!$    
+!!$       do j=1,2**(ilev-1)
+!!$
+!!$          iprev = ii+(j-1)*delta_ib
+!!$          inext = ii+j*delta_ib
+!!$          icurr = (iprev+inext)/2
+!!$
+!!$          !Free particle sampling
+!!$
+!!$          do k=1,dim
+!!$
+!!$             xold(k) = Path(k,ip,icurr)               
+!!$
+!!$             call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$
+!!$             xprev(k) = Path(k,ip,iprev)-xold(k)
+!!$             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$             xprev(k) = xold(k)+xprev(k)
+!!$             
+!!$             xnext(k) = xold(k)-Path(k,ip,inext)
+!!$             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$             xnext(k) = xold(k)-xnext(k)
+!!$             
+!!$             xmid(k) = 0.5d0*(xprev(k)+xnext(k))
+!!$             xnew(k) = xmid(k)+sigma*gauss1
+!!$
+!!$             !Periodic boundary conditions
+!!$
+!!$             call BoundaryConditions(k,xnew(k))
+!!$
+!!$             Path(k,ip,icurr) = xnew(k)
+!!$             
+!!$          end do
+!!$
+!!$          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
+!!$          
+!!$          LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
+!!$          SumDeltaS   = SumDeltaS+DeltaS
+!!$
+!!$       end do
+!!$
+!!$       !Evaluation of the action corresponding to the current bisection
+!!$       !level. It is important to note that the "exact" action is only
+!!$       !evaluated at the last level, in the rest of the levels of sampling
+!!$       !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
+!!$              
+!!$       if (ilev==Nlev) then
+!!$          TotDeltaS = SumDeltaS-PrevDeltaS
+!!$       else
+!!$          TotDeltaS = LevelDeltaS-PrevDeltaS
+!!$       end if
+!!$       
+!!$       !Metropolis question
+!!$
+!!$       if (exp(-TotDeltaS)>=1.d0) then
+!!$          accept     = .True.
+!!$          PrevDeltaS = LevelDeltaS
+!!$       else
+!!$          if (exp(-TotDeltaS)>=grnd()) then
+!!$             accept     = .True.
+!!$             PrevDeltaS = LevelDeltaS
+!!$          else
+!!$             accept = .False.
+!!$             exit             
+!!$          end if
+!!$       end if
+!!$
+!!$    end do
+!!$
+!!$    if (accept) then
+!!$    
+!!$       accepted = accepted+1
+!!$
+!!$       do k=1,dim
+!!$          xend(k,half) = Path(k,ip,Nb)
+!!$       end do
+!!$    
+!!$    else
+!!$    
+!!$       do ib=ii,ie
+!!$          do k=1,dim
+!!$             Path(k,ip,ib) = OldChain(k,ib)
+!!$          end do
+!!$       end do
+!!$    
+!!$    end if
+!!$   
+!!$    return
+!!$  end subroutine BisectionHalf
 
 !-----------------------------------------------------------------------
 
@@ -1686,9 +1681,8 @@ contains
        if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
        xnext(k) = xold(k)-xnext(k)
        
-       xmid(k) = xnext(k)
        sigma   = sqrt(2**Nlev*dt)
-       
+       xmid(k) = xnext(k)
        xnew(k) = xmid(k)+sigma*gauss1
        
        !Periodic boundary conditions
@@ -1801,191 +1795,190 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveHeadHalfBisection(half,LogWF,dt,level,ip,Path,xend,accepted)
-
-    implicit none
-
-    logical          :: accept
-    real (kind=8)    :: dt,dt_bis
-    real (kind=8)    :: gauss1,gauss2
-    real (kind=8)    :: DeltaS,sigma
-    real (kind=8)    :: SumDeltaS,TotDeltaS
-    real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    integer (kind=4) :: j
-    integer (kind=4) :: ii,ie
-    integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,level,delta_ib
-    integer (kind=4) :: iprev,inext,icurr
-    integer (kind=4) :: half
-        
-    real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (dim)           :: xnew,xold
-    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
-    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
-    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
-    
-    !Nlev = level
-    Nlev = int((level-1)*grnd())+2
-
-    do k=1,dim
-       Path(k,ip,Nb) = xend(k,half)
-    end do
-
-    !Pick a random bead that is the starting point of the displaced 
-    !piece of chain
-    
-    if (half==1) then
-       ii = 0
-       ie = ii+2**Nlev
-    else
-       ii = Nb
-       ie = ii+2**Nlev
-    end if
-
-    !Save the original chain
-
-    do ib=ii,ie
-       do k=1,dim
-          OldChain(k,ib) = Path(k,ip,ib)
-       end do
-    end do
-    
-    !Make an initial guess for the position of first bead
-
-    SumDeltaS = 0.d0
-
-    do k=1,dim
-
-       xold(k) = Path(k,ip,ii)              
-           
-       call rangauss(1.d0,0.d0,gauss1,gauss2)
-               
-       xnext(k) = xold(k)-Path(k,ip,ie)
-       if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-       if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-       xnext(k) = xold(k)-xnext(k)
-       
-       xmid(k) = xnext(k)
-       sigma   = sqrt(real(2**Nlev)*dt)
-       xnew(k) = xmid(k)+sigma*gauss1
-       
-       !Periodic boundary conditions
-       
-       call BoundaryConditions(k,xnew(k))
-       
-       Path(k,ip,ii) = xnew(k)
-       
-    end do
-
-    call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)   
-
-    if (half==1) then
-       SumDeltaS = SumDeltaS+DeltaS
-    else
-       SumDeltaS = SumDeltaS+0.5d0*DeltaS
-    end if
-
-    PrevDeltaS = 0.d0
-    
-    do ilev=1,Nlev
-
-       delta_ib = 2**(Nlev-ilev+1)
-       dt_bis   = 0.5d0*real(delta_ib)*dt
-       sigma    = sqrt(0.5d0*dt_bis)
-          
-       LevelDeltaS = 0.d0
-    
-       do j=1,2**(ilev-1)
-
-          iprev = ii+(j-1)*delta_ib
-          inext = ii+j*delta_ib
-          icurr = (iprev+inext)/2
-
-          !Free particle sampling
-
-          do k=1,dim
-
-             xold(k) = Path(k,ip,icurr)               
-
-             call rangauss(1.d0,0.d0,gauss1,gauss2)
-
-             xprev(k) = Path(k,ip,iprev)-xold(k)
-             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-             xprev(k) = xold(k)+xprev(k)
-             
-             xnext(k) = xold(k)-Path(k,ip,inext)
-             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-             xnext(k) = xold(k)-xnext(k)
-             
-             xmid(k) = 0.5d0*(xprev(k)+xnext(k))
-             xnew(k) = xmid(k)+sigma*gauss1
-
-             !Periodic boundary conditions
-
-             call BoundaryConditions(k,xnew(k))
-
-             Path(k,ip,icurr) = xnew(k)
-             
-          end do
-
-          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
-          
-          LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
-          SumDeltaS   = SumDeltaS+DeltaS
-
-       end do
-
-       !Evaluation of the action corresponding to the current bisection
-       !level. It is important to note that the "exact" action is only
-       !evaluated at the last level, in the rest of the levels of sampling
-       !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
-              
-       if (ilev==Nlev) then
-          TotDeltaS = SumDeltaS-PrevDeltaS
-       else
-          TotDeltaS = LevelDeltaS-PrevDeltaS
-       end if
-       
-       !Metropolis question
-
-       if (exp(-TotDeltaS)>=1.d0) then
-          accept     = .True.
-          PrevDeltaS = LevelDeltaS
-       else
-          if (exp(-TotDeltaS)>=grnd()) then
-             accept     = .True.
-             PrevDeltaS = LevelDeltaS
-          else
-             accept = .False.
-             exit             
-          end if
-       end if
-
-    end do
-
-    if (accept) then
-    
-       accepted = accepted+1
-
-       do k=1,dim
-          xend(k,half) = Path(k,ip,Nb)
-       end do
-       
-    else
-    
-       do ib=ii,ie
-          do k=1,dim
-             Path(k,ip,ib) = OldChain(k,ib)
-          end do
-       end do
-    
-    end if
-   
-    return
-  end subroutine MoveHeadHalfBisection
+!!$  subroutine MoveHeadHalfBisection(half,LogWF,dt,level,ip,Path,xend,accepted)
+!!$
+!!$    implicit none
+!!$
+!!$    logical          :: accept
+!!$    real (kind=8)    :: dt,dt_bis
+!!$    real (kind=8)    :: gauss1,gauss2
+!!$    real (kind=8)    :: DeltaS,sigma
+!!$    real (kind=8)    :: SumDeltaS,TotDeltaS
+!!$    real (kind=8)    :: LevelDeltaS,PrevDeltaS
+!!$    integer (kind=4) :: j
+!!$    integer (kind=4) :: ii,ie
+!!$    integer (kind=4) :: ip,ib,k,accepted
+!!$    integer (kind=4) :: ilev,Nlev,level,delta_ib
+!!$    integer (kind=4) :: iprev,inext,icurr
+!!$    integer (kind=4) :: half
+!!$        
+!!$    real (kind=8),dimension (dim,2)         :: xend
+!!$    real (kind=8),dimension (dim)           :: xnew,xold
+!!$    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+!!$    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+!!$    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+!!$    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
+!!$    
+!!$    Nlev = int((level-1)*grnd())+2
+!!$
+!!$    do k=1,dim
+!!$       Path(k,ip,Nb) = xend(k,half)
+!!$    end do
+!!$
+!!$    !Pick a random bead that is the starting point of the displaced 
+!!$    !piece of chain
+!!$    
+!!$    if (half==1) then
+!!$       ii = 0
+!!$       ie = ii+2**Nlev
+!!$    else
+!!$       ii = Nb
+!!$       ie = ii+2**Nlev
+!!$    end if
+!!$
+!!$    !Save the original chain
+!!$
+!!$    do ib=ii,ie
+!!$       do k=1,dim
+!!$          OldChain(k,ib) = Path(k,ip,ib)
+!!$       end do
+!!$    end do
+!!$    
+!!$    !Make an initial guess for the position of first bead
+!!$
+!!$    SumDeltaS = 0.d0
+!!$
+!!$    do k=1,dim
+!!$
+!!$       xold(k) = Path(k,ip,ii)              
+!!$           
+!!$       call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$               
+!!$       xnext(k) = xold(k)-Path(k,ip,ie)
+!!$       if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$       if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$       xnext(k) = xold(k)-xnext(k)
+!!$    
+!!$       sigma   = sqrt(real(2**Nlev)*dt)
+!!$       xmid(k) = xnext(k)
+!!$       xnew(k) = xmid(k)+sigma*gauss1
+!!$       
+!!$       !Periodic boundary conditions
+!!$       
+!!$       call BoundaryConditions(k,xnew(k))
+!!$       
+!!$       Path(k,ip,ii) = xnew(k)
+!!$       
+!!$    end do
+!!$
+!!$    call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)   
+!!$
+!!$    if (half==1) then
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$    else
+!!$       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+!!$    end if
+!!$
+!!$    PrevDeltaS = 0.d0
+!!$    
+!!$    do ilev=1,Nlev
+!!$
+!!$       delta_ib = 2**(Nlev-ilev+1)
+!!$       dt_bis   = 0.5d0*real(delta_ib)*dt
+!!$       sigma    = sqrt(0.5d0*dt_bis)
+!!$          
+!!$       LevelDeltaS = 0.d0
+!!$    
+!!$       do j=1,2**(ilev-1)
+!!$
+!!$          iprev = ii+(j-1)*delta_ib
+!!$          inext = ii+j*delta_ib
+!!$          icurr = (iprev+inext)/2
+!!$
+!!$          !Free particle sampling
+!!$
+!!$          do k=1,dim
+!!$
+!!$             xold(k) = Path(k,ip,icurr)               
+!!$
+!!$             call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$
+!!$             xprev(k) = Path(k,ip,iprev)-xold(k)
+!!$             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$             xprev(k) = xold(k)+xprev(k)
+!!$             
+!!$             xnext(k) = xold(k)-Path(k,ip,inext)
+!!$             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$             xnext(k) = xold(k)-xnext(k)
+!!$             
+!!$             xmid(k) = 0.5d0*(xprev(k)+xnext(k))
+!!$             xnew(k) = xmid(k)+sigma*gauss1
+!!$
+!!$             !Periodic boundary conditions
+!!$
+!!$             call BoundaryConditions(k,xnew(k))
+!!$
+!!$             Path(k,ip,icurr) = xnew(k)
+!!$             
+!!$          end do
+!!$
+!!$          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
+!!$          
+!!$          LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
+!!$          SumDeltaS   = SumDeltaS+DeltaS
+!!$
+!!$       end do
+!!$
+!!$       !Evaluation of the action corresponding to the current bisection
+!!$       !level. It is important to note that the "exact" action is only
+!!$       !evaluated at the last level, in the rest of the levels of sampling
+!!$       !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
+!!$              
+!!$       if (ilev==Nlev) then
+!!$          TotDeltaS = SumDeltaS-PrevDeltaS
+!!$       else
+!!$          TotDeltaS = LevelDeltaS-PrevDeltaS
+!!$       end if
+!!$       
+!!$       !Metropolis question
+!!$
+!!$       if (exp(-TotDeltaS)>=1.d0) then
+!!$          accept     = .True.
+!!$          PrevDeltaS = LevelDeltaS
+!!$       else
+!!$          if (exp(-TotDeltaS)>=grnd()) then
+!!$             accept     = .True.
+!!$             PrevDeltaS = LevelDeltaS
+!!$          else
+!!$             accept = .False.
+!!$             exit             
+!!$          end if
+!!$       end if
+!!$
+!!$    end do
+!!$
+!!$    if (accept) then
+!!$    
+!!$       accepted = accepted+1
+!!$
+!!$       do k=1,dim
+!!$          xend(k,half) = Path(k,ip,Nb)
+!!$       end do
+!!$       
+!!$    else
+!!$    
+!!$       do ib=ii,ie
+!!$          do k=1,dim
+!!$             Path(k,ip,ib) = OldChain(k,ib)
+!!$          end do
+!!$       end do
+!!$    
+!!$    end if
+!!$   
+!!$    return
+!!$  end subroutine MoveHeadHalfBisection
 
 !-----------------------------------------------------------------------
 
@@ -2042,9 +2035,8 @@ contains
        if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
        xprev(k) = xold(k)+xprev(k)
        
-       xmid(k) = xprev(k)
        sigma   = sqrt(2**Nlev*dt)
-       
+       xmid(k) = xprev(k)
        xnew(k) = xmid(k)+sigma*gauss1
        
        !Periodic boundary conditions
@@ -2157,191 +2149,190 @@ contains
 
  !-----------------------------------------------------------------------
 
-  subroutine MoveTailHalfBisection(half,LogWF,dt,level,ip,Path,xend,accepted)
-
-    implicit none
-
-    logical          :: accept
-    real (kind=8)    :: dt,dt_bis
-    real (kind=8)    :: gauss1,gauss2
-    real (kind=8)    :: DeltaS,sigma
-    real (kind=8)    :: SumDeltaS,TotDeltaS
-    real (kind=8)    :: LevelDeltaS,PrevDeltaS
-    integer (kind=4) :: j
-    integer (kind=4) :: ii,ie
-    integer (kind=4) :: ip,ib,k,accepted
-    integer (kind=4) :: ilev,Nlev,level,delta_ib
-    integer (kind=4) :: iprev,inext,icurr
-    integer (kind=4) :: half
-        
-    real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (dim)           :: xnew,xold
-    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
-    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
-    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
-    
-    Nlev = int((level-1)*grnd())+2
-
-    do k=1,dim
-       Path(k,ip,Nb) = xend(k,half)
-    end do
-
-    !Pick a random bead that is the starting point of the displaced 
-    !piece of chain
-    
-    if (half==1) then
-       ii = Nb-2**Nlev
-       ie = Nb
-    else
-       ii = 2*Nb-2**Nlev
-       ie = 2*Nb
-    end if
-
-    !Save the original chain
-
-    do ib=ii,ie
-       do k=1,dim
-          OldChain(k,ib) = Path(k,ip,ib)
-       end do
-    end do
-    
-    !Make an initial guess for the position of last bead
-
-    SumDeltaS = 0.d0
-
-    do k=1,dim
-       
-       xold(k) = Path(k,ip,ie)               
-       
-       call rangauss(1.d0,0.d0,gauss1,gauss2)
-       
-       xprev(k) = Path(k,ip,ii)-xold(k)
-       if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-       if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-       xprev(k) = xold(k)+xprev(k)
-       
-       xmid(k)  = xprev(k)
-       sigma    = sqrt(2**Nlev*dt)
-       
-       xnew(k) = xmid(k)+sigma*gauss1
-       
-       !Periodic boundary conditions
-       
-       call BoundaryConditions(k,xnew(k))
-       
-       Path(k,ip,ie) = xnew(k)
-       
-    end do
-
-    call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)    
-
-    if (half==1) then
-       SumDeltaS = SumDeltaS+0.5d0*DeltaS
-    else
-       SumDeltaS = SumDeltaS+DeltaS
-    end if
-
-    PrevDeltaS = 0.d0
-    
-    do ilev=1,Nlev
-
-       delta_ib = 2**(Nlev-ilev+1)
-       dt_bis   = 0.5d0*real(delta_ib)*dt
-       sigma    = sqrt(0.5d0*dt_bis)
-          
-       LevelDeltaS = 0.d0
-    
-       do j=1,2**(ilev-1)
-
-          iprev = ii+(j-1)*delta_ib
-          inext = ii+j*delta_ib
-          icurr = (iprev+inext)/2
-
-          !Free particle sampling
-
-          do k=1,dim
-
-             xold(k) = Path(k,ip,icurr)               
-
-             call rangauss(1.d0,0.d0,gauss1,gauss2)
-
-             xprev(k) = Path(k,ip,iprev)-xold(k)
-             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-             xprev(k) = xold(k)+xprev(k)
-             
-             xnext(k) = xold(k)-Path(k,ip,inext)
-             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-             xnext(k) = xold(k)-xnext(k)
-             
-             xmid(k) = 0.5d0*(xprev(k)+xnext(k))
-             xnew(k) = xmid(k)+sigma*gauss1
-
-             !Periodic boundary conditions
-
-             call BoundaryConditions(k,xnew(k))
-
-             Path(k,ip,icurr) = xnew(k)
-             
-          end do
-
-          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
-          
-          LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
-          SumDeltaS   = SumDeltaS+DeltaS
-
-       end do
-
-       !Evaluation of the action corresponding to the current bisection
-       !level. It is important to note that the "exact" action is only
-       !evaluated at the last level, in the rest of the levels of sampling
-       !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
-              
-       if (ilev==Nlev) then
-          TotDeltaS = SumDeltaS-PrevDeltaS
-       else
-          TotDeltaS = LevelDeltaS-PrevDeltaS
-       end if
-       
-       !Metropolis question
-
-       if (exp(-TotDeltaS)>=1.d0) then
-          accept     = .True.
-          PrevDeltaS = LevelDeltaS
-       else
-          if (exp(-TotDeltaS)>=grnd()) then
-             accept     = .True.
-             PrevDeltaS = LevelDeltaS
-          else
-             accept = .False.
-             exit             
-          end if
-       end if
-
-    end do
-
-    if (accept) then
-    
-       accepted = accepted+1
-
-       do k=1,dim
-          xend(k,half) = Path(k,ip,Nb)
-       end do
-       
-    else
-    
-       do ib=ii,ie
-          do k=1,dim
-             Path(k,ip,ib) = OldChain(k,ib)
-          end do
-       end do
-    
-    end if
-   
-    return
-  end subroutine MoveTailHalfBisection
+!!$  subroutine MoveTailHalfBisection(half,LogWF,dt,level,ip,Path,xend,accepted)
+!!$
+!!$    implicit none
+!!$
+!!$    logical          :: accept
+!!$    real (kind=8)    :: dt,dt_bis
+!!$    real (kind=8)    :: gauss1,gauss2
+!!$    real (kind=8)    :: DeltaS,sigma
+!!$    real (kind=8)    :: SumDeltaS,TotDeltaS
+!!$    real (kind=8)    :: LevelDeltaS,PrevDeltaS
+!!$    integer (kind=4) :: j
+!!$    integer (kind=4) :: ii,ie
+!!$    integer (kind=4) :: ip,ib,k,accepted
+!!$    integer (kind=4) :: ilev,Nlev,level,delta_ib
+!!$    integer (kind=4) :: iprev,inext,icurr
+!!$    integer (kind=4) :: half
+!!$        
+!!$    real (kind=8),dimension (dim,2)         :: xend
+!!$    real (kind=8),dimension (dim)           :: xnew,xold
+!!$    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+!!$    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+!!$    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+!!$    real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
+!!$    
+!!$    Nlev = int((level-1)*grnd())+2
+!!$
+!!$    do k=1,dim
+!!$       Path(k,ip,Nb) = xend(k,half)
+!!$    end do
+!!$
+!!$    !Pick a random bead that is the starting point of the displaced 
+!!$    !piece of chain
+!!$    
+!!$    if (half==1) then
+!!$       ii = Nb-2**Nlev
+!!$       ie = Nb
+!!$    else
+!!$       ii = 2*Nb-2**Nlev
+!!$       ie = 2*Nb
+!!$    end if
+!!$
+!!$    !Save the original chain
+!!$
+!!$    do ib=ii,ie
+!!$       do k=1,dim
+!!$          OldChain(k,ib) = Path(k,ip,ib)
+!!$       end do
+!!$    end do
+!!$    
+!!$    !Make an initial guess for the position of last bead
+!!$
+!!$    SumDeltaS = 0.d0
+!!$
+!!$    do k=1,dim
+!!$       
+!!$       xold(k) = Path(k,ip,ie)               
+!!$       
+!!$       call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$       
+!!$       xprev(k) = Path(k,ip,ii)-xold(k)
+!!$       if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$       if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$       xprev(k) = xold(k)+xprev(k)
+!!$       
+!!$       sigma   = sqrt(2**Nlev*dt)
+!!$       xmid(k) = xprev(k)
+!!$       xnew(k) = xmid(k)+sigma*gauss1
+!!$       
+!!$       !Periodic boundary conditions
+!!$       
+!!$       call BoundaryConditions(k,xnew(k))
+!!$       
+!!$       Path(k,ip,ie) = xnew(k)
+!!$       
+!!$    end do
+!!$
+!!$    call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)    
+!!$
+!!$    if (half==1) then
+!!$       SumDeltaS = SumDeltaS+0.5d0*DeltaS
+!!$    else
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$    end if
+!!$
+!!$    PrevDeltaS = 0.d0
+!!$    
+!!$    do ilev=1,Nlev
+!!$
+!!$       delta_ib = 2**(Nlev-ilev+1)
+!!$       dt_bis   = 0.5d0*real(delta_ib)*dt
+!!$       sigma    = sqrt(0.5d0*dt_bis)
+!!$          
+!!$       LevelDeltaS = 0.d0
+!!$    
+!!$       do j=1,2**(ilev-1)
+!!$
+!!$          iprev = ii+(j-1)*delta_ib
+!!$          inext = ii+j*delta_ib
+!!$          icurr = (iprev+inext)/2
+!!$
+!!$          !Free particle sampling
+!!$
+!!$          do k=1,dim
+!!$
+!!$             xold(k) = Path(k,ip,icurr)               
+!!$
+!!$             call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$
+!!$             xprev(k) = Path(k,ip,iprev)-xold(k)
+!!$             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$             xprev(k) = xold(k)+xprev(k)
+!!$             
+!!$             xnext(k) = xold(k)-Path(k,ip,inext)
+!!$             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$             xnext(k) = xold(k)-xnext(k)
+!!$             
+!!$             xmid(k) = 0.5d0*(xprev(k)+xnext(k))
+!!$             xnew(k) = xmid(k)+sigma*gauss1
+!!$
+!!$             !Periodic boundary conditions
+!!$
+!!$             call BoundaryConditions(k,xnew(k))
+!!$
+!!$             Path(k,ip,icurr) = xnew(k)
+!!$             
+!!$          end do
+!!$
+!!$          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
+!!$          
+!!$          LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
+!!$          SumDeltaS   = SumDeltaS+DeltaS
+!!$
+!!$       end do
+!!$
+!!$       !Evaluation of the action corresponding to the current bisection
+!!$       !level. It is important to note that the "exact" action is only
+!!$       !evaluated at the last level, in the rest of the levels of sampling
+!!$       !we use an approximate action that is S_k = 2**(Nlev-k)*S_1. 
+!!$              
+!!$       if (ilev==Nlev) then
+!!$          TotDeltaS = SumDeltaS-PrevDeltaS
+!!$       else
+!!$          TotDeltaS = LevelDeltaS-PrevDeltaS
+!!$       end if
+!!$       
+!!$       !Metropolis question
+!!$
+!!$       if (exp(-TotDeltaS)>=1.d0) then
+!!$          accept     = .True.
+!!$          PrevDeltaS = LevelDeltaS
+!!$       else
+!!$          if (exp(-TotDeltaS)>=grnd()) then
+!!$             accept     = .True.
+!!$             PrevDeltaS = LevelDeltaS
+!!$          else
+!!$             accept = .False.
+!!$             exit             
+!!$          end if
+!!$       end if
+!!$
+!!$    end do
+!!$
+!!$    if (accept) then
+!!$    
+!!$       accepted = accepted+1
+!!$
+!!$       do k=1,dim
+!!$          xend(k,half) = Path(k,ip,Nb)
+!!$       end do
+!!$       
+!!$    else
+!!$    
+!!$       do ib=ii,ie
+!!$          do k=1,dim
+!!$             Path(k,ip,ib) = OldChain(k,ib)
+!!$          end do
+!!$       end do
+!!$    
+!!$    end if
+!!$   
+!!$    return
+!!$  end subroutine MoveTailHalfBisection
 
 !-----------------------------------------------------------------------
 
@@ -2412,9 +2403,8 @@ contains
           if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
           xprev(k) = xold(k)+xprev(k)
           
-          xmid(k)  = xprev(k)
-          sigma    = sqrt(real(Ls)*dt)
-          
+          sigma   = sqrt(real(Ls)*dt)
+          xmid(k) = xprev(k)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -2466,9 +2456,9 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k)  = xnext(k)
-          sigma    = sqrt(real(Ls)*dt)
-          xnew(k)  = xmid(k)+sigma*gauss1
+          sigma   = sqrt(real(Ls)*dt)
+          xmid(k) = xnext(k)
+          xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
           
@@ -2504,9 +2494,8 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          
+          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -2668,9 +2657,8 @@ contains
           if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
           xnext(k) = xold(k)-xnext(k)
           
-          xmid(k)  = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          sigma    = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          
+          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
           xnew(k) = xmid(k)+sigma*gauss1
           
           !Periodic boundary conditions
@@ -2839,18 +2827,6 @@ contains
              Path(k,ik,ie) = xend(k,2)
           end do
 
-!!!!!!!!!!!!This part of the code is under study
-
-          !do k=1,dim
-          !   Path(k,iw,Nb) = xend(k,1)
-          !end do
-
-          !call UpdateAction(LogWF,Path,ik,ie,xnew,xold,dt,DeltaS)  
-
-          !SumDeltaS = SumDeltaS+0.5d0*DeltaS
-
-!!!!!!!!!!!!!!
-
           !Reconstruction of the whole chain piece using Staging
 
           SumDeltaS = 0.d0
@@ -2873,8 +2849,8 @@ contains
                 if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
                 xnext(k) = xold(k)-xnext(k)
                 
-                xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
                 sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+                xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
                 xnew(k) = xmid(k)+sigma*gauss1
                 
                 !Periodic boundary conditions

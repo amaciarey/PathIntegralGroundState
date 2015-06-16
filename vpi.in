@@ -5,7 +5,7 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-128             # Number of particles
+30              # Number of particles
 128.d0          # Density
 0.6d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
@@ -15,7 +15,6 @@
 1.00d-4         # Time step 
 20              # Number of beads 
 1982            # Seed of the random number generator
-0.0d0           # Parameters of the propagator decomposition (a_1 and t_0)
 0.2d0		# Size of the CM movements (in units of density^(1/dim))
 1               # Frequency of CM updates 
 bisection       # Sampling method for the diagonal movements (sta=staging, bis=bisection)
