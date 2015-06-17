@@ -5,7 +5,7 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-30              # Number of particles
+32              # Number of particles
 128.d0          # Density
 0.6d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
@@ -39,5 +39,5 @@ bisection       # Sampling method for the diagonal movements (sta=staging, bis=b
 
 200             # Number of blocks
 100             # Steps per block
-40              # Points in the grid for g(r) and OBDM
+80              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
