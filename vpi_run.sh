@@ -63,10 +63,10 @@ $POL             # Polarization angle
                                                                                        
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING                                     
                                                                                       
-1.00d-4         # Time step                                                             
-20              # Number of beads                                                       
+4.00d-5         # Time step                                                             
+40              # Number of beads                                                       
 1982            # Seed of the random number generator                                 
-0.2d0           # Size of the CM movements (in units of density^(1/dim))              
+0.12d0          # Size of the CM movements (in units of density^(1/dim))              
 1               # Frequency of CM updates
 bisection       # Sampling methods for diagonal movements (sta=staging, bis=bisection)
 16              # Length of the Staging movements                                     
@@ -76,8 +76,8 @@ bisection       # Sampling methods for diagonal movements (sta=staging, bis=bise
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION                                  
                                                                                       
 10000           # Grid points for the tabulation of the wave function                 
-0.03d0          # Variational parameter                                               
-.true.         # .true. if tabulate the wave function, .false. otherwise             
+0.02d0          # Variational parameter                                               
+.true.          # .true. if tabulate the wave function, .false. otherwise             
                                                                                       
 # PARAMETERS FOR THE SAMPLING OF THE OBDM                                             
                                                                                       
