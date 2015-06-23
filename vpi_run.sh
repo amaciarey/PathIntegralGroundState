@@ -76,7 +76,7 @@ bisection       # Sampling methods for diagonal movements (sta=staging, bis=bise
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION                                  
                                                                                       
 10000           # Grid points for the tabulation of the wave function                 
-0.02d0          # Variational parameter                                               
+0.020d0         # Variational parameter                                               
 .true.          # .true. if tabulate the wave function, .false. otherwise             
                                                                                       
 # PARAMETERS FOR THE SAMPLING OF THE OBDM                                             
@@ -88,9 +88,9 @@ bisection       # Sampling methods for diagonal movements (sta=staging, bis=bise
                                                                                       
 # PARAMETERS OF THE SAMPLING PROCESS                                                  
                                                                                       
-500             # Number of blocks                                                    
+2000            # Number of blocks                                                    
 100             # Steps per block                                                     
-60              # Points in the grid for g(r) and OBDM                                
+100             # Points in the grid for g(r) and OBDM                                
 20              # K points for S(k) evaluation                                        
 EOF
 

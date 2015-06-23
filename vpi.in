@@ -5,14 +5,14 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-256             # Number of particles
-256.d0          # Density
+32              # Number of particles
+224.d0          # Density
 0.6d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-4.00d-5         # Time step 
+5.00d-5         # Time step 
 40              # Number of beads 
 1982            # Seed of the random number generator
 0.12d0		# Size of the CM movements (in units of density^(1/dim))
@@ -25,7 +25,7 @@ bisection       # Sampling method for the diagonal movements (sta=staging, bis=b
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
 
 10000           # Grid points for the tabulation of the wave function
-0.020d0         # Variational parameter
+0.022d0         # Variational parameter
 .true.          # .true. if tabulate the wave function, .false. otherwise
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
@@ -37,7 +37,7 @@ bisection       # Sampling method for the diagonal movements (sta=staging, bis=b
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-400             # Number of blocks
+200             # Number of blocks
 100             # Steps per block
 50              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
