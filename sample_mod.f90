@@ -406,7 +406,7 @@ contains
     integer (kind=4) :: ibin
     integer (kind=4) :: ngr
     
-    real (kind=8),dimension (Nbin)   :: gr
+    real (kind=8),dimension (Nbin) :: gr
         
     k_n  = pi**(0.5d0*dim)/r8_gamma(0.5d0*dim+1.d0)
     norm = real(Np)*real(ngr)

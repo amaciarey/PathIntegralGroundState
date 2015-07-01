@@ -68,9 +68,9 @@ $POL             # Polarization angle
 1982            # Seed of the random number generator                                 
 0.12d0          # Size of the CM movements (in units of density^(1/dim))              
 1               # Frequency of CM updates
-bisection       # Sampling methods for diagonal movements (sta=staging, bis=bisection)
+staging         # Sampling methods for diagonal movements (sta=staging, bis=bisection)
 16              # Length of the Staging movements                                     
-4               # Bisection level (2**Nlev will be the length of the movement)
+2               # Bisection level (2**Nlev will be the length of the movement)
 5               # Number of staging movements per step                                
                                                                                       
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION                                  
@@ -88,9 +88,9 @@ bisection       # Sampling methods for diagonal movements (sta=staging, bis=bise
                                                                                       
 # PARAMETERS OF THE SAMPLING PROCESS                                                  
                                                                                       
-2000            # Number of blocks                                                    
+200            # Number of blocks                                                    
 100             # Steps per block                                                     
-100             # Points in the grid for g(r) and OBDM                                
+50              # Points in the grid for g(r) and OBDM                                
 20              # K points for S(k) evaluation                                        
 EOF
 

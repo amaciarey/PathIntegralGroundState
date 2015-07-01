@@ -302,15 +302,19 @@ do iblock=1,Nblock
 
                do iobdm=1,Nobdm
                
-                  do j=1,2
-                  
-                     if (mod(istep,CMFreq)==0) then
+                  if (mod(istep,CMFreq)==0) then
+
+                     do j=1,2
                         try_cm_half = try_cm_half+1
                         call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
-                     end if
+                     end do
 
-                     do istag=1,Nstag
+                  end if
 
+                  do istag=1,Nstag
+                     
+                     do j=1,2
+                  
                         try_stag_half = try_stag_half+1
                         
                         call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
@@ -319,15 +323,15 @@ do iblock=1,Nblock
                         
                      end do
 
+                     if (swapping) then
+                        
+                        try_swap = try_swap+1
+
+                        call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
+
+                     end if
+
                   end do
-
-                  if (swapping) then
-
-                     try_swap = try_swap+1
-
-                     call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
-
-                  end if
 
                   call OBDM(xend,nrho)
                   
