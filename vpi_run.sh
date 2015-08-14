@@ -63,20 +63,20 @@ $POL             # Polarization angle
                                                                                        
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING                                     
                                                                                       
-4.00d-5         # Time step                                                             
-40              # Number of beads                                                       
+1.20d-4         # Time step                                                             
+0               # Number of beads                                                       
 1982            # Seed of the random number generator                                 
-0.12d0          # Size of the CM movements (in units of density^(1/dim))              
+0.20d0          # Size of the CM movements (in units of density^(1/dim))              
 1               # Frequency of CM updates
 staging         # Sampling methods for diagonal movements (sta=staging, bis=bisection)
-16              # Length of the Staging movements                                     
+0               # Length of the Staging movements                                     
 2               # Bisection level (2**Nlev will be the length of the movement)
 5               # Number of staging movements per step                                
                                                                                       
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION                                  
                                                                                       
 10000           # Grid points for the tabulation of the wave function                 
-0.020d0         # Variational parameter                                               
+0.05d0          # Variational parameter                                               
 .true.          # .true. if tabulate the wave function, .false. otherwise             
                                                                                       
 # PARAMETERS FOR THE SAMPLING OF THE OBDM                                             
@@ -87,8 +87,8 @@ staging         # Sampling methods for diagonal movements (sta=staging, bis=bise
 5               # Maximum angular momentum partial wave in OBDM                       
                                                                                       
 # PARAMETERS OF THE SAMPLING PROCESS                                                  
-                                                                                      
-200            # Number of blocks                                                    
+
+200             # Number of blocks                                                    
 100             # Steps per block                                                     
 50              # Points in the grid for g(r) and OBDM                                
 20              # K points for S(k) evaluation                                        
