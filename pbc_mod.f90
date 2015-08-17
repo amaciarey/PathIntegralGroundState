@@ -15,8 +15,11 @@ contains
     real (kind=8)    :: xij
     integer (kind=4) :: k
     
-    if (xij>Lbox(k)) xij = xij-Lbox(k)
-    if (xij<0.d0)    xij = xij+Lbox(k)
+    !if (xij>Lbox(k)) xij = xij-Lbox(k)
+    !if (xij<0.d0)    xij = xij+Lbox(k)
+
+    if (xij> LboxHalf(k)) xij = xij-Lbox(k)
+    if (xij<-LboxHalf(k)) xij = xij+Lbox(k)
 
     return
   end subroutine BoundaryConditions
