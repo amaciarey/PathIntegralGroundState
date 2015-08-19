@@ -51,6 +51,7 @@ contains
     rij6 = rij**6
 
     Potential = V0*(1.d0/rij6-1.d0)/rij6
+    !Potential = V0*(1.d0/rij6)/rij6
 
   end function Potential
 
@@ -69,6 +70,7 @@ contains
     V0 = 22.0228d0
 
     dVdr  = -6.d0*V0*(2.d0/rij**7-1.d0)/rij**6
+    !dVdr  = -6.d0*V0*(2.d0/rij**7)/rij**6
     Force = dVdr*xij(k)/rij
 
     return 
