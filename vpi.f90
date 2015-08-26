@@ -53,7 +53,7 @@ integer (kind=4) :: obdm_bl,diag_bl
 
 character (len=3) :: sampling
 
-real (kind=8),dimension(:),allocatable     :: LogWF
+real (kind=8),dimension(:),allocatable     :: LogWF,VTable
 real (kind=8),dimension(:,:),allocatable   :: xend
 real (kind=8),dimension(:,:,:),allocatable :: Path
 real (kind=8),dimension(:,:),allocatable   :: nrho,AvNr,AvNr2,VarNr
@@ -62,7 +62,7 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 
 !Reading input parameters
 
-call ReadParameters(resume,crystal,wf_table,swapping,sampling,&
+call ReadParameters(resume,crystal,wf_table,v_table,swapping,sampling,&
      & density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
      & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
@@ -104,11 +104,12 @@ iworm    = 0
 !Generate an initial Path
 
 allocate (Path(dim,Np,0:2*Nb))
-allocate (LogWF(0:Nmax+1))
+allocate (LogWF(0:Nmax+1),VTable(0:Nmax+1))
 allocate (xend(dim,2))
 
 call init(seed,Path,xend,crystal,resume,isopen,iworm)
 call JastrowTable(rcut,Rm,LogWF)
+call PotentialTable(rcut,VTable)
 
 !Definition of used formats
 
@@ -258,13 +259,13 @@ do iblock=1,Nblock
 
       if (isopen) then
          if (iupdate == 0) then
-            call CloseChain(LogWF,density,dt,Lstag,iworm,Path,xend,isopen,acc_close)
+            call CloseChain(LogWF,VTable,density,dt,Lstag,iworm,Path,xend,isopen,acc_close)
             try_close = try_close+1
          end if
       else
          if (iupdate == 1) then
             iworm = int(grnd()*Np)+1
-            call OpenChain(LogWF,density,dt,Lstag,iworm,Path,xend,isopen,acc_open)
+            call OpenChain(LogWF,VTable,density,dt,Lstag,iworm,Path,xend,isopen,acc_open)
             try_open = try_open+1
          end if
       end if
@@ -279,7 +280,7 @@ do iblock=1,Nblock
                
                if (mod(istep,CMFreq)==0) then               
                   try_cm = try_cm+1
-                  call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+                  call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,acc_cm)
                end if
 
                do istag=1,Nstag
@@ -287,13 +288,13 @@ do iblock=1,Nblock
                   try_stag = try_stag+1
                   
                   if (sampling=="sta") then
-                     call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-                     call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-                     call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+                     call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,acc_head)
+                     call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,acc_tail)
+                     call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
                   else
-                     call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
-                     call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
-                     call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
+                     call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_head)
+                     call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_tail)
+                     call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
                   end if
 
                end do
@@ -306,7 +307,7 @@ do iblock=1,Nblock
 
                      do j=1,2
                         try_cm_half = try_cm_half+1
-                        call TranslateHalfChain(j,delta_cm,LogWF,dt,ip,Path,xend,acc_cm_half)
+                        call TranslateHalfChain(j,delta_cm,LogWF,VTable,dt,ip,Path,xend,acc_cm_half)
                      end do
 
                   end if
@@ -317,9 +318,9 @@ do iblock=1,Nblock
                   
                         try_stag_half = try_stag_half+1
                         
-                        call MoveHeadHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_head_half)
-                        call MoveTailHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_tail_half)
-                        call StagingHalfChain(j,LogWF,dt,Lstag,ip,Path,xend,acc_bd_half)
+                        call MoveHeadHalfChain(j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_head_half)
+                        call MoveTailHalfChain(j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_tail_half)
+                        call StagingHalfChain(j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_bd_half)
                         
                      end do
 
@@ -327,7 +328,7 @@ do iblock=1,Nblock
                         
                         try_swap = try_swap+1
 
-                        call Swap(LogWF,dt,Lstag,ip,Path,xend,acc_swap)
+                        call Swap(LogWF,VTable,dt,Lstag,ip,Path,xend,acc_swap)
 
                      end if
 
@@ -351,7 +352,7 @@ do iblock=1,Nblock
 
             if (mod(istep,CMFreq)==0) then
                try_cm = try_cm+1
-               call TranslateChain(delta_cm,LogWF,dt,ip,Path,acc_cm)
+               call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,acc_cm)
             end if
 
             do istag=1,Nstag
@@ -359,13 +360,13 @@ do iblock=1,Nblock
                try_stag = try_stag+1
 
                if (sampling=="sta") then
-                  call MoveHead(LogWF,dt,Lstag,ip,Path,acc_head)
-                  call MoveTail(LogWF,dt,Lstag,ip,Path,acc_tail)
-                  call Staging(LogWF,dt,Lstag,ip,Path,acc_bd)
+                  call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,acc_head)
+                  call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,acc_tail)
+                  call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
                else
-                  call MoveHeadBisection(LogWF,dt,Nlev,ip,Path,acc_head)
-                  call MoveTailBisection(LogWF,dt,Nlev,ip,Path,acc_tail)
-                  call Bisection(LogWF,dt,Nlev,ip,Path,acc_bd)
+                  call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_head)
+                  call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_tail)
+                  call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
                end if
 
             end do
@@ -374,14 +375,14 @@ do iblock=1,Nblock
 
          !Energy calculation using mixed estimator
       
-         call LocalEnergy(LogWF,Path(:,:,0),Rm,E1,Kin,Pot)
-         call LocalEnergy(LogWF,Path(:,:,2*Nb),Rm,E2,Kin,Pot)
+         call LocalEnergy(LogWF,VTable,Path(:,:,0),Rm,E1,Kin,Pot)
+         call LocalEnergy(LogWF,VTable,Path(:,:,2*Nb),Rm,E2,Kin,Pot)
 
          E = 0.5d0*(E1+E2)
 
          !Energy evaluation using thermodynamic estimator
 
-         call ThermEnergy(Path,dt,Et,Kt,Pot)
+         call ThermEnergy(VTable,Path,dt,Et,Kt,Pot)
 
          Kin = E-Pot         
             

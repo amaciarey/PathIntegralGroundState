@@ -43,17 +43,60 @@ contains
 
     implicit none
 
-    real (kind=8) :: Potential,V0,rij,rij6
+    logical, save :: FirstCall = .true.
+    real (kind=8) :: Potential,Hx,rij
+    real (kind=8) :: dij,dij2,dij4,dij6
 
-    real (kind=8), dimension(dim) :: xij
+    real (kind=8), save            :: A,alpha,C6,C8,C10,D,V0
+    real (kind=8), dimension (dim) :: xij
 
-    V0   = 22.0228d0
-    rij6 = rij**6
+    if (FirstCall) then
 
-    Potential = V0*(1.d0/rij6-1.d0)/rij6
-    !Potential = V0*(1.d0/rij6)/rij6
+       !Parameters of the Aziz potential
+
+       V0    = 5.81817d0
+       A     = 0.54485046d6
+       alpha = 13.353384d0
+       C6    = 1.3732412d0
+       C8    = 0.4253785d0
+       C10   = 0.1781d0
+       D     = 1.241314d0
+
+       FirstCall = .false.
+
+    end if
+
+    dij  = rij*2.556d0/2.9673d0
+    dij2 = dij*dij
+    dij4 = dij2*dij2
+    dij6 = dij4*dij2
+
+    if (dij<=D) then
+       Hx = exp(-(D/dij-1.d0)**2)
+    else
+       Hx = 1.d0
+    end if
+
+    Potential = V0*(A*exp(-alpha*dij)-(C6+C8/dij2+C10/dij4)*Hx/dij6)
 
   end function Potential
+
+!-----------------------------------------------------------------------
+
+!!$  function Potential(xij,rij)
+!!$
+!!$    implicit none
+!!$
+!!$    real (kind=8) :: Potential,V0,rij,rij6
+!!$
+!!$    real (kind=8), dimension(dim) :: xij
+!!$
+!!$    V0   = 22.0228d0
+!!$    rij6 = rij**6
+!!$
+!!$    Potential = V0*(1.d0/rij6-1.d0)/rij6
+!!$
+!!$  end function Potential
 
 !-----------------------------------------------------------------------
 
@@ -68,9 +111,8 @@ contains
     real (kind=8),dimension (dim) :: xij
     
     V0 = 22.0228d0
-
+    
     dVdr  = -6.d0*V0*(2.d0/rij**7-1.d0)/rij**6
-    !dVdr  = -6.d0*V0*(2.d0/rij**7)/rij**6
     Force = dVdr*xij(k)/rij
 
     return 

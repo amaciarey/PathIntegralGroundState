@@ -2,7 +2,7 @@ module global_mod
 
 implicit none
 
-logical          :: wf_table
+logical          :: wf_table,v_table
 real (kind=8)    :: pi
 real (kind=8)    :: V0
 real (kind=8)    :: Rm

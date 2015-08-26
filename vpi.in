@@ -5,7 +5,7 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 3               # Dimensions
-128             # Number of particles
+64              # Number of particles
 0.365d0         # Density
 0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
@@ -27,6 +27,7 @@ staging         # Sampling method (sta=staging, bis=bisection)
 10000           # Grid points for the tabulation of the wave function
 1.20d0          # Variational parameter
 .false.         # .true. if tabulate the wave function, .false. otherwise
+.true.          # .true. if tabulate the potential, .false. otherwise
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
@@ -37,7 +38,7 @@ staging         # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-100             # Number of blocks
+400             # Number of blocks
 100             # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation

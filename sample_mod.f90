@@ -11,19 +11,21 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine PotentialEnergy(R,Pot,F2)
+  subroutine PotentialEnergy(VTable,R,Pot,F2)
 
     implicit none
     
     real (kind=8)    :: Pot
     real (kind=8)    :: rij2,rij
+    real (kind=8)    :: Interpolate
     integer (kind=4) :: ip,jp
     integer (kind=4) :: k
 
     real (kind=8),optional :: F2
        
-    real (kind=8),dimension(dim,Np) :: R,F
-    real (kind=8),dimension(dim)    :: xij
+    real (kind=8),dimension(0:Nmax+1) :: VTable
+    real (kind=8),dimension(dim,Np)   :: R,F
+    real (kind=8),dimension(dim)      :: xij
     
     Pot = 0.d0
         
@@ -50,15 +52,30 @@ contains
              
              rij = sqrt(rij2)
              
-             Pot = Pot+Potential(xij,rij)
-             
-             if (present(F2)) then
-                do k=1,dim
-                   
-                   F(k,ip) = F(k,ip)+Force(k,xij,rij)
-                   F(k,jp) = F(k,jp)-Force(k,xij,rij)
+             if (v_table) then
+                Pot = Pot+Interpolate(0,Nmax,dr,VTable,rij)
+             else
+                Pot = Pot+Potential(xij,rij)
+             end if
 
-                end do
+             if (present(F2)) then
+
+                if (v_table) then
+                   
+                   do k=1,dim
+                      F(k,ip) = F(k,ip)+Interpolate(1,Nmax,dr,VTable,rij)*xij(k)/rij
+                      F(k,jp) = F(k,jp)-Interpolate(1,Nmax,dr,VTable,rij)*xij(k)/rij
+                   end do
+
+                else
+                   
+                   do k=1,dim
+                      F(k,ip) = F(k,ip)+Force(k,xij,rij)
+                      F(k,jp) = F(k,jp)-Force(k,xij,rij)
+                   end do
+
+                end if
+
              end if
              
           end if
@@ -83,7 +100,7 @@ contains
   
 !-----------------------------------------------------------------------
 
-  subroutine LocalEnergy(LogWF,R,Rm,E,Kin,Pot)
+  subroutine LocalEnergy(LogWF,VTable,R,Rm,E,Kin,Pot)
 
     implicit none
     
@@ -96,7 +113,7 @@ contains
     integer (kind=4) :: i,j
     integer (kind=4) :: k
         
-    real (kind=8),dimension (0:Nmax+1) :: LogWF
+    real (kind=8),dimension (0:Nmax+1) :: LogWF,VTable
     real (kind=8),dimension (dim,Np)   :: R,F
     real (kind=8),dimension (dim)      :: xij
     
@@ -167,7 +184,11 @@ contains
              
              !Calculation of the local potential energy 
              
-             Pot = Pot+Potential(xij,rij)
+             if (v_table) then
+                Pot = Pot+Interpolate(0,Nmax,dr,VTable,rij)
+             else
+                Pot = Pot+Potential(xij,rij)
+             end if
              
           end if
           
@@ -194,7 +215,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine ThermEnergy(Path,dt,E,Ec,Ep)
+  subroutine ThermEnergy(VTable,Path,dt,E,Ec,Ep)
 
     implicit none
 
@@ -205,7 +226,8 @@ contains
     integer (kind=4) :: ib
     integer (kind=4) :: ip
     integer (kind=4) :: k
-        
+    
+    real (kind=8),dimension(0:Nmax+1)      :: VTable
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension(dim)           :: xij
         
@@ -216,10 +238,10 @@ contains
     do ib=0,2*Nb-1
        
        if (mod(ib,2)==0) then
-          call PotentialEnergy(Path(:,:,ib),Pot)
+          call PotentialEnergy(VTable,Path(:,:,ib),Pot)
           F2 = 0.d0
        else
-          call PotentialEnergy(Path(:,:,ib),Pot,F2)
+          call PotentialEnergy(VTable,Path(:,:,ib),Pot,F2)
        end if
 
        if (ib==Nb) then
@@ -246,7 +268,7 @@ contains
        
     end do
 
-    call PotentialEnergy(Path(:,:,2*Nb),Pot)
+    call PotentialEnergy(VTable,Path(:,:,2*Nb),Pot)
     
     E  = E+GreenFunction(1,2*Nb,dt,Pot,0.d0)
     E  = 0.5d0*(E/real(Nb)+real(dim*Np)/dt)
