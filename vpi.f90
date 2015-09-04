@@ -296,6 +296,8 @@ do iblock=1,Nblock
                      call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_tail)
                      call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
                   end if
+!!$
+!!$                  call BeadSampling(LogWF,VTable,dt,ip,Path,acc_bd)
 
                end do
 
@@ -323,6 +325,8 @@ do iblock=1,Nblock
                         call StagingHalfChain(j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_bd_half)
                         
                      end do
+!!$
+!!$                     call BeadSampling(LogWF,VTable,dt,ip,Path,acc_bd)
 
                      if (swapping) then
                         
@@ -368,6 +372,8 @@ do iblock=1,Nblock
                   call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_tail)
                   call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
                end if
+!!$
+!!$               call BeadSampling(LogWF,VTable,dt,ip,Path,acc_bd)
 
             end do
                

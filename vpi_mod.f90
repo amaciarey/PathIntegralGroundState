@@ -72,8 +72,7 @@ contains
 
     logical           :: resume, crystal, wf_table, v_table, swapping
     character (len=3) :: sampling
-    real (kind=8)     :: density, alpha, dt, delta_cm
-    real (kind=8)     :: Rm
+    real (kind=8)     :: density, alpha, dt, delta_cm, Rm
     integer (kind=4)  :: dim, Np, Nb, seed, Lstag, Nstag, Nmax
     integer (kind=4)  :: Nobdm, Nblock, Nstep, Nbin, Nk, Nlev, CMFreq
 
@@ -501,98 +500,98 @@ contains
 
 !-----------------------------------------------------------------------
 
-!!$  subroutine BeadSampling(LogWF,dt,ip,Path,accepted)
-!!$
-!!$    implicit none
-!!$
-!!$    logical          :: accept
-!!$    real (kind=8)    :: dt
-!!$    real (kind=8)    :: gauss1,gauss2
-!!$    real (kind=8)    :: DeltaS,sigma
-!!$    integer (kind=4) :: ip,ib,k,accepted
-!!$
-!!$    real (kind=8),dimension (dim)           :: xnew,xold
-!!$    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-!!$    real (kind=8),dimension (0:Nmax+1)      :: LogWF
-!!$    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
-!!$
-!!$    do ib=0,2*Nb
-!!$
-!!$        !Free particle sampling
-!!$
-!!$        do k=1,dim
-!!$
-!!$           xold(k) = Path(k,ip,ib)               
-!!$           
-!!$           call rangauss(1.d0,0.d0,gauss1,gauss2)
-!!$               
-!!$           if (ib==0) then
-!!$              xnext(k) = xold(k)-Path(k,ip,ib+1)
-!!$              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-!!$              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-!!$              xnext(k) = xold(k)-xnext(k)
-!!$
-!!$              xmid(k) = xnext(k)
-!!$              sigma   = sqrt(dt)
-!!$           else if (ib==2*Nb) then
-!!$              xprev(k) = Path(k,ip,ib-1)-xold(k)
-!!$              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-!!$              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-!!$              xprev(k) = xold(k)+xprev(k)
-!!$              
-!!$              xmid(k) = xprev(k)
-!!$              sigma   = sqrt(dt)
-!!$           else
-!!$              xprev(k) = Path(k,ip,ib-1)-xold(k)
-!!$              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-!!$              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-!!$              xprev(k) = xold(k)+xprev(k)
-!!$              
-!!$              xnext(k) = xold(k)-Path(k,ip,ib+1)
-!!$              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-!!$              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-!!$              xnext(k) = xold(k)-xnext(k)
-!!$              
-!!$              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
-!!$              sigma   = sqrt(0.5d0*dt)
-!!$           end if
-!!$
-!!$           xnew(k) = xmid(k)+sigma*gauss1
-!!$           
-!!$           !Periodic boundary conditions
-!!$           
-!!$           call BoundaryConditions(k,xnew(k))
-!!$
-!!$        end do
-!!$        
-!!$        call UpdateAction(LogWF,Path,ip,ib,xnew,xold,dt,DeltaS)
-!!$        
-!!$        !Metropolis question
-!!$        
-!!$        if (exp(-DeltaS)>=1.d0) then
-!!$           accept = .True.
-!!$        else
-!!$           if (exp(-DeltaS)>=grnd()) then
-!!$              accept = .True.
-!!$           else
-!!$              accept = .False.
-!!$           end if
-!!$        end if
-!!$        
-!!$        if (accept) then
-!!$           
-!!$           accepted = accepted+1
-!!$           
-!!$           do k=1,dim
-!!$              Path(k,ip,ib) = xnew(k)
-!!$           end do
-!!$           
-!!$        end if
-!!$        
-!!$     end do
-!!$     
-!!$    return
-!!$  end subroutine BeadSampling
+  subroutine BeadSampling(LogWF,VTable,dt,ip,Path,accepted)
+
+    implicit none
+
+    logical          :: accept
+    real (kind=8)    :: dt
+    real (kind=8)    :: gauss1,gauss2
+    real (kind=8)    :: DeltaS,sigma
+    integer (kind=4) :: ip,ib,k,accepted
+
+    real (kind=8),dimension (dim)           :: xnew,xold
+    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
+    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+
+    do ib=0,2*Nb
+
+        !Free particle sampling
+
+        do k=1,dim
+
+           xold(k) = Path(k,ip,ib)               
+           
+           call rangauss(1.d0,0.d0,gauss1,gauss2)
+               
+           if (ib==0) then
+              xnext(k) = xold(k)-Path(k,ip,ib+1)
+              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+              xnext(k) = xold(k)-xnext(k)
+
+              xmid(k) = xnext(k)
+              sigma   = sqrt(dt)
+           else if (ib==2*Nb) then
+              xprev(k) = Path(k,ip,ib-1)-xold(k)
+              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+              xprev(k) = xold(k)+xprev(k)
+              
+              xmid(k) = xprev(k)
+              sigma   = sqrt(dt)
+           else
+              xprev(k) = Path(k,ip,ib-1)-xold(k)
+              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+              xprev(k) = xold(k)+xprev(k)
+              
+              xnext(k) = xold(k)-Path(k,ip,ib+1)
+              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+              xnext(k) = xold(k)-xnext(k)
+              
+              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
+              sigma   = sqrt(0.5d0*dt)
+           end if
+
+           xnew(k) = xmid(k)+sigma*gauss1
+           
+           !Periodic boundary conditions
+           
+           call BoundaryConditions(k,xnew(k))
+
+        end do
+        
+        call UpdateAction(LogWF,VTable,Path,ip,ib,xnew,xold,dt,DeltaS)
+        
+        !Metropolis question
+        
+        if (exp(-DeltaS)>=1.d0) then
+           accept = .True.
+        else
+           if (exp(-DeltaS)>=grnd()) then
+              accept = .True.
+           else
+              accept = .False.
+           end if
+        end if
+        
+        if (accept) then
+           
+           accepted = accepted+1
+           
+           do k=1,dim
+              Path(k,ip,ib) = xnew(k)
+           end do
+           
+        end if
+        
+     end do
+     
+    return
+  end subroutine BeadSampling
 
 !-----------------------------------------------------------------------
 

@@ -39,7 +39,56 @@ contains
 
 !-----------------------------------------------------------------------
 
+!!$  function Potential(xij,rij)
+!!$
+!!$    !Aziz I HFDHE2 Potential
+!!$
+!!$    implicit none
+!!$
+!!$    logical, save :: FirstCall = .true.
+!!$    real (kind=8) :: Potential,Hx,rij
+!!$    real (kind=8) :: dij,dij2,dij4,dij6
+!!$
+!!$    real (kind=8), save            :: A,alpha,C6,C8,C10,D,V0,rm
+!!$    real (kind=8), dimension (dim) :: xij
+!!$
+!!$    if (FirstCall) then
+!!$
+!!$       !Parameters of the Aziz potential
+!!$
+!!$       V0    = 5.81817d0
+!!$       rm    = 2.9673d0
+!!$       A     = 0.54485046d6
+!!$       alpha = 13.353384d0
+!!$       C6    = 1.3732412d0
+!!$       C8    = 0.4253785d0
+!!$       C10   = 0.1781d0
+!!$       D     = 1.241314d0
+!!$
+!!$       FirstCall = .false.
+!!$
+!!$    end if
+!!$
+!!$    dij  = rij*2.556d0/rm
+!!$    dij2 = dij*dij
+!!$    dij4 = dij2*dij2
+!!$    dij6 = dij4*dij2
+!!$
+!!$    if (dij<=D) then
+!!$       Hx = exp(-(D/dij-1.d0)**2)
+!!$    else
+!!$       Hx = 1.d0
+!!$    end if
+!!$
+!!$    Potential = V0*(A*exp(-alpha*dij)-(C6+C8/dij2+C10/dij4)*Hx/dij6)
+!!$
+!!$  end function Potential
+
+!-----------------------------------------------------------------------
+
   function Potential(xij,rij)
+
+    !Aziz II HFD-B(HE) Potential
 
     implicit none
 
@@ -47,26 +96,28 @@ contains
     real (kind=8) :: Potential,Hx,rij
     real (kind=8) :: dij,dij2,dij4,dij6
 
-    real (kind=8), save            :: A,alpha,C6,C8,C10,D,V0
+    real (kind=8), save            :: A,alpha,beta,C6,C8,C10,D,V0,rm
     real (kind=8), dimension (dim) :: xij
 
     if (FirstCall) then
 
        !Parameters of the Aziz potential
 
-       V0    = 5.81817d0
-       A     = 0.54485046d6
-       alpha = 13.353384d0
-       C6    = 1.3732412d0
-       C8    = 0.4253785d0
-       C10   = 0.1781d0
-       D     = 1.241314d0
+       V0    = 5.89790047777778d0
+       rm    = 2.963d0
+       A     = 1.8443101d5
+       alpha = 10.43329537d0
+       beta  = -2.27965105d0
+       C6    = 1.36745214d0
+       C8    = 0.42123807d0
+       C10   = 0.17473318d0
+       D     = 1.4826d0
 
        FirstCall = .false.
 
     end if
 
-    dij  = rij*2.556d0/2.9673d0
+    dij  = rij*2.556d0/rm
     dij2 = dij*dij
     dij4 = dij2*dij2
     dij6 = dij4*dij2
@@ -77,7 +128,7 @@ contains
        Hx = 1.d0
     end if
 
-    Potential = V0*(A*exp(-alpha*dij)-(C6+C8/dij2+C10/dij4)*Hx/dij6)
+    Potential = V0*(A*exp(-alpha*dij+beta*dij2)-(C6+C8/dij2+C10/dij4)*Hx/dij6)
 
   end function Potential
 
