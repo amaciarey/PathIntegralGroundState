@@ -1,6 +1,7 @@
 #f90=gfortran -fno-range-check -O3 -flto -fno-protect-parens -ffast-math -funroll-loops -march=native
-f90=ifort -fast 
 #f90=gfortran -O3 -msse2 -flto -funroll-loops -fwhole-program -Wall -fno-range-check 
+f90=ifort -prof-gen -prof-dir/home/amacia/GIT/PathIntegralGroundState/prof  
+f90=ifort -prof-use -fast -prof-dir/home/amacia/GIT/PathIntegralGroundState/prof  
 
 vpi: \
 	random_mod.mod\

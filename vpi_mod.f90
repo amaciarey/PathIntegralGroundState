@@ -64,16 +64,15 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine ReadParameters(resume,crystal,wf_table,swapping,sampling,&
+  subroutine ReadParameters(resume,crystal,wf_table,v_table,swapping,sampling,&
        & density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
        & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
 
-    logical           :: resume, crystal, wf_table, swapping
+    logical           :: resume, crystal, wf_table, v_table, swapping
     character (len=3) :: sampling
-    real (kind=8)     :: density, alpha, dt, delta_cm
-    real (kind=8)     :: Rm
+    real (kind=8)     :: density, alpha, dt, delta_cm, Rm
     integer (kind=4)  :: dim, Np, Nb, seed, Lstag, Nstag, Nmax
     integer (kind=4)  :: Nobdm, Nblock, Nstep, Nbin, Nk, Nlev, CMFreq
 
@@ -128,6 +127,7 @@ contains
     read (1,*) Nmax
     read (1,*) Rm
     read (1,*) wf_table
+    read (1,*) v_table
     read (1,*)
     read (1,*)
     read (1,*) 
@@ -179,6 +179,39 @@ contains
 
     return
   end subroutine JastrowTable
+
+!-----------------------------------------------------------------------
+
+  subroutine PotentialTable(rmax,VTable)
+
+    implicit none
+    
+    real (kind=8)    :: rmax
+    real (kind=8)    :: r
+    integer (kind=4) :: i
+    
+    real (kind=8),dimension (0:Nmax+1) :: VTable
+    real (kind=8),dimension (dim)      :: x
+    
+    dr = rmax/real(Nmax-1)
+
+    open (unit=1,file='potential.out')
+
+    do i=1,Nmax
+       
+       r         = (i-1)*dr
+       VTable(i) = Potential(x,r)
+       write (1,'(20g20.10e3)') r,VTable(i)
+
+    end do
+    
+    close (unit=1)
+
+    VTable(0)      = VTable(2)
+    VTable(Nmax+1) = VTable(Nmax)
+
+    return
+  end subroutine PotentialTable
   
 !-----------------------------------------------------------------------
 
@@ -304,7 +337,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine TranslateChain(delta,LogWF,dt,ip,Path,accepted)
+  subroutine TranslateChain(delta,LogWF,VTable,dt,ip,Path,accepted)
 
     implicit none
 
@@ -314,7 +347,7 @@ contains
     integer (kind=4) :: ip,ib,k,accepted
 
     real (kind=8),dimension (dim)           :: xold,xnew,dx
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: NewChain
 
@@ -337,7 +370,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ib,xnew,xold,dt,DeltaS)
+       call UpdateAction(LogWF,VTable,Path,ip,ib,xnew,xold,dt,DeltaS)
        
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -372,7 +405,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine TranslateHalfChain(half,delta,LogWF,dt,ip,Path,xend,accepted)
+  subroutine TranslateHalfChain(half,delta,LogWF,VTable,dt,ip,Path,xend,accepted)
 
     implicit none
 
@@ -385,7 +418,7 @@ contains
     
     real (kind=8),dimension (dim)           :: xold,xnew,dx
     real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
 
@@ -426,7 +459,7 @@ contains
 
        end do
        
-       call UpdateAction(LogWF,Path,ip,ib,xnew,xold,dt,DeltaS)
+       call UpdateAction(LogWF,VTable,Path,ip,ib,xnew,xold,dt,DeltaS)
 
        SumDeltaS = SumDeltaS+DeltaS
 
@@ -467,102 +500,102 @@ contains
 
 !-----------------------------------------------------------------------
 
-!!$  subroutine BeadSampling(LogWF,dt,ip,Path,accepted)
-!!$
-!!$    implicit none
-!!$
-!!$    logical          :: accept
-!!$    real (kind=8)    :: dt
-!!$    real (kind=8)    :: gauss1,gauss2
-!!$    real (kind=8)    :: DeltaS,sigma
-!!$    integer (kind=4) :: ip,ib,k,accepted
-!!$
-!!$    real (kind=8),dimension (dim)           :: xnew,xold
-!!$    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-!!$    real (kind=8),dimension (0:Nmax+1)      :: LogWF
-!!$    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
-!!$
-!!$    do ib=0,2*Nb
-!!$
-!!$        !Free particle sampling
-!!$
-!!$        do k=1,dim
-!!$
-!!$           xold(k) = Path(k,ip,ib)               
-!!$           
-!!$           call rangauss(1.d0,0.d0,gauss1,gauss2)
-!!$               
-!!$           if (ib==0) then
-!!$              xnext(k) = xold(k)-Path(k,ip,ib+1)
-!!$              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-!!$              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-!!$              xnext(k) = xold(k)-xnext(k)
-!!$
-!!$              xmid(k) = xnext(k)
-!!$              sigma   = sqrt(dt)
-!!$           else if (ib==2*Nb) then
-!!$              xprev(k) = Path(k,ip,ib-1)-xold(k)
-!!$              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-!!$              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-!!$              xprev(k) = xold(k)+xprev(k)
-!!$              
-!!$              xmid(k) = xprev(k)
-!!$              sigma   = sqrt(dt)
-!!$           else
-!!$              xprev(k) = Path(k,ip,ib-1)-xold(k)
-!!$              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-!!$              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-!!$              xprev(k) = xold(k)+xprev(k)
-!!$              
-!!$              xnext(k) = xold(k)-Path(k,ip,ib+1)
-!!$              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-!!$              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-!!$              xnext(k) = xold(k)-xnext(k)
-!!$              
-!!$              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
-!!$              sigma   = sqrt(0.5d0*dt)
-!!$           end if
-!!$
-!!$           xnew(k) = xmid(k)+sigma*gauss1
-!!$           
-!!$           !Periodic boundary conditions
-!!$           
-!!$           call BoundaryConditions(k,xnew(k))
-!!$
-!!$        end do
-!!$        
-!!$        call UpdateAction(LogWF,Path,ip,ib,xnew,xold,dt,DeltaS)
-!!$        
-!!$        !Metropolis question
-!!$        
-!!$        if (exp(-DeltaS)>=1.d0) then
-!!$           accept = .True.
-!!$        else
-!!$           if (exp(-DeltaS)>=grnd()) then
-!!$              accept = .True.
-!!$           else
-!!$              accept = .False.
-!!$           end if
-!!$        end if
-!!$        
-!!$        if (accept) then
-!!$           
-!!$           accepted = accepted+1
-!!$           
-!!$           do k=1,dim
-!!$              Path(k,ip,ib) = xnew(k)
-!!$           end do
-!!$           
-!!$        end if
-!!$        
-!!$     end do
-!!$     
-!!$    return
-!!$  end subroutine BeadSampling
+  subroutine BeadSampling(LogWF,VTable,dt,ip,Path,accepted)
+
+    implicit none
+
+    logical          :: accept
+    real (kind=8)    :: dt
+    real (kind=8)    :: gauss1,gauss2
+    real (kind=8)    :: DeltaS,sigma
+    integer (kind=4) :: ip,ib,k,accepted
+
+    real (kind=8),dimension (dim)           :: xnew,xold
+    real (kind=8),dimension (dim)           :: xmid,xprev,xnext
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
+    real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
+
+    do ib=0,2*Nb
+
+        !Free particle sampling
+
+        do k=1,dim
+
+           xold(k) = Path(k,ip,ib)               
+           
+           call rangauss(1.d0,0.d0,gauss1,gauss2)
+               
+           if (ib==0) then
+              xnext(k) = xold(k)-Path(k,ip,ib+1)
+              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+              xnext(k) = xold(k)-xnext(k)
+
+              xmid(k) = xnext(k)
+              sigma   = sqrt(dt)
+           else if (ib==2*Nb) then
+              xprev(k) = Path(k,ip,ib-1)-xold(k)
+              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+              xprev(k) = xold(k)+xprev(k)
+              
+              xmid(k) = xprev(k)
+              sigma   = sqrt(dt)
+           else
+              xprev(k) = Path(k,ip,ib-1)-xold(k)
+              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+              xprev(k) = xold(k)+xprev(k)
+              
+              xnext(k) = xold(k)-Path(k,ip,ib+1)
+              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+              xnext(k) = xold(k)-xnext(k)
+              
+              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
+              sigma   = sqrt(0.5d0*dt)
+           end if
+
+           xnew(k) = xmid(k)+sigma*gauss1
+           
+           !Periodic boundary conditions
+           
+           call BoundaryConditions(k,xnew(k))
+
+        end do
+        
+        call UpdateAction(LogWF,VTable,Path,ip,ib,xnew,xold,dt,DeltaS)
+        
+        !Metropolis question
+        
+        if (exp(-DeltaS)>=1.d0) then
+           accept = .True.
+        else
+           if (exp(-DeltaS)>=grnd()) then
+              accept = .True.
+           else
+              accept = .False.
+           end if
+        end if
+        
+        if (accept) then
+           
+           accepted = accepted+1
+           
+           do k=1,dim
+              Path(k,ip,ib) = xnew(k)
+           end do
+           
+        end if
+        
+     end do
+     
+    return
+  end subroutine BeadSampling
 
 !-----------------------------------------------------------------------
 
-  subroutine Staging(LogWF,dt,Lstag,ip,Path,accepted)
+  subroutine Staging(LogWF,VTable,dt,Lstag,ip,Path,accepted)
 
     implicit none 
 
@@ -576,7 +609,7 @@ contains
 
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
@@ -621,7 +654,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
 
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -658,7 +691,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine StagingHalfChain(half,LogWF,dt,Lstag,ip,Path,xend,accepted)
+  subroutine StagingHalfChain(half,LogWF,VTable,dt,Lstag,ip,Path,xend,accepted)
 
     implicit none 
 
@@ -674,7 +707,7 @@ contains
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
     real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
@@ -728,7 +761,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS) 
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS) 
 
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -771,7 +804,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveHead(LogWF,dt,Lmax,ip,Path,accepted)
+  subroutine MoveHead(LogWF,VTable,dt,Lmax,ip,Path,accepted)
 
     implicit none 
 
@@ -786,7 +819,7 @@ contains
 
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
@@ -831,7 +864,7 @@ contains
        
     end do
 
-    call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
+    call UpdateAction(LogWF,VTable,Path,ip,ii,xnew,xold,dt,DeltaS)       
 
     SumDeltaS = SumDeltaS+DeltaS
 
@@ -867,7 +900,7 @@ contains
           
        end do
 
-       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
 
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -904,7 +937,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveHeadHalfChain(half,LogWF,dt,Lmax,ip,Path,xend,accepted)
+  subroutine MoveHeadHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,accepted)
 
     implicit none 
 
@@ -922,7 +955,7 @@ contains
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
     real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
         
@@ -976,7 +1009,7 @@ contains
        
     end do
 
-    call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
+    call UpdateAction(LogWF,VTable,Path,ip,ii,xnew,xold,dt,DeltaS)       
 
     if (half==1) then
        SumDeltaS = SumDeltaS+DeltaS
@@ -1016,7 +1049,7 @@ contains
           
        end do
 
-       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS)
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)
 
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -1059,7 +1092,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveTail(LogWF,dt,Lmax,ip,Path,accepted)
+  subroutine MoveTail(LogWF,VTable,dt,Lmax,ip,Path,accepted)
 
     implicit none 
     
@@ -1074,7 +1107,7 @@ contains
     
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
@@ -1116,7 +1149,7 @@ contains
        
     end do
     
-    call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
+    call UpdateAction(LogWF,VTable,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
     SumDeltaS = SumDeltaS+DeltaS
     
@@ -1152,7 +1185,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
        
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -1189,7 +1222,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveTailHalfChain(half,LogWF,dt,Lmax,ip,Path,xend,accepted)
+  subroutine MoveTailHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,accepted)
 
     implicit none 
     
@@ -1206,7 +1239,7 @@ contains
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
     real (kind=8),dimension (dim,2)         :: xend
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
         
@@ -1257,7 +1290,7 @@ contains
        
     end do
     
-    call UpdateAction(LogWF,Path,ip,ii+Ls,xnew,xold,dt,DeltaS) 
+    call UpdateAction(LogWF,VTable,Path,ip,ii+Ls,xnew,xold,dt,DeltaS) 
     
     if (half==1) then
        SumDeltaS = SumDeltaS+0.5d0*DeltaS
@@ -1297,7 +1330,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS) 
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS) 
 
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -1340,7 +1373,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine Bisection(LogWF,dt,level,ip,Path,accepted)
+  subroutine Bisection(LogWF,VTable,dt,level,ip,Path,accepted)
 
     implicit none
 
@@ -1358,7 +1391,7 @@ contains
         
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
@@ -1424,7 +1457,7 @@ contains
              
           end do
 
-          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
+          call UpdateAction(LogWF,VTable,Path,ip,icurr,xnew,xold,dt,DeltaS)
           
           LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
           SumDeltaS   = SumDeltaS+DeltaS
@@ -1478,7 +1511,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveHeadBisection(LogWF,dt,level,ip,Path,accepted)
+  subroutine MoveHeadBisection(LogWF,VTable,dt,level,ip,Path,accepted)
 
     implicit none
 
@@ -1496,7 +1529,7 @@ contains
         
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
@@ -1541,7 +1574,7 @@ contains
        
     end do
 
-    call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)    
+    call UpdateAction(LogWF,VTable,Path,ip,ii,xnew,xold,dt,DeltaS)    
 
     SumDeltaS  = SumDeltaS+DeltaS
     PrevDeltaS = 0.d0
@@ -1589,7 +1622,7 @@ contains
              
           end do
 
-          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
+          call UpdateAction(LogWF,VTable,Path,ip,icurr,xnew,xold,dt,DeltaS)
           
           LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
           SumDeltaS   = SumDeltaS+DeltaS
@@ -1643,7 +1676,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveTailBisection(LogWF,dt,level,ip,Path,accepted)
+  subroutine MoveTailBisection(LogWF,VTable,dt,level,ip,Path,accepted)
 
     implicit none
 
@@ -1661,7 +1694,7 @@ contains
         
     real (kind=8),dimension (dim)           :: xnew,xold
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
     
@@ -1708,7 +1741,7 @@ contains
        
     end do
 
-    call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
+    call UpdateAction(LogWF,VTable,Path,ip,ie,xnew,xold,dt,DeltaS)       
 
     SumDeltaS  = SumDeltaS+DeltaS
     PrevDeltaS = 0.d0
@@ -1756,7 +1789,7 @@ contains
              
           end do
 
-          call UpdateAction(LogWF,Path,ip,icurr,xnew,xold,dt,DeltaS)
+          call UpdateAction(LogWF,VTable,Path,ip,icurr,xnew,xold,dt,DeltaS)
           
           LevelDeltaS = LevelDeltaS+2**(Nlev-ilev)*DeltaS
           SumDeltaS   = SumDeltaS+DeltaS
@@ -1810,7 +1843,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine OpenChain(LogWF,density,dt,Lmax,ip,Path,xend,isopen,accepted)
+  subroutine OpenChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,accepted)
     
     implicit none
 
@@ -1829,7 +1862,7 @@ contains
     real (kind=8),dimension (dim,2)         :: xend
     real (kind=8),dimension (dim)           :: xnew,xold,xij
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
 
@@ -1889,7 +1922,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
     else
 
@@ -1942,7 +1975,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ii,xnew,xold,dt,DeltaS)       
        
     end if
     
@@ -1980,7 +2013,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
        
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -2035,7 +2068,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine CloseChain(LogWF,density,dt,Lmax,ip,Path,xend,isopen,accepted)
+  subroutine CloseChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,accepted)
 
     implicit none
 
@@ -2054,7 +2087,7 @@ contains
     real (kind=8),dimension (dim,2)         :: xend
     real (kind=8),dimension (dim)           :: xnew,xold,xij
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain
 
@@ -2083,7 +2116,7 @@ contains
           xnew(k)       = Path(k,ip,ie)          
        end do
 
-       call UpdateAction(LogWF,Path,ip,ie,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
     else
        
@@ -2105,7 +2138,7 @@ contains
           xnew(k)       = Path(k,ip,ii)
        end do
 
-       call UpdateAction(LogWF,Path,ip,ii,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ii,xnew,xold,dt,DeltaS)       
     
     end if
 
@@ -2143,7 +2176,7 @@ contains
           
        end do
        
-       call UpdateAction(LogWF,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
        
        SumDeltaS = SumDeltaS+DeltaS
        
@@ -2206,7 +2239,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine Swap(LogWF,dt,Lmax,iw,Path,xend,accepted)
+  subroutine Swap(LogWF,VTable,dt,Lmax,iw,Path,xend,accepted)
     implicit none
 
     logical          :: accept
@@ -2224,7 +2257,7 @@ contains
     real (kind=8),dimension (dim,2)         :: xend
     real (kind=8),dimension (dim)           :: xnew,xold,xij
     real (kind=8),dimension (dim)           :: xmid,xprev,xnext
-    real (kind=8),dimension (0:Nmax+1)      :: LogWF
+    real (kind=8),dimension (0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension (dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension (dim,0:2*Nb)    :: OldChain,OldWorm 
     
@@ -2335,7 +2368,7 @@ contains
                 
              end do
        
-             call UpdateAction(LogWF,Path,ik,ii+j,xnew,xold,dt,DeltaS)  
+             call UpdateAction(LogWF,VTable,Path,ik,ii+j,xnew,xold,dt,DeltaS)  
 
              SumDeltaS = SumDeltaS+DeltaS
        
@@ -2389,7 +2422,7 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine UpdateAction(LogWF,Path,ip,ib,xnew,xold,dt,DeltaS)
+  subroutine UpdateAction(LogWF,VTable,Path,ip,ib,xnew,xold,dt,DeltaS)
 
     implicit none
 
@@ -2399,7 +2432,7 @@ contains
     integer (kind=4) :: ib
     integer (kind=4) :: ip
         
-    real (kind=8),dimension(0:Nmax+1)      :: LogWF
+    real (kind=8),dimension(0:Nmax+1)      :: LogWF,VTable
     real (kind=8),dimension(dim,Np,0:2*Nb) :: Path
     real (kind=8),dimension(dim)           :: xnew,xold
     
@@ -2407,10 +2440,10 @@ contains
     !and old configuration of the displaced bead
     
     if (mod(ib,2)==0) then
-       call UpdatePot(ip,Path(:,:,ib),xnew,xold,DeltaPot)
+       call UpdatePot(VTable,ip,Path(:,:,ib),xnew,xold,DeltaPot)
        DeltaF2 = 0.d0
     else
-       call UpdatePot(ip,Path(:,:,ib),xnew,xold,DeltaPot,DeltaF2)
+       call UpdatePot(VTable,ip,Path(:,:,ib),xnew,xold,DeltaPot,DeltaF2)
     end if
 
     !Contribution of the wave function at the begining and the end of the 
@@ -2513,7 +2546,7 @@ contains
   
 !-----------------------------------------------------------------------
 
-  subroutine UpdatePot(ip,R,xnew,xold,DeltaPot,DeltaF2)
+  subroutine UpdatePot(VTable,ip,R,xnew,xold,DeltaPot,DeltaF2)
 
     implicit none
 
@@ -2522,15 +2555,17 @@ contains
     real (kind=8)    :: Fnew2,Fold2
     real (kind=8)    :: rijnew2,rijold2
     real (kind=8)    :: rijnew,rijold
+    real (kind=8)    :: Interpolate
     integer (kind=4) :: ip,jp
     integer (kind=4) :: k
 
     real (kind=8), optional :: DeltaF2
-        
-    real (kind=8),dimension(dim,Np) :: R
-    real (kind=8),dimension(dim)    :: xnew,xold
-    real (kind=8),dimension(dim)    :: xijnew,xijold
-    real (kind=8),dimension(dim)    :: Fnew,Fold
+    
+    real (kind=8),dimension(0:Nmax+1) :: VTable
+    real (kind=8),dimension(dim,Np)   :: R
+    real (kind=8),dimension(dim)      :: xnew,xold
+    real (kind=8),dimension(dim)      :: xijnew,xijold
+    real (kind=8),dimension(dim)      :: Fnew,Fold
     
     PotNew = 0.d0
     PotOld = 0.d0
@@ -2558,13 +2593,23 @@ contains
           if (rijnew2<=rcut2) then
              
              rijnew = sqrt(rijnew2)
-             PotNew = PotNew+Potential(xijnew,rijnew)
 
+             if (v_table) then
+                PotNew = PotNew+Interpolate(0,Nmax,dr,VTable,rijnew)
+             else
+                PotNew = PotNew+Potential(xijnew,rijnew)
+             end if
 
              if (present(DeltaF2)) then
-                do k=1,dim
-                   Fnew(k) = Fnew(k)+Force(k,xijnew,rijnew)
-                end do
+                if (v_table) then
+                   do k=1,dim
+                      Fnew(k) = Fnew(k)+Interpolate(1,Nmax,dr,VTable,rijnew)*xijnew(k)/rijnew
+                   end do
+                else
+                   do k=1,dim
+                      Fnew(k) = Fnew(k)+Force(k,xijnew,rijnew)
+                   end do
+                end if
              end if
 
           end if
@@ -2572,12 +2617,23 @@ contains
           if (rijold2<=rcut2) then
              
              rijold = sqrt(rijold2)
-             PotOld = PotOld+Potential(xijold,rijold)
+
+             if (v_table) then
+                PotOld = PotOld+Interpolate(0,Nmax,dr,VTable,rijold)
+             else
+                PotOld = PotOld+Potential(xijold,rijold)
+             end if
 
              if (present(DeltaF2)) then
-                do k=1,dim
-                   Fold(k) = Fold(k)+Force(k,xijold,rijold)
-                end do
+                if (v_table) then
+                   do k=1,dim
+                      Fold(k) = Fold(k)+Interpolate(1,Nmax,dr,VTable,rijold)*xijold(k)/rijold
+                   end do
+                else
+                   do k=1,dim
+                      Fold(k) = Fold(k)+Force(k,xijold,rijold)
+                   end do
+                end if
              end if
 
           end if
