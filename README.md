@@ -1,9 +1,6 @@
 # PATH INTEGRAL GROUND STATE MONTE CARLO
 
-This is a Path Integral Ground state Monte Carlo code written in Fortran. It is intended to the description of dipolar 
-bosons in two dimensions but it can be easily extended to any other homogeneous system in any dimensions.
-
-The code is structured as follows:
+Path integral ground state Monte Carlo (PIGS) is a quantum Monte Carlo method intended to the study of quantum many body systems at zero temperature. This method solves the many body Schrödinger equation of the system by propagating an initial (or trial) wave function in imaginary time making that any non ground state contribution present in the initial guess of the wave function vanishes. The imaginary time propagation is implemented by successive application of the quantum propagator of the system. 
 
 **VPI.F90**
 
