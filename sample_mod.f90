@@ -1,6 +1,5 @@
 module sample_mod
 
-use vpi_mod 
 use global_mod
 use system_mod
 use pbc_mod
