@@ -27,6 +27,7 @@ staging         # Sampling method for the diagonal movements (sta=staging, bis=b
 10000           # Grid points for the tabulation of the wave function
 0.015d0         # Variational parameter
 .true.          # .true. if tabulate the wave function, .false. otherwise
+.false.         # .true. if tabulate the interaction potential, .false. otherwise
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
