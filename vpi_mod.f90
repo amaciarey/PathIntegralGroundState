@@ -216,7 +216,6 @@ contains
           do ip=1,Np
              do k=1,dim
                 R(k,ip) = Lbox(k)*(grnd()-0.5d0)
-                !R(k,ip) = Lbox(k)*grnd()
              end do
           end do
     
@@ -2488,7 +2487,8 @@ contains
     end do
     
     DeltaPsi = PsiNew-PsiOld
-    
+
+    return    
   end subroutine UpdateWf
   
 !-----------------------------------------------------------------------

@@ -6,16 +6,16 @@
 
 2               # Dimensions
 64              # Number of particles
-320.d0          # Density
+256.d0          # Density
 0.6d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-3.00E-5         # Time step 
+4.00E-5         # Time step 
 40              # Number of beads 
 1982            # Seed of the random number generator
-0.10d0		# Size of the CM movements (in units of density^(1/dim))
+0.12d0		# Size of the CM movements (in units of density^(1/dim))
 1               # Frequency of CM updates 
 staging         # Sampling method for the diagonal movements (sta=staging, bis=bisection)
 16              # Length of the Staging movements
@@ -25,20 +25,20 @@ staging         # Sampling method for the diagonal movements (sta=staging, bis=b
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
 
 10000           # Grid points for the tabulation of the wave function
-0.015d0         # Variational parameter
+0.020d0         # Variational parameter
 .true.          # .true. if tabulate the wave function, .false. otherwise
 .false.         # .true. if tabulate the interaction potential, .false. otherwise
 
 # PARAMETERS FOR THE SAMPLING OF THE OBDM
 
 .true.          # .true. if swap updates will be used, .false. otherwise
-6.d-1           # C0 constant of the WORM algorithm
+5.d-1           # C0 constant of the WORM algorithm
 10              # Number of evaluation of OBDM per step
 5               # Maximum angular momentum partial wave in OBDM
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-2000             # Number of blocks
+200             # Number of blocks
 100             # Steps per block
 50              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
