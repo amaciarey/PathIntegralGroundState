@@ -154,7 +154,8 @@ print *,    ''
 !Initializing accumulators
 
 allocate (gr(Nbin),AvGr(Nbin),AvGr2(Nbin),VarGr(Nbin))
-allocate (nrho(0:Npw,Nbin),AvNr(0:Npw,Nbin),AvNr2(0:Npw,Nbin),VarNr(0:Npw,Nbin))
+allocate (nrho(0:Npw,Nbin),AvNr(0:Npw,Nbin),AvNr2(0:Npw,Nbin),&
+         &VarNr(0:Npw,Nbin))
 allocate (Sk(dim,Nk),AvSk(dim,Nk),AvSk2(dim,Nk),VarSk(dim,Nk))
 
 open (unit=1,file='e_vpi.out')
@@ -252,20 +253,22 @@ do iblock=1,Nblock
    
    do istep=1,Nstep
 
-      !Open and Close updates to determine if the system is in a diagonal
-      !or in an off-diagonal configuration
+      !Open and Close updates to determine if the system is in a 
+      !diagonal or in an off-diagonal configuration
 
       iupdate = int(grnd()*2)
 
       if (isopen) then
          if (iupdate == 0) then
-            call CloseChain(LogWF,VTable,density,dt,Lstag,iworm,Path,xend,isopen,acc_close)
+            call CloseChain(LogWF,VTable,density,dt,Lstag,iworm,Path,&
+                           &xend,isopen,acc_close)
             try_close = try_close+1
          end if
       else
          if (iupdate == 1) then
             iworm = int(grnd()*Np)+1
-            call OpenChain(LogWF,VTable,density,dt,Lstag,iworm,Path,xend,isopen,acc_open)
+            call OpenChain(LogWF,VTable,density,dt,Lstag,iworm,Path,&
+                          &xend,isopen,acc_open)
             try_open = try_open+1
          end if
       end if
@@ -280,7 +283,8 @@ do iblock=1,Nblock
                
                if (mod(istep,CMFreq)==0) then               
                   try_cm = try_cm+1
-                  call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,acc_cm)
+                  call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,&
+                                     &acc_cm)
                end if
 
                do istag=1,Nstag
@@ -288,16 +292,18 @@ do iblock=1,Nblock
                   try_stag = try_stag+1
                   
                   if (sampling=="sta") then
-                     call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,acc_head)
-                     call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,acc_tail)
+                     call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,&
+                                  &acc_head)
+                     call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,&
+                                  &acc_tail)
                      call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
                   else
-                     call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_head)
-                     call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_tail)
+                     call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
+                                           &acc_head)
+                     call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
+                                           &acc_tail)
                      call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
                   end if
-!!$
-!!$                  call BeadSampling(LogWF,VTable,dt,ip,Path,acc_bd)
 
                end do
 
@@ -309,7 +315,9 @@ do iblock=1,Nblock
 
                      do j=1,2
                         try_cm_half = try_cm_half+1
-                        call TranslateHalfChain(j,delta_cm,LogWF,VTable,dt,ip,Path,xend,acc_cm_half)
+                        call TranslateHalfChain(j,delta_cm,LogWF,VTable,&
+                                               &dt,ip,Path,xend,&
+                                               &acc_cm_half)
                      end do
 
                   end if
@@ -320,19 +328,23 @@ do iblock=1,Nblock
                   
                         try_stag_half = try_stag_half+1
                         
-                        call MoveHeadHalfChain(j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_head_half)
-                        call MoveTailHalfChain(j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_tail_half)
-                        call StagingHalfChain(j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_bd_half)
+                        call MoveHeadHalfChain(j,LogWF,VTable,dt,Lstag,&
+                                              &ip,Path,xend,&
+                                              &acc_head_half)
+                        call MoveTailHalfChain(j,LogWF,VTable,dt,Lstag,&
+                                              &ip,Path,xend,&
+                                              &acc_tail_half)
+                        call StagingHalfChain(j,LogWF,VTable,dt,Lstag,&
+                                             &ip,Path,xend,acc_bd_half)
                         
                      end do
-!!$
-!!$                     call BeadSampling(LogWF,VTable,dt,ip,Path,acc_bd)
 
                      if (swapping) then
                         
                         try_swap = try_swap+1
 
-                        call Swap(LogWF,VTable,dt,Lstag,ip,Path,xend,acc_swap)
+                        call Swap(LogWF,VTable,dt,Lstag,ip,Path,xend,&
+                                 &acc_swap)
 
                      end if
 
@@ -356,7 +368,8 @@ do iblock=1,Nblock
 
             if (mod(istep,CMFreq)==0) then
                try_cm = try_cm+1
-               call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,acc_cm)
+               call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,&
+                                  &acc_cm)
             end if
 
             do istag=1,Nstag
@@ -368,12 +381,12 @@ do iblock=1,Nblock
                   call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,acc_tail)
                   call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
                else
-                  call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_head)
-                  call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,acc_tail)
+                  call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
+                                        &acc_head)
+                  call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
+                                        &acc_tail)
                   call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
                end if
-!!$
-!!$               call BeadSampling(LogWF,VTable,dt,ip,Path,acc_bd)
 
             end do
                
@@ -397,8 +410,10 @@ do iblock=1,Nblock
          call Accumulate(E,Kin,Pot,BlockAvE,BlockAvK,BlockAvV)
          call Accumulate(Et,Kt,Pot,BlockAvEt,BlockAvKt,BlockAvVt)
 
-         call Accumulate(E**2,Kin**2,Pot**2,BlockAvE2,BlockAvK2,BlockAvV2)
-         call Accumulate(Et**2,Kt**2,Pot**2,BlockAvEt2,BlockAvKt2,BlockAvVt2)
+         call Accumulate(E**2,Kin**2,Pot**2,BlockAvE2,BlockAvK2,&
+                        &BlockAvV2)
+         call Accumulate(Et**2,Kt**2,Pot**2,BlockAvEt2,BlockAvKt2,&
+                        &BlockAvVt2)
 
          !Structural quantities
       
@@ -437,18 +452,22 @@ do iblock=1,Nblock
       diag_bl = diag_bl+1
       
       call Accumulate(BlockAvE,BlockAvK,BlockAvV,AvE,AvK,AvV)
-      call Accumulate(BlockAvE**2,BlockAvK**2,BlockAvV**2,AvE2,AvK2,AvV2)
+      call Accumulate(BlockAvE**2,BlockAvK**2,BlockAvV**2,&
+                     &AvE2,AvK2,AvV2)
 
       call Accumulate(BlockAvEt,BlockAvKt,BlockAvVt,AvEt,AvKt,AvVt)
-      call Accumulate(BlockAvEt**2,BlockAvKt**2,BlockAvVt**2,AvEt2,AvKt2,AvVt2)
+      call Accumulate(BlockAvEt**2,BlockAvKt**2,BlockAvVt**2,&
+                     &AvEt2,AvKt2,AvVt2)
       
       call AccumGr(gr,AvGr,AvGr2)
       call AccumSk(Nk,Sk,AvSk,AvSk2)      
 
       !Outputs of the block
 
-      write (1,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,BlockAvV/Np
-      write (2,'(5g20.10e3)') real(iblock),BlockAvEt/Np,BlockAvKt/Np,BlockAvVt/Np
+      write (1,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,&
+                              &BlockAvV/Np
+      write (2,'(5g20.10e3)') real(iblock),BlockAvEt/Np,BlockAvKt/Np,&
+                              &BlockAvVt/Np
 
    end if
 

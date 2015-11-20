@@ -11,8 +11,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine ReadParameters(resume,crystal,wf_table,v_table,swapping,sampling,&
-       & density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
+  subroutine ReadParameters(resume,crystal,wf_table,v_table,swapping,&
+       & sampling,density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
        & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
@@ -351,7 +351,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine TranslateHalfChain(half,delta,LogWF,VTable,dt,ip,Path,xend,accepted)
+  subroutine TranslateHalfChain(half,delta,LogWF,VTable,dt,ip,Path,xend,&
+       & accepted)
 
     implicit none
 
@@ -637,7 +638,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine StagingHalfChain(half,LogWF,VTable,dt,Lstag,ip,Path,xend,accepted)
+  subroutine StagingHalfChain(half,LogWF,VTable,dt,Lstag,ip,Path,xend,&
+       & accepted)
 
     implicit none 
 
@@ -883,7 +885,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveHeadHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,accepted)
+  subroutine MoveHeadHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,&
+       & accepted)
 
     implicit none 
 
@@ -1168,7 +1171,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveTailHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,accepted)
+  subroutine MoveTailHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,&
+       & accepted)
 
     implicit none 
     
@@ -1789,7 +1793,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine OpenChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,accepted)
+  subroutine OpenChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,&
+       & accepted)
     
     implicit none
 
@@ -2014,7 +2019,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine CloseChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,accepted)
+  subroutine CloseChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,&
+       & accepted)
 
     implicit none
 
@@ -2550,7 +2556,9 @@ contains
              if (present(DeltaF2)) then
                 if (v_table) then
                    do k=1,dim
-                      Fnew(k) = Fnew(k)+Interpolate(1,Nmax,dr,VTable,rijnew)*xijnew(k)/rijnew
+                      Fnew(k) = Fnew(k)+&
+                              & Interpolate(1,Nmax,dr,VTable,rijnew)*&
+                              & xijnew(k)/rijnew
                    end do
                 else
                    do k=1,dim
@@ -2574,7 +2582,9 @@ contains
              if (present(DeltaF2)) then
                 if (v_table) then
                    do k=1,dim
-                      Fold(k) = Fold(k)+Interpolate(1,Nmax,dr,VTable,rijold)*xijold(k)/rijold
+                      Fold(k) = Fold(k)+&
+                              & Interpolate(1,Nmax,dr,VTable,rijold)*&
+                              & xijold(k)/rijold
                    end do
                 else
                    do k=1,dim

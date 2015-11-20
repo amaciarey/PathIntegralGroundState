@@ -7,25 +7,25 @@
 2               # Dimensions
 64              # Number of particles
 256.d0          # Density
-0.6d0           # Polarization angle
+0.0d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-4.00E-5         # Time step 
-40              # Number of beads 
+1.20E-4         # Time step 
+12              # Number of beads 
 1982            # Seed of the random number generator
 0.12d0		# Size of the CM movements (in units of density^(1/dim))
 1               # Frequency of CM updates 
 staging         # Sampling method for the diagonal movements (sta=staging, bis=bisection)
-16              # Length of the Staging movements
+6               # Length of the Staging movements
 4               # Bisection level, implies that the length of movements is 2**Nlev
-4               # Number of sampling movements per step
+10              # Number of sampling movements per step
 
 # PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
 
 10000           # Grid points for the tabulation of the wave function
-0.020d0         # Variational parameter
+0.050d0         # Variational parameter
 .true.          # .true. if tabulate the wave function, .false. otherwise
 .false.         # .true. if tabulate the interaction potential, .false. otherwise
 

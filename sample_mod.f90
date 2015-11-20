@@ -62,8 +62,12 @@ contains
                 if (v_table) then
                    
                    do k=1,dim
-                      F(k,ip) = F(k,ip)+Interpolate(1,Nmax,dr,VTable,rij)*xij(k)/rij
-                      F(k,jp) = F(k,jp)-Interpolate(1,Nmax,dr,VTable,rij)*xij(k)/rij
+                      F(k,ip) = F(k,ip)+&
+                              & Interpolate(1,Nmax,dr,VTable,rij)*&
+                              & xij(k)/rij
+                      F(k,jp) = F(k,jp)-&
+                              & Interpolate(1,Nmax,dr,VTable,rij)*&
+                              & xij(k)/rij
                    end do
 
                 else
@@ -489,10 +493,7 @@ contains
        do m=0,Npw
           nrho(m,ibin) = nrho(m,ibin)/(CWorm*nid*zconf*real(Nobdm))
        end do
-       !write (98,'(20g20.10e3)') r,(nrho(m,ibin),m=0,Npw)
     end do
-    !write (98,*) 
-    !write (98,*)
     
     return
   end subroutine NormalizeNr
