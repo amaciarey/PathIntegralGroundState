@@ -3,7 +3,7 @@
 #f90=ifort -prof-gen -prof-dir/home/amacia/GIT/PathIntegralGroundState/prof  
 #f90=ifort -prof-use -fast -prof-dir/home/amacia/GIT/PathIntegralGroundState/prof  
 f90=gfortran -Ofast -fno-range-check -flto -funroll-loops
-#f90=ifort -fast
+#f90=ifort -parallel
 
 vpi: \
 	random_mod.mod\
