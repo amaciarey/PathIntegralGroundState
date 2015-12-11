@@ -11,61 +11,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  function GreenFunction(opt,ib,dt,Pot,F2)
-
-    implicit none
-
-    real (kind=8)    :: GreenFunction
-    real (kind=8)    :: dt,Pot,F2
-    real (kind=8)    :: Ve,dVe
-    real (kind=8)    :: Vc,dVc
-    integer (kind=4) :: ib,opt
-
-    GreenFunction = 0.d0
-
-    if (opt==0) then
-
-       Ve = Pot
-       Vc = Pot+dt**2*F2/6.d0
-
-       if (ib==0) then
-          GreenFunction = dt*Ve/3.d0
-       else if (ib==2*Nb) then
-          GreenFunction = dt*Ve/3.d0
-       else
-          if (mod(ib,2)==0) then
-             GreenFunction = 2.d0*dt*Ve/3.d0
-          else
-             GreenFunction = 4.d0*dt*Vc/3.d0
-          end if
-       end if
-
-    else if (opt==1) then
-       
-       dVe = Pot
-       dVc = Pot+dt**2*F2/2.d0
-
-       if (ib==0) then
-          GreenFunction = dVe/3.d0
-       else if (ib==2*Nb) then
-          GreenFunction = dVe/3.d0
-       else
-          if (mod(ib,2)==0) then
-             GreenFunction = 2.d0*dVe/3.d0
-          else
-             GreenFunction = 4.d0*dVc/3.d0
-          end if
-       end if
-
-    end if
-       
-    return
-  end function GreenFunction
-
-!-----------------------------------------------------------------------
-
-  subroutine ReadParameters(resume,crystal,wf_table,v_table,swapping,sampling,&
-       & density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
+  subroutine ReadParameters(resume,crystal,wf_table,v_table,swapping,&
+       & sampling,density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
        & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
     
     implicit none
@@ -269,7 +216,6 @@ contains
           do ip=1,Np
              do k=1,dim
                 R(k,ip) = Lbox(k)*(grnd()-0.5d0)
-                !R(k,ip) = Lbox(k)*grnd()
              end do
           end do
     
@@ -405,7 +351,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine TranslateHalfChain(half,delta,LogWF,VTable,dt,ip,Path,xend,accepted)
+  subroutine TranslateHalfChain(half,delta,LogWF,VTable,dt,ip,Path,xend,&
+       & accepted)
 
     implicit none
 
@@ -691,7 +638,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine StagingHalfChain(half,LogWF,VTable,dt,Lstag,ip,Path,xend,accepted)
+  subroutine StagingHalfChain(half,LogWF,VTable,dt,Lstag,ip,Path,xend,&
+       & accepted)
 
     implicit none 
 
@@ -937,7 +885,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveHeadHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,accepted)
+  subroutine MoveHeadHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,&
+       & accepted)
 
     implicit none 
 
@@ -1222,7 +1171,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine MoveTailHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,accepted)
+  subroutine MoveTailHalfChain(half,LogWF,VTable,dt,Lmax,ip,Path,xend,&
+       & accepted)
 
     implicit none 
     
@@ -1843,7 +1793,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine OpenChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,accepted)
+  subroutine OpenChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,&
+       & accepted)
     
     implicit none
 
@@ -2068,7 +2019,8 @@ contains
 
 !-----------------------------------------------------------------------
 
-  subroutine CloseChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,accepted)
+  subroutine CloseChain(LogWF,VTable,density,dt,Lmax,ip,Path,xend,isopen,&
+       & accepted)
 
     implicit none
 
@@ -2541,7 +2493,8 @@ contains
     end do
     
     DeltaPsi = PsiNew-PsiOld
-    
+
+    return    
   end subroutine UpdateWf
   
 !-----------------------------------------------------------------------
@@ -2603,7 +2556,9 @@ contains
              if (present(DeltaF2)) then
                 if (v_table) then
                    do k=1,dim
-                      Fnew(k) = Fnew(k)+Interpolate(1,Nmax,dr,VTable,rijnew)*xijnew(k)/rijnew
+                      Fnew(k) = Fnew(k)+&
+                              & Interpolate(1,Nmax,dr,VTable,rijnew)*&
+                              & xijnew(k)/rijnew
                    end do
                 else
                    do k=1,dim
@@ -2627,7 +2582,9 @@ contains
              if (present(DeltaF2)) then
                 if (v_table) then
                    do k=1,dim
-                      Fold(k) = Fold(k)+Interpolate(1,Nmax,dr,VTable,rijold)*xijold(k)/rijold
+                      Fold(k) = Fold(k)+&
+                              & Interpolate(1,Nmax,dr,VTable,rijold)*&
+                              & xijold(k)/rijold
                    end do
                 else
                    do k=1,dim

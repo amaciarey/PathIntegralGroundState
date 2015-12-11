@@ -5,20 +5,20 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 3               # Dimensions
-64              # Number of particles
+180             # Number of particles
 0.365d0         # Density
 0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
 
 # PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
 
-5.00d-3         # Time step 
-32              # Number of beads 
+1.00d-2         # Time step 
+16              # Number of beads 
 1982            # Seed of the random number generator
 0.15d0		# Size of the CM movements (in units of density^(1/dim))
 1               # Frequency of CM updates 
 staging         # Sampling method (sta=staging, bis=bisection)
-24              # Length of the Staging movements
+12              # Length of the Staging movements
 4               # Bisection level, implies that the length of movements is 2**Nlev
 5               # Number of staging movements per step
 
@@ -38,7 +38,7 @@ staging         # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-400             # Number of blocks
+800             # Number of blocks
 100             # Steps per block
 40              # Points in the grid for g(r) and OBDM
 20              # K points for S(k) evaluation
