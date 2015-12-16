@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Path Integral Ground State Monte Carlo : A Fortran 90 open source code to study the properties of zero temperature many-body bulk systems using the path integral ground state Monte Carlo method">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Path Integral Ground State Monte Carlo</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/amaciarey/PathIntegralGroundState">View on GitHub</a>
+
+          <h1 id="project_title">Path Integral Ground State Monte Carlo</h1>
+          <h2 id="project_tagline">A Fortran 90 open source code to study the properties of zero temperature many-body bulk systems using the path integral ground state Monte Carlo method</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/amaciarey/PathIntegralGroundState/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/amaciarey/PathIntegralGroundState/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="path-integral-ground-state-monte-carlo" class="anchor" href="#path-integral-ground-state-monte-carlo" aria-hidden="true"><span class="octicon octicon-link"></span></a>PATH INTEGRAL GROUND STATE MONTE CARLO</h1>
+
+<p>Path integral ground state Monte Carlo (PIGS) is a quantum Monte Carlo method intended to the study of quantum many body systems at zero temperature. This method solves the many body Schrödinger equation of the system by propagating an initial (or trial) wave function in imaginary time making that any non ground state contribution present in the initial guess of the wave function vanishes. The imaginary time propagation is implemented by successive application of the quantum propagator of the system. </p>
+
+<p><strong>VPI.F90</strong></p>
+
+<p>This is the main program that contains the definitions of the variables needed to perform the simulation and the main 
+Monte Carlo loop over blocks and steps. It also calls the routines intended to evaluate the desired observables.</p>
+
+<p><strong>GLOBAL_MOD.F90</strong></p>
+
+<p>Module that contains the definition of some global variables used along many functions of the code.</p>
+
+<p><strong>VPI_MOD.F90</strong></p>
+
+<p>This module contains all the routines concerning the Monte Carlo movements used to sample the path integral and all the
+functions needed for the calculation. </p>
+
+<p><strong>List of functions</strong></p>
+
+<pre><code>*GreenFunction
+*OBDMGuess
+</code></pre>
+
+<p><strong>List of routines</strong></p>
+
+<p>Initialization routines:</p>
+
+<pre><code>* Jastrow_Table
+* init
+* CheckPoint
+</code></pre>
+
+<p>Routines for the movement of the particles of the system</p>
+
+<pre><code>* TranslateChain
+* Staging
+* MoveHead
+* MoveTail
+* TranslateHalfChain
+* StagingHalfChain
+* MoveHeadHalfChain
+* MoveTailHalfChain
+</code></pre>
+
+<p>Routines for the evaluation of quantities for Metropolis algorithm</p>
+
+<pre><code>* UpdateAction
+* UpdateWf
+* UpdatePot
+</code></pre>
+
+<p><strong>SAMPLE_MOD.F90</strong></p>
+
+<p>This module contains all the functions required for the evaluation of the different observable quantities.</p>
+
+<p><strong>List of functions</strong></p>
+
+<pre><code>* Var
+</code></pre>
+
+<p><strong>List of routines</strong></p>
+
+<p>Routines for the evaluation of energies:</p>
+
+<pre><code>* PotentialEnergy
+* LocalEnergy
+* Accumulate
+</code></pre>
+
+<p>Routines for the evaluation of structural quantities</p>
+
+<pre><code>* PairCorrelation
+* StructureFactor
+* Normalize
+* AccumGr
+* AccumSk
+* NormAvGr
+* NormAvSk
+</code></pre>
+
+<p>Routines for the evaluation of OBDM</p>
+
+<pre><code>* OBDM
+* Normalize
+* AccumNr
+* NormAvNr 
+</code></pre>
+
+<p><strong>PBC_MOD.F90</strong></p>
+
+<p>Module that contains functions to implement the periodic boundary conditions in a cubic box (independent of 
+dimensionality).</p>
+
+<p><strong>List of routines</strong></p>
+
+<pre><code>* BoundaryConditions
+* MinimumImage
+</code></pre>
+
+<p><strong>RANDOM_MOD.F90</strong></p>
+
+<p>Module that contains the functions and routines used for the generation of random numbers: uniform and gaussian. The 
+Twister Mersenne random number generator is used. </p>
+
+<p><strong>INTERPOLATE.F90</strong></p>
+
+<p>Function that performs linear interpolation to find the value of a tabulated function in a given point.</p>
+
+<p><strong>R8_GAMMA.F90</strong></p>
+
+<p>Gamma function needed to evaluate the volume of a spherical shell in an arbitrary dimension.</p>
+
+<p>Those are the generic parts of the code, in addition to this modules there are some system-dependent modules:</p>
+
+<p><strong>SYSTEM_MOD.F90</strong></p>
+
+<p>Module that contains the trial (or initial) model wave functions of the system (one and two-body terms) and the
+potential (also one and two-body).</p>
+
+<p><strong>BESSEL_MOD.F90</strong></p>
+
+<p>This is a module containing the definition of Bessel functions and Modified Bessel functions of the first and second 
+kind. This is a very specific module needed to build the two-body Jastrow factor of dipoles in two dimensions.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Path Integral Ground State Monte Carlo maintained by <a href="https://github.com/amaciarey">amaciarey</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
