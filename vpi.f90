@@ -292,17 +292,21 @@ do iblock=1,Nblock
                   try_stag = try_stag+1
                   
                   if (sampling=="sta") then
+
                      call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,&
                                   &acc_head)
                      call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,&
                                   &acc_tail)
                      call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
+
                   else
+
                      call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
                                            &acc_head)
                      call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
                                            &acc_tail)
                      call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
+
                   end if
 
                end do
@@ -377,15 +381,19 @@ do iblock=1,Nblock
                try_stag = try_stag+1
 
                if (sampling=="sta") then
+                  
                   call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,acc_head)
                   call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,acc_tail)
                   call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
+               
                else
+               
                   call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
                                         &acc_head)
                   call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
                                         &acc_tail)
                   call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
+               
                end if
 
             end do
