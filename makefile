@@ -24,7 +24,8 @@ vpi.o: \
 sample_mod.o sample_mod.mod: \
 	sample_mod.f90\
  	global_mod.mod\
- 	pbc_mod.mod\
+ 	system_mod.mod\
+	pbc_mod.mod\
  	vpi_mod.mod
 	$(F90) $(FFLAGS) -c sample_mod.f90
 

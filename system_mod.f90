@@ -34,6 +34,8 @@ contains
        
     end if
 
+    LogPsi = 0.d0
+
     return
   end function LogPsi
 

@@ -5,7 +5,7 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 3               # Dimensions
-180             # Number of particles
+90              # Number of particles
 0.365d0         # Density
 0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
@@ -15,7 +15,7 @@
 1.00d-2         # Time step 
 16              # Number of beads 
 1982            # Seed of the random number generator
-0.15d0		# Size of the CM movements (in units of density^(1/dim))
+0.12d0		# Size of the CM movements (in units of density^(1/dim))
 1               # Frequency of CM updates 
 staging         # Sampling method (sta=staging, bis=bisection)
 12              # Length of the Staging movements
