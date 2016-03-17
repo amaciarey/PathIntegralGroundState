@@ -1,5 +1,8 @@
-F90=gfortran
-FFLAGS=-Ofast -fno-range-check -flto -funroll-loops
+#F90=gfortran
+#FFLAGS=-Ofast -fno-range-check -flto -funroll-loops
+
+F90=ifort
+FFLAGS=-fast
 
 vpi: \
  	random_mod.o\

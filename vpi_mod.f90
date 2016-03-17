@@ -474,29 +474,33 @@ contains
                
            if (ib==0) then
               xnext(k) = xold(k)-Path(k,ip,ib+1)
-              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+              !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+              !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+              call MinimumImageDistance(k,xnext(k))
               xnext(k) = xold(k)-xnext(k)
 
               xmid(k) = xnext(k)
               sigma   = sqrt(dt)
            else if (ib==2*Nb) then
               xprev(k) = Path(k,ip,ib-1)-xold(k)
-              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+              !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+              !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+              call MinimumImageDistance(k,xprev(k))
               xprev(k) = xold(k)+xprev(k)
               
               xmid(k) = xprev(k)
               sigma   = sqrt(dt)
            else
               xprev(k) = Path(k,ip,ib-1)-xold(k)
-              if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-              if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+              !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+              !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+              call MinimumImageDistance(k,xprev(k))
               xprev(k) = xold(k)+xprev(k)
               
               xnext(k) = xold(k)-Path(k,ip,ib+1)
-              if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-              if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+              !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+              !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+              call MinimumImageDistance(k,xnext(k))
               xnext(k) = xold(k)-xnext(k)
               
               xmid(k) = 0.5d0*(xprev(k)+xnext(k))
@@ -542,6 +546,70 @@ contains
 
 !-----------------------------------------------------------------------
 
+  subroutine StagingReconstruction(ii,Lstag,dt,LogWF,VTable,ip,Path,&
+       & SumDeltaS)
+
+    implicit none
+    
+    real (kind=8)    :: dt,sigma
+    real (kind=8)    :: gauss1,gauss2
+    real (kind=8)    :: DeltaS,SumDeltaS
+    real (kind=8)    :: aj,bj
+    integer (kind=4) :: ip,ib,k
+    integer (kind=4) :: Lstag,j
+    integer (kind=4) :: ii
+
+    real (kind=8), dimension (dim,Np,0:2*Nb) :: Path
+    real (kind=8), dimension (0:Nmax+1)      :: LogWF,VTable
+    real (kind=8), dimension (dim)           :: xnew,xold
+    real (kind=8), dimension (dim)           :: xprev,xmid,xnext    
+    
+    SumDeltaS = 0.d0
+
+    do j=1,Lstag-1
+
+       sigma = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
+       aj    = 1.d0/real(Lstag-j+1)
+       bj    = real(Lstag-j)/real(Lstag-j+1)
+
+       do k=1,dim
+
+          xold(k) = Path(k,ip,ii+j)               
+           
+          call rangauss(1.d0,0.d0,gauss1,gauss2)
+               
+          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+          call MinimumImageDistance(k,xprev(k))
+          xprev(k) = xold(k)+xprev(k)
+          
+          xnext(k) = xold(k)-Path(k,ip,ii+Lstag)
+          call MinimumImageDistance(k,xnext(k))
+          xnext(k) = xold(k)-xnext(k)
+          
+          !sigma   = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
+          !xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
+          xmid(k) = aj*xnext(k)+bj*xprev(k)
+          xnew(k) = xmid(k)+sigma*gauss1
+          
+          !Periodic boundary conditions
+          
+          call BoundaryConditions(k,xnew(k))
+
+          Path(k,ip,ii+j) = xnew(k)
+          
+       end do
+       
+       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+
+       SumDeltaS = SumDeltaS+DeltaS
+       
+    end do
+    
+    return
+  end subroutine StagingReconstruction
+
+!-----------------------------------------------------------------------
+
   subroutine Staging(LogWF,VTable,dt,Lstag,ip,Path,accepted)
 
     implicit none 
@@ -550,6 +618,7 @@ contains
     real (kind=8)    :: dt,sigma
     real (kind=8)    :: gauss1,gauss2
     real (kind=8)    :: DeltaS,SumDeltaS
+    real (kind=8)    :: aj,bj
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: Lstag,j
     integer (kind=4) :: ii,ie
@@ -569,43 +638,8 @@ contains
        end do
     end do
    
-    SumDeltaS = 0.d0
-
-    do j=1,Lstag-1
-
-       do k=1,dim
-
-          xold(k) = Path(k,ip,ii+j)               
-           
-          call rangauss(1.d0,0.d0,gauss1,gauss2)
-               
-          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-          xprev(k) = xold(k)+xprev(k)
-          
-          xnext(k) = xold(k)-Path(k,ip,ii+Lstag)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-          xnext(k) = xold(k)-xnext(k)
-          
-          sigma   = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
-          xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
-          xnew(k) = xmid(k)+sigma*gauss1
-          
-          !Periodic boundary conditions
-          
-          call BoundaryConditions(k,xnew(k))
-
-          Path(k,ip,ii+j) = xnew(k)
-          
-       end do
-       
-       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
-
-       SumDeltaS = SumDeltaS+DeltaS
-       
-    end do
+    call StagingReconstruction(ii,Lstag,dt,LogWF,VTable,ip,Path,&
+         & SumDeltaS)
 
     !Metropolis question
     
@@ -677,43 +711,48 @@ contains
        end do
     end do
    
-    SumDeltaS = 0.d0
+!!$    SumDeltaS = 0.d0
+!!$
+!!$    do j=1,Lstag-1
+!!$
+!!$       do k=1,dim
+!!$
+!!$          xold(k) = Path(k,ip,ii+j)
+!!$           
+!!$          call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$               
+!!$          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+!!$          !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$          !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xprev(k))          
+!!$          xprev(k) = xold(k)+xprev(k)
+!!$          
+!!$          xnext(k) = xold(k)-Path(k,ip,ii+Lstag)
+!!$          !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$          !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xnext(k))
+!!$          xnext(k) = xold(k)-xnext(k)
+!!$          
+!!$          sigma   = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
+!!$          xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
+!!$          xnew(k) = xmid(k)+sigma*gauss1
+!!$          
+!!$          !Periodic boundary conditions
+!!$          
+!!$          call BoundaryConditions(k,xnew(k))
+!!$
+!!$          Path(k,ip,ii+j) = xnew(k)
+!!$          
+!!$       end do
+!!$       
+!!$       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS) 
+!!$
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$       
+!!$    end do
 
-    do j=1,Lstag-1
-
-       do k=1,dim
-
-          xold(k) = Path(k,ip,ii+j)
-           
-          call rangauss(1.d0,0.d0,gauss1,gauss2)
-               
-          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-          xprev(k) = xold(k)+xprev(k)
-          
-          xnext(k) = xold(k)-Path(k,ip,ii+Lstag)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-          xnext(k) = xold(k)-xnext(k)
-          
-          sigma   = sqrt((real(Lstag-j)/real(Lstag-j+1))*dt)
-          xmid(k) = (xnext(k)+xprev(k)*(Lstag-j))/real(Lstag-j+1)
-          xnew(k) = xmid(k)+sigma*gauss1
-          
-          !Periodic boundary conditions
-          
-          call BoundaryConditions(k,xnew(k))
-
-          Path(k,ip,ii+j) = xnew(k)
-          
-       end do
-       
-       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS) 
-
-       SumDeltaS = SumDeltaS+DeltaS
-       
-    end do
+    call StagingReconstruction(ii,Lstag,dt,LogWF,VTable,ip,Path,&
+         & SumDeltaS)
 
     !Metropolis question
     
@@ -796,8 +835,9 @@ contains
        call rangauss(1.d0,0.d0,gauss1,gauss2)
                
        xnext(k) = xold(k)-Path(k,ip,ie)
-       if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-       if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+       !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+       !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+       call MinimumImageDistance(k,xnext(k))
        xnext(k) = xold(k)-xnext(k)
        
        sigma   = sqrt(real(Ls)*dt)
@@ -814,45 +854,50 @@ contains
 
     call UpdateAction(LogWF,VTable,Path,ip,ii,xnew,xold,dt,DeltaS)       
 
-    SumDeltaS = SumDeltaS+DeltaS
-
     !Reconstruction of the whole chain piece using Staging
 
-    do j=1,Ls-1
+!!$    do j=1,Ls-1
+!!$
+!!$       do k=1,dim
+!!$
+!!$          xold(k) = Path(k,ip,ii+j)               
+!!$           
+!!$          call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$               
+!!$          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+!!$          !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$          !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xprev(k))
+!!$          xprev(k) = xold(k)+xprev(k)
+!!$          
+!!$          xnext(k) = xold(k)-Path(k,ip,ii+Ls)
+!!$          !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$          !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xnext(k))
+!!$          xnext(k) = xold(k)-xnext(k)
+!!$       
+!!$          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+!!$          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+!!$          xnew(k) = xmid(k)+sigma*gauss1
+!!$          
+!!$          !Periodic boundary conditions
+!!$          
+!!$          call BoundaryConditions(k,xnew(k))
+!!$
+!!$          Path(k,ip,ii+j) = xnew(k)
+!!$          
+!!$       end do
+!!$
+!!$       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+!!$
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$       
+!!$    end do
 
-       do k=1,dim
+    call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ip,Path,&
+         & SumDeltaS)
 
-          xold(k) = Path(k,ip,ii+j)               
-           
-          call rangauss(1.d0,0.d0,gauss1,gauss2)
-               
-          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-          xprev(k) = xold(k)+xprev(k)
-          
-          xnext(k) = xold(k)-Path(k,ip,ii+Ls)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-          xnext(k) = xold(k)-xnext(k)
-       
-          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          xnew(k) = xmid(k)+sigma*gauss1
-          
-          !Periodic boundary conditions
-          
-          call BoundaryConditions(k,xnew(k))
-
-          Path(k,ip,ii+j) = xnew(k)
-          
-       end do
-
-       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
-
-       SumDeltaS = SumDeltaS+DeltaS
-       
-    end do
+    SumDeltaS = SumDeltaS+DeltaS
 
     !Metropolis question
     
@@ -942,8 +987,9 @@ contains
        call rangauss(1.d0,0.d0,gauss1,gauss2)
                
        xnext(k) = xold(k)-Path(k,ip,ie)
-       if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-       if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+       !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+       !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+       call MinimumImageDistance(k,xnext(k))
        xnext(k) = xold(k)-xnext(k)
        
        sigma   = sqrt(real(Ls)*dt)
@@ -960,49 +1006,54 @@ contains
 
     call UpdateAction(LogWF,VTable,Path,ip,ii,xnew,xold,dt,DeltaS)       
 
+    !Reconstruction of the whole chain piece using Staging
+
+!!$    do j=1,Ls-1
+!!$
+!!$       do k=1,dim
+!!$
+!!$          xold(k) = Path(k,ip,ii+j)               
+!!$           
+!!$          call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$               
+!!$          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+!!$          !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$          !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xprev(k))
+!!$          xprev(k) = xold(k)+xprev(k)
+!!$          
+!!$          xnext(k) = xold(k)-Path(k,ip,ii+Ls)
+!!$          !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$          !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xnext(k))
+!!$          xnext(k) = xold(k)-xnext(k)
+!!$       
+!!$          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+!!$          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+!!$          xnew(k) = xmid(k)+sigma*gauss1
+!!$          
+!!$          !Periodic boundary conditions
+!!$          
+!!$          call BoundaryConditions(k,xnew(k))
+!!$
+!!$          Path(k,ip,ii+j) = xnew(k)
+!!$          
+!!$       end do
+!!$
+!!$       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)
+!!$
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$       
+!!$    end do
+
+    call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ip,Path,&
+         & SumDeltaS)
+
     if (half==1) then
        SumDeltaS = SumDeltaS+DeltaS
     else
        SumDeltaS = SumDeltaS+0.5d0*DeltaS
     end if
-
-    !Reconstruction of the whole chain piece using Staging
-
-    do j=1,Ls-1
-
-       do k=1,dim
-
-          xold(k) = Path(k,ip,ii+j)               
-           
-          call rangauss(1.d0,0.d0,gauss1,gauss2)
-               
-          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-          xprev(k) = xold(k)+xprev(k)
-          
-          xnext(k) = xold(k)-Path(k,ip,ii+Ls)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-          xnext(k) = xold(k)-xnext(k)
-       
-          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          xnew(k) = xmid(k)+sigma*gauss1
-          
-          !Periodic boundary conditions
-          
-          call BoundaryConditions(k,xnew(k))
-
-          Path(k,ip,ii+j) = xnew(k)
-          
-       end do
-
-       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)
-
-       SumDeltaS = SumDeltaS+DeltaS
-       
-    end do
 
     !Metropolis question
     
@@ -1082,8 +1133,9 @@ contains
        call rangauss(1.d0,0.d0,gauss1,gauss2)
        
        xprev(k) = Path(k,ip,ii)-xold(k)
-       if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-       if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+       !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+       !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+       call MinimumImageDistance(k,xprev(k))
        xprev(k) = xold(k)+xprev(k)
        
        sigma   = sqrt(real(Ls)*dt)
@@ -1100,45 +1152,50 @@ contains
     
     call UpdateAction(LogWF,VTable,Path,ip,ie,xnew,xold,dt,DeltaS)       
     
-    SumDeltaS = SumDeltaS+DeltaS
-    
     !Reconstruction of the whole chain piece using Staging
 
-    do j=1,Ls-1
-       
-       do k=1,dim
-          
-          xold(k) = Path(k,ip,ii+j)               
-          
-          call rangauss(1.d0,0.d0,gauss1,gauss2)
-          
-          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-          xprev(k) = xold(k)+xprev(k)
-          
-          xnext(k) = xold(k)-Path(k,ip,ie)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-          xnext(k) = xold(k)-xnext(k)
-          
-          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          xnew(k) = xmid(k)+sigma*gauss1
-          
-          !Periodic boundary conditions
-          
-          call BoundaryConditions(k,xnew(k))
-          
-          Path(k,ip,ii+j) = xnew(k)
-          
-       end do
-       
-       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
-       
-       SumDeltaS = SumDeltaS+DeltaS
-       
-    end do
+!!$    do j=1,Ls-1
+!!$       
+!!$       do k=1,dim
+!!$          
+!!$          xold(k) = Path(k,ip,ii+j)               
+!!$          
+!!$          call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$          
+!!$          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+!!$          !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$          !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xprev(k))
+!!$          xprev(k) = xold(k)+xprev(k)
+!!$          
+!!$          xnext(k) = xold(k)-Path(k,ip,ie)
+!!$          !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$          !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xnext(k))
+!!$          xnext(k) = xold(k)-xnext(k)
+!!$          
+!!$          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+!!$          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+!!$          xnew(k) = xmid(k)+sigma*gauss1
+!!$          
+!!$          !Periodic boundary conditions
+!!$          
+!!$          call BoundaryConditions(k,xnew(k))
+!!$          
+!!$          Path(k,ip,ii+j) = xnew(k)
+!!$          
+!!$       end do
+!!$       
+!!$       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+!!$       
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$       
+!!$    end do
+
+    call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ip,Path,&
+         & SumDeltaS)
+
+    SumDeltaS = SumDeltaS+DeltaS
     
     !Metropolis question
     
@@ -1224,8 +1281,9 @@ contains
        call rangauss(1.d0,0.d0,gauss1,gauss2)
        
        xprev(k) = Path(k,ip,ii)-xold(k)
-       if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-       if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+       !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+       !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+       call MinimumImageDistance(k,xprev(k))
        xprev(k) = xold(k)+xprev(k)
        
        sigma   = sqrt(real(Ls)*dt)
@@ -1242,49 +1300,54 @@ contains
     
     call UpdateAction(LogWF,VTable,Path,ip,ii+Ls,xnew,xold,dt,DeltaS) 
     
+    !Reconstruction of the whole chain piece using Staging
+
+!!$    do j=1,Ls-1
+!!$       
+!!$       do k=1,dim
+!!$          
+!!$          xold(k) = Path(k,ip,ii+j)               
+!!$          
+!!$          call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$          
+!!$          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+!!$          !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$          !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xprev(k))
+!!$          xprev(k) = xold(k)+xprev(k)
+!!$          
+!!$          xnext(k) = xold(k)-Path(k,ip,ii+Ls)
+!!$          !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$          !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xnext(k))
+!!$          xnext(k) = xold(k)-xnext(k)
+!!$          
+!!$          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+!!$          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+!!$          xnew(k) = xmid(k)+sigma*gauss1
+!!$          
+!!$          !Periodic boundary conditions
+!!$          
+!!$          call BoundaryConditions(k,xnew(k))
+!!$          
+!!$          Path(k,ip,ii+j) = xnew(k)
+!!$          
+!!$       end do
+!!$       
+!!$       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS) 
+!!$
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$       
+!!$    end do
+
+    call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ip,Path,&
+         & SumDeltaS)
+
     if (half==1) then
        SumDeltaS = SumDeltaS+0.5d0*DeltaS
     else
        SumDeltaS = SumDeltaS+DeltaS
     end if
-
-    !Reconstruction of the whole chain piece using Staging
-
-    do j=1,Ls-1
-       
-       do k=1,dim
-          
-          xold(k) = Path(k,ip,ii+j)               
-          
-          call rangauss(1.d0,0.d0,gauss1,gauss2)
-          
-          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-          xprev(k) = xold(k)+xprev(k)
-          
-          xnext(k) = xold(k)-Path(k,ip,ii+Ls)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-          xnext(k) = xold(k)-xnext(k)
-          
-          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          xnew(k) = xmid(k)+sigma*gauss1
-          
-          !Periodic boundary conditions
-          
-          call BoundaryConditions(k,xnew(k))
-          
-          Path(k,ip,ii+j) = xnew(k)
-          
-       end do
-       
-       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS) 
-
-       SumDeltaS = SumDeltaS+DeltaS
-       
-    end do
       
     !Metropolis question
     
@@ -1387,13 +1450,15 @@ contains
              call rangauss(1.d0,0.d0,gauss1,gauss2)
 
              xprev(k) = Path(k,ip,iprev)-xold(k)
-             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+             !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+             !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+             call MinimumImageDistance(k,xprev(k))
              xprev(k) = xold(k)+xprev(k)
              
              xnext(k) = xold(k)-Path(k,ip,inext)
-             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+             !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+             !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+             call MinimumImageDistance(k,xnext(k))
              xnext(k) = xold(k)-xnext(k)
              
              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
@@ -1508,8 +1573,9 @@ contains
        call rangauss(1.d0,0.d0,gauss1,gauss2)
                
        xnext(k) = xold(k)-Path(k,ip,ie)
-       if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-       if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+       !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+       !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+       call MinimumImageDistance(k,xnext(k))
        xnext(k) = xold(k)-xnext(k)
        
        sigma   = sqrt(2**Nlev*dt)
@@ -1552,13 +1618,15 @@ contains
              call rangauss(1.d0,0.d0,gauss1,gauss2)
 
              xprev(k) = Path(k,ip,iprev)-xold(k)
-             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+             !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+             !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+             call MinimumImageDistance(k,xprev(k))
              xprev(k) = xold(k)+xprev(k)
              
              xnext(k) = xold(k)-Path(k,ip,inext)
-             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+             !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+             !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+             call MinimumImageDistance(k,xnext(k))
              xnext(k) = xold(k)-xnext(k)
              
              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
@@ -1675,8 +1743,9 @@ contains
        call rangauss(1.d0,0.d0,gauss1,gauss2)
        
        xprev(k) = Path(k,ip,ii)-xold(k)
-       if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-       if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+       !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+       !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+       call MinimumImageDistance(k,xprev(k))
        xprev(k) = xold(k)+xprev(k)
        
        sigma   = sqrt(2**Nlev*dt)
@@ -1719,13 +1788,15 @@ contains
              call rangauss(1.d0,0.d0,gauss1,gauss2)
 
              xprev(k) = Path(k,ip,iprev)-xold(k)
-             if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-             if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+             !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+             !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+             call MinimumImageDistance(k,xprev(k))
              xprev(k) = xold(k)+xprev(k)
              
              xnext(k) = xold(k)-Path(k,ip,inext)
-             if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-             if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+             !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+             !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+             call MinimumImageDistance(k,xnext(k))
              xnext(k) = xold(k)-xnext(k)
              
              xmid(k) = 0.5d0*(xprev(k)+xnext(k))
@@ -1820,7 +1891,7 @@ contains
     Ls   = 2*int(((Lmax-2)/2)*grnd())+2
     half = int(grnd()*2)+1
     
-    SumDeltaS = -log(CWorm*density)
+    !SumDeltaS = -log(CWorm*density)
 
     if (half==1) then
 
@@ -1857,8 +1928,9 @@ contains
           call rangauss(1.d0,0.d0,gauss1,gauss2)
           
           xprev(k) = Path(k,ip,ii)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+          !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+          !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+          call MinimumImageDistance(k,xprev(k))
           xprev(k) = xold(k)+xprev(k)
           
           sigma   = sqrt(real(Ls)*dt)
@@ -1910,8 +1982,9 @@ contains
           call rangauss(1.d0,0.d0,gauss1,gauss2)
           
           xnext(k) = xold(k)-Path(k,ip,ie)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+          !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+          !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+          call MinimumImageDistance(k,xnext(k))
           xnext(k) = xold(k)-xnext(k)
           
           sigma   = sqrt(real(Ls)*dt)
@@ -1929,47 +2002,60 @@ contains
        call UpdateAction(LogWF,VTable,Path,ip,ii,xnew,xold,dt,DeltaS)       
        
     end if
-    
-    SumDeltaS = SumDeltaS+0.5d0*DeltaS
-    
-    !Reconstruction of the whole chain piece using Staging
 
-    do j=1,Ls-1
-       
-       do k=1,dim
-          
-          xold(k) = Path(k,ip,ii+j)               
-          
-          call rangauss(1.d0,0.d0,gauss1,gauss2)
-          
-          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-          xprev(k) = xold(k)+xprev(k)
-          
-          xnext(k) = xold(k)-Path(k,ip,ie)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-          xnext(k) = xold(k)-xnext(k)
-          
-          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          xnew(k) = xmid(k)+sigma*gauss1
-          
-          !Periodic boundary conditions
-          
-          call BoundaryConditions(k,xnew(k))
-          
-          Path(k,ip,ii+j) = xnew(k)
-          
-       end do
-       
-       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
-       
-       SumDeltaS = SumDeltaS+DeltaS
-       
-    end do
+!!$    SumDeltaS = SumDeltaS+0.5d0*DeltaS
+!!$
+!!$    print *, DeltaS
+!!$    
+!!$    !Reconstruction of the whole chain piece using Staging
+!!$
+!!$    do j=1,Ls-1
+!!$       
+!!$       do k=1,dim
+!!$          
+!!$          xold(k) = Path(k,ip,ii+j)               
+!!$          
+!!$          call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$          
+!!$          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+!!$          !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$          !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xprev(k))
+!!$          xprev(k) = xold(k)+xprev(k)
+!!$          
+!!$          xnext(k) = xold(k)-Path(k,ip,ie)
+!!$          !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$          !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xnext(k))
+!!$          xnext(k) = xold(k)-xnext(k)
+!!$          
+!!$          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+!!$          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+!!$          xnew(k) = xmid(k)+sigma*gauss1
+!!$          
+!!$          !Periodic boundary conditions
+!!$          
+!!$          call BoundaryConditions(k,xnew(k))
+!!$          
+!!$          Path(k,ip,ii+j) = xnew(k)
+!!$          
+!!$       end do
+!!$       
+!!$       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+!!$       
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$       
+!!$    end do
+!!$
+!!$    print *, SumDeltaS
+!!$
+!!$    stop
 
+    call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ip,Path,&
+         & SumDeltaS)
+
+    SumDeltaS = SumDeltaS+0.5d0*DeltaS-log(CWorm*density)
+    
     !Metropolis question
     
     if (exp(-SumDeltaS-DeltaK)>=1.d0) then
@@ -2046,7 +2132,7 @@ contains
     Ls   = 2*int(((Lmax-2)/2)*grnd())+2
     half = int(grnd()*2)+1
     
-    SumDeltaS = log(CWorm*density)
+    !SumDeltaS = log(CWorm*density)
 
     if (half==1) then
 
@@ -2094,46 +2180,53 @@ contains
     
     end if
 
-    SumDeltaS = SumDeltaS+0.5d0*DeltaS
+!!$    SumDeltaS = SumDeltaS+0.5d0*DeltaS
+!!$    
+!!$    !Reconstruction of the whole chain piece using Staging
+!!$
+!!$    do j=1,Ls-1
+!!$       
+!!$       do k=1,dim
+!!$          
+!!$          xold(k) = Path(k,ip,ii+j)               
+!!$          
+!!$          call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$          
+!!$          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
+!!$          !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$          !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xprev(k))
+!!$          xprev(k) = xold(k)+xprev(k)
+!!$          
+!!$          xnext(k) = xold(k)-Path(k,ip,ie)
+!!$          !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$          !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$          call MinimumImageDistance(k,xnext(k))
+!!$          xnext(k) = xold(k)-xnext(k)
+!!$          
+!!$          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+!!$          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+!!$          xnew(k) = xmid(k)+sigma*gauss1
+!!$          
+!!$          !Periodic boundary conditions
+!!$          
+!!$          call BoundaryConditions(k,xnew(k))
+!!$          
+!!$          Path(k,ip,ii+j) = xnew(k)
+!!$          
+!!$       end do
+!!$       
+!!$       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
+!!$       
+!!$       SumDeltaS = SumDeltaS+DeltaS
+!!$       
+!!$    end do
+
+    call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ip,Path,&
+         & SumDeltaS)
+
+    SumDeltaS = SumDeltaS+0.5d0*DeltaS+log(CWorm*density)
     
-    !Reconstruction of the whole chain piece using Staging
-
-    do j=1,Ls-1
-       
-       do k=1,dim
-          
-          xold(k) = Path(k,ip,ii+j)               
-          
-          call rangauss(1.d0,0.d0,gauss1,gauss2)
-          
-          xprev(k) = Path(k,ip,ii+j-1)-xold(k)
-          if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-          if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-          xprev(k) = xold(k)+xprev(k)
-          
-          xnext(k) = xold(k)-Path(k,ip,ie)
-          if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-          if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-          xnext(k) = xold(k)-xnext(k)
-          
-          sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-          xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-          xnew(k) = xmid(k)+sigma*gauss1
-          
-          !Periodic boundary conditions
-          
-          call BoundaryConditions(k,xnew(k))
-          
-          Path(k,ip,ii+j) = xnew(k)
-          
-       end do
-       
-       call UpdateAction(LogWF,VTable,Path,ip,ii+j,xnew,xold,dt,DeltaS)       
-       
-       SumDeltaS = SumDeltaS+DeltaS
-       
-    end do
-
     !Evaluation of the change in the kinetic action due to the fact
     !that the link is broken
     
@@ -2299,41 +2392,46 @@ contains
 
           SumDeltaS = 0.d0
 
-          do j=1,Ls-1
-       
-             do k=1,dim
-          
-                xold(k) = Path(k,ik,ii+j)               
-          
-                call rangauss(1.d0,0.d0,gauss1,gauss2)
-          
-                xprev(k) = Path(k,ik,ii+j-1)-xold(k)
-                if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
-                if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
-                xprev(k) = xold(k)+xprev(k)
-                
-                xnext(k) = xold(k)-Path(k,ik,ie)
-                if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
-                if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
-                xnext(k) = xold(k)-xnext(k)
-                
-                sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
-                xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
-                xnew(k) = xmid(k)+sigma*gauss1
-                
-                !Periodic boundary conditions
-                
-                call BoundaryConditions(k,xnew(k))
-                
-                Path(k,ik,ii+j) = xnew(k)
-                
-             end do
-       
-             call UpdateAction(LogWF,VTable,Path,ik,ii+j,xnew,xold,dt,DeltaS)  
+!!$          do j=1,Ls-1
+!!$       
+!!$             do k=1,dim
+!!$          
+!!$                xold(k) = Path(k,ik,ii+j)               
+!!$          
+!!$                call rangauss(1.d0,0.d0,gauss1,gauss2)
+!!$          
+!!$                xprev(k) = Path(k,ik,ii+j-1)-xold(k)
+!!$                !if (xprev(k)<-LboxHalf(k)) xprev(k) = xprev(k)+Lbox(k)
+!!$                !if (xprev(k)> LboxHalf(k)) xprev(k) = xprev(k)-Lbox(k)
+!!$                call MinimumImageDistance(k,xprev(k))
+!!$                xprev(k) = xold(k)+xprev(k)
+!!$                
+!!$                xnext(k) = xold(k)-Path(k,ik,ie)
+!!$                !if (xnext(k)<-LboxHalf(k)) xnext(k) = xnext(k)+Lbox(k)
+!!$                !if (xnext(k)> LboxHalf(k)) xnext(k) = xnext(k)-Lbox(k)
+!!$                call MinimumImageDistance(k,xnext(k))
+!!$                xnext(k) = xold(k)-xnext(k)
+!!$                
+!!$                sigma   = sqrt((real(Ls-j)/real(Ls-j+1))*dt)
+!!$                xmid(k) = (xnext(k)+xprev(k)*(Ls-j))/real(Ls-j+1)
+!!$                xnew(k) = xmid(k)+sigma*gauss1
+!!$                
+!!$                !Periodic boundary conditions
+!!$                
+!!$                call BoundaryConditions(k,xnew(k))
+!!$                
+!!$                Path(k,ik,ii+j) = xnew(k)
+!!$                
+!!$             end do
+!!$       
+!!$             call UpdateAction(LogWF,VTable,Path,ik,ii+j,xnew,xold,dt,DeltaS)  
+!!$
+!!$             SumDeltaS = SumDeltaS+DeltaS
+!!$       
+!!$          end do
 
-             SumDeltaS = SumDeltaS+DeltaS
-       
-          end do
+          call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ip,Path,&
+               & SumDeltaS)
 
           !Metropolis question
 

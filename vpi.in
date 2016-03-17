@@ -5,7 +5,7 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 3               # Dimensions
-90              # Number of particles
+128             # Number of particles
 0.365d0         # Density
 0.d0            # Polarization angle
 .false.         # .true. if solid, .false. otherwise
@@ -38,7 +38,7 @@ staging         # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-1000            # Number of blocks
+100            # Number of blocks
 100             # Steps per block
 100             # Points in the grid for g(r) and OBDM
 50              # K points for S(k) evaluation
