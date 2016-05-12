@@ -5,7 +5,7 @@
 # PHYSICAL DESCRIPTION OF THE SYSTEM
 
 2               # Dimensions
-32              # Number of particles
+64              # Number of particles
 256.d0          # Density
 0.0d0           # Polarization angle
 .false.         # .true. if solid, .false. otherwise

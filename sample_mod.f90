@@ -18,6 +18,7 @@ contains
     real (kind=8)    :: rij2,rij
     real (kind=8)    :: Interpolate
     integer (kind=4) :: ip,jp
+    integer (kind=4) :: ipair,Npair
     integer (kind=4) :: k
 
     real (kind=8),optional :: F2
@@ -34,58 +35,67 @@ contains
        end do
     end do
     
-    do ip=1,Np-1
-       do jp=ip+1,Np
-          
-          rij2 = 0.d0
-          
-          do k=1,dim
-             
-             xij(k) = R(k,ip)-R(k,jp)
-             
-          end do
+    Npair = Np*(Np-1)/2
 
-          call MinimumImage(xij,rij2)
+    !$OMP PARALLEL DO &
+    !$OMP PRIVATE(ip,jp,k,rij2,xij,rij) &
+    !$OMP REDUCTION(+:Pot,F)
+     
+    do ipair=1,Npair
+     
+       rij2 = 0.d0
           
-          if (rij2<=rcut2) then
+       ip = PairList(ipair,1)
+       jp = PairList(ipair,2)
+
+       do k=1,dim
+          
+          xij(k) = R(k,ip)-R(k,jp)
              
-             rij = sqrt(rij2)
+       end do
+
+       call MinimumImage(xij,rij2)
+          
+       if (rij2<=rcut2) then
+             
+          rij = sqrt(rij2)
+             
+          if (v_table) then
+             Pot = Pot+Interpolate(0,Nmax,dr,VTable,rij)
+          else
+             Pot = Pot+Potential(xij,rij)
+          end if
+
+          if (present(F2)) then
              
              if (v_table) then
-                Pot = Pot+Interpolate(0,Nmax,dr,VTable,rij)
+                   
+                do k=1,dim
+                   F(k,ip) = F(k,ip)+&
+                        & Interpolate(1,Nmax,dr,VTable,rij)*&
+                        & xij(k)/rij
+                   F(k,jp) = F(k,jp)-&
+                        & Interpolate(1,Nmax,dr,VTable,rij)*&
+                        & xij(k)/rij
+                end do
+
              else
-                Pot = Pot+Potential(xij,rij)
-             end if
-
-             if (present(F2)) then
-
-                if (v_table) then
-                   
-                   do k=1,dim
-                      F(k,ip) = F(k,ip)+&
-                              & Interpolate(1,Nmax,dr,VTable,rij)*&
-                              & xij(k)/rij
-                      F(k,jp) = F(k,jp)-&
-                              & Interpolate(1,Nmax,dr,VTable,rij)*&
-                              & xij(k)/rij
-                   end do
-
-                else
-                   
-                   do k=1,dim
-                      F(k,ip) = F(k,ip)+Force(k,xij,rij)
-                      F(k,jp) = F(k,jp)-Force(k,xij,rij)
-                   end do
-
-                end if
+                
+                do k=1,dim
+                   F(k,ip) = F(k,ip)+Force(k,xij,rij)
+                   F(k,jp) = F(k,jp)-Force(k,xij,rij)
+                end do
 
              end if
-             
+
           end if
+             
+       end if
           
-       end do
     end do
-    
+
+    !$OMP END PARALLEL DO
+        
     if (present(F2)) then
 
        F2 = 0.d0
@@ -100,7 +110,7 @@ contains
     
     return 
   end subroutine PotentialEnergy
-  
+
 !-----------------------------------------------------------------------
 
   subroutine LocalEnergy(LogWF,VTable,R,Rm,E,Kin,Pot)
@@ -114,6 +124,7 @@ contains
     real (kind=8)    :: Interpolate
     
     integer (kind=4) :: i,j
+    integer (kind=4) :: ipair,Npair
     integer (kind=4) :: k
         
     real (kind=8),dimension (0:Nmax+1) :: LogWF,VTable
@@ -130,74 +141,86 @@ contains
        end do
     end do
     
-    do i=1,Np-1
-       do j=i+1,Np
-          
-          !Calculation of the distance between each pair of dipoles
-          !choosing only the nearest image of each particle
-          
-          do k=1,dim
-          
-             xij(k) = R(k,i)-R(k,j)
-          
-          end do
+    Npair = Np*(Np-1)/2
 
-          call MinimumImage(xij,rij2)
-          
-          !Calculation of the local kinetic energy
-          !We use in this routine the following prescription:
-          
-          ! Kin = -Laplacian(Psi)/(2*Psi)
-          ! T   = -Laplacian(log(Psi))/4
-          ! F   = Grad(Psi)/(sqrt(2)*Psi)
-          ! Kin = 2*T-F*F
-          
-          !We use linear interpolation between the nearest points of the
-          !tabulated wave function, as in the previous subroutine we use:
-          !
-          !    x_{i-1} < z < x_i
-          !
-          !    psi(z) = psi(x_i)*(z-x_{i-1})/dr+psi(x_{i-1})*(x_i-z)/dr   
-          !
-          !The evaluation of derivatives is also numeric by interpolating 
-          !in the next and previous intervals.
-          
-          if (rij2<=rcut2) then
-             
-             rij = sqrt(rij2)
+    !$OMP PARALLEL DO &
+    !$OMP PRIVATE(i,j,k,xij,rij2,rij,dudr,d2udr2) &
+    !$OMP REDUCTION(+:Pot,LapLogPsi,F)
 
-             if (wf_table) then
-                
-                dudr   = Interpolate(1,Nmax,dr,LogWF,rij)
-                d2udr2 = Interpolate(2,Nmax,dr,LogWF,rij)
-                
-             else
-             
-                dudr   = LogPsi(1,Rm,rij)
-                d2udr2 = LogPsi(2,Rm,rij)
-             
-             end if
+    do ipair=1,Npair
+      
+       i = PairList(ipair,1)
+       j = PairList(ipair,2)
 
-             LapLogPsi = LapLogPsi+((real(dim)-1)*dudr/rij+d2udr2)        
-             
-             do k=1,dim
-                F(k,i) = F(k,i)+dudr*xij(k)/rij
-                F(k,j) = F(k,j)-dudr*xij(k)/rij
-             end do
-             
-             !Calculation of the local potential energy 
-             
-             if (v_table) then
-                Pot = Pot+Interpolate(0,Nmax,dr,VTable,rij)
-             else
-                Pot = Pot+Potential(xij,rij)
-             end if
-             
-          end if
+       !Calculation of the distance between each pair of dipoles
+       !choosing only the nearest image of each particle
+          
+       do k=1,dim
+          
+          xij(k) = R(k,i)-R(k,j)
           
        end do
-    end do
+
+       call MinimumImage(xij,rij2)
+          
+       !Calculation of the local kinetic energy
+       !We use in this routine the following prescription:
+       
+       ! Kin = -Laplacian(Psi)/(2*Psi)
+       ! T   = -Laplacian(log(Psi))/4
+       ! F   = Grad(Psi)/(sqrt(2)*Psi)
+       ! Kin = 2*T-F*F
+       
+       !We use linear interpolation between the nearest points of the
+       !tabulated wave function, as in the previous subroutine we use:
+       !
+       !    x_{i-1} < z < x_i
+       !
+       !    psi(z) = psi(x_i)*(z-x_{i-1})/dr+psi(x_{i-1})*(x_i-z)/dr   
+       !
+       !The evaluation of derivatives is also numeric by interpolating 
+       !in the next and previous intervals.
+       
+       if (rij2<=rcut2) then
+          
+          rij = sqrt(rij2)
+
+          if (wf_table) then
+             
+             dudr   = Interpolate(1,Nmax,dr,LogWF,rij)
+             d2udr2 = Interpolate(2,Nmax,dr,LogWF,rij)
+             
+          else
+             
+             dudr   = LogPsi(1,Rm,rij)
+             d2udr2 = LogPsi(2,Rm,rij)
+                
+          end if
+             
+          LapLogPsi = LapLogPsi+((real(dim)-1)*dudr/rij+d2udr2)        
+             
+          do k=1,dim
+             F(k,i) = F(k,i)+dudr*xij(k)/rij
+             F(k,j) = F(k,j)-dudr*xij(k)/rij
+          end do
+             
+          !Calculation of the local potential energy 
+             
+          if (v_table) then
+             Pot = Pot+Interpolate(0,Nmax,dr,VTable,rij)
+          else
+             Pot = Pot+Potential(xij,rij)
+          end if
+             
+       end if
+          
+    !   end do
+    !end do
     
+    end do
+
+    !$OMP END PARALLEL DO
+
     !Kinetic energy and drift force calculation
     
     Kin = 2.d0*LapLogPsi
@@ -237,6 +260,10 @@ contains
     Ep = 0.d0
     Ec = 0.d0
     E  = 0.d0
+
+    !!$OMP PARALLEL DO &
+    !!$OMP PRIVATE(Pot,F2,xij,rij2,ip,k) &
+    !!$OMP REDUCTION(-:E)
     
     do ib=0,2*Nb-1
        
@@ -271,6 +298,8 @@ contains
        
     end do
 
+    !!$OMP END PARALLEL DO
+
     call PotentialEnergy(VTable,Path(:,:,2*Nb),Pot)
     
     E  = E+GreenFunction(1,2*Nb,dt,Pot,0.d0)
@@ -288,6 +317,7 @@ contains
     
     real (kind=8)    :: rij2,rij
     integer (kind=4) :: ip,jp
+    integer (kind=4) :: ipair,Npair
     integer (kind=4) :: k
     integer (kind=4) :: ibin
     
@@ -295,31 +325,40 @@ contains
     real (kind=8),dimension (dim,Np) :: R
     real (kind=8),dimension (Nbin)   :: gr
     
-    do ip=1,Np-1
-       do jp=ip+1,Np
-          
-          rij2 = 0.d0
-          
-          do k=1,dim
-             
-             xij(k) = R(k,ip)-R(k,jp)
-             
-          end do
-          
-          call MinimumImage(xij,rij2)
+    Npair = Np*(Np-1)/2
 
-          if (rij2<=rcut2) then
+    !$OMP PARALLEL DO &
+    !$OMP PRIVATE(ip,jp,xij,rij2,rij,ibin) &
+    !$OMP REDUCTION(+:gr)
+
+    do ipair=1,Npair
+            
+       ip = PairList(ipair,1)
+       jp = PairList(ipair,2)  
+          
+       rij2 = 0.d0
+       
+       do k=1,dim
              
-             rij = sqrt(rij2)
-             
-             ibin     = int(rij/rbin)+1
-             gr(ibin) = gr(ibin)+2.d0
-             
-          end if
+          xij(k) = R(k,ip)-R(k,jp)
           
        end do
+       
+       call MinimumImage(xij,rij2)
+       
+       if (rij2<=rcut2) then
+          
+          rij = sqrt(rij2)
+          
+          ibin     = int(rij/rbin)+1
+          gr(ibin) = gr(ibin)+2.d0
+          
+       end if
+       
     end do
-    
+
+    !$OMP END PARALLEL DO
+
     return
   end subroutine PairCorrelation
 
@@ -330,41 +369,39 @@ contains
     implicit none
 
     real (kind=8)    :: qr
-    real (kind=8)    :: SumCos,SumSin
     integer (kind=4) :: iq,Nk
     integer (kind=4) :: k
     integer (kind=4) :: ip
   
-    real (kind=8),dimension(dim)    :: x
+    real (kind=8),dimension(dim)    :: x,SumCos,SumSin
     real (kind=8),dimension(dim,Np) :: R
     real (kind=8),dimension(dim,Nk) :: Sk
 
-    SumCos = 0.d0
-    SumSin = 0.d0
-
     do iq=1,Nk
-   
+       
        do k=1,dim
+          SumCos(k) = 0.d0
+          SumSin(k) = 0.d0
+       end do
 
-          SumCos = 0.d0
-          SumSin = 0.d0
-          
-          do ip=1,Np
-             
+       do ip=1,Np
+
+          do k=1,dim
              x(k) = R(k,ip)
              qr   = real(iq)*qbin(k)*x(k)
-             
-             SumCos = SumCos+cos(qr)
-             SumSin = SumSin+sin(qr)
-             
-          end do
-          
-          Sk(k,iq) = Sk(k,iq)+(SumCos*SumCos+SumSin*SumSin)
-          
-       end do
-       
-    end do
 
+             SumCos(k) = SumCos(k)+cos(qr)
+             SumSin(k) = SumSin(k)+sin(qr)
+          end do
+
+       end do
+
+       do k=1,dim
+          Sk(k,iq) = Sk(k,iq)+(SumCos(k)*SumCos(k)+SumSin(k)*SumSin(k))
+       end do
+
+    end do
+    
     return
   end subroutine StructureFactor
 
