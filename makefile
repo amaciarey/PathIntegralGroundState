@@ -1,8 +1,9 @@
 #F90=gfortran
-#FFLAGS=-Ofast -fno-range-check -flto -funroll-loops
+#FFLAGS=-Ofast -fno-range-check -flto -funroll-loops -fwhole-program -fopenmp
 
 F90=ifort
-FFLAGS=-fast
+#FFLAGS=-O3 -ipo -no-prec-div -p -g 
+FFLAGS=-fast -qopenmp
 
 vpi: \
  	random_mod.o\

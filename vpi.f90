@@ -34,7 +34,8 @@ real (kind=8)    :: try_cm,try_cm_half
 integer (kind=4) :: seed
 integer (kind=4) :: Lstag,Nlev
 integer (kind=4) :: k,j
-integer (kind=4) :: ip
+integer (kind=4) :: ip,jp
+integer (kind=4) :: ipair
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
 integer (kind=4) :: istag,Nstag
@@ -70,6 +71,17 @@ pi = acos(-1.d0)
 V0 = alpha
 
 allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
+allocate (PairList(Np*(Np-1)/2,2))
+
+ipair = 1
+
+do ip=1,Np-1
+   do jp=ip+1,Np
+      PairList(ipair,1) = ip
+      PairList(ipair,2) = jp
+      ipair = ipair+1
+   end do
+end do
 
 if (crystal) then
 
@@ -101,7 +113,8 @@ delta_cm = delta_cm/density**(1.d0/real(dim))
 isopen   = .false.
 iworm    = 0
 
-!Generate an initial Path
+!Generate an initial Path and tables for the wave function and the 
+!interaction potential
 
 allocate (Path(dim,Np,0:2*Nb))
 allocate (LogWF(0:Nmax+1),VTable(0:Nmax+1))
@@ -250,11 +263,13 @@ do iblock=1,Nblock
    BlockAvEt2 = 0.d0
    BlockAvKt2 = 0.d0
    BlockAvVt2 = 0.d0
-   
+
    do istep=1,Nstep
 
       !Open and Close updates to determine if the system is in a 
-      !diagonal or in an off-diagonal configuration
+      !diagonal or in an off-diagonal configuration.
+      !If the system is in an open configuration we will try to close it
+      !If the system is in a closed configuration we will try to open it
 
       iupdate = int(grnd()*2)
 
@@ -277,6 +292,64 @@ do iblock=1,Nblock
 
       if (isopen) then
 
+!!$         !$OMP PARALLEL DO &
+!!$         !$OMP SCHEDULE(dynamic) &
+!!$         !$OMP REDUCTION(+:try_cm,acc_cm)
+!!$
+!!$         do ip=1,Np
+!!$            if (ip/=iworm) then
+!!$               if (mod(istep,CMFreq)==0) then
+!!$                  try_cm = try_cm+1
+!!$                  call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,&
+!!$                                     &acc_cm)
+!!$               end if
+!!$            end if
+!!$         end do
+!!$
+!!$         !$END PARALLEL DO
+!!$
+!!$         do istag=1,Nstag
+!!$
+!!$            !$OMP PARALLEL DO &
+!!$            !$OMP SCHEDULE(dynamic) &
+!!$            !$OMP REDUCTION(+:try_stag,acc_head,acc_tail,acc_bd)
+!!$
+!!$            do ip=1,Np
+!!$         
+!!$               if (ip/=iworm) then
+!!$         
+!!$                  try_stag = try_stag+1
+!!$                  
+!!$                  if (sampling=="sta") then
+!!$
+!!$                     call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,&
+!!$                          &acc_head)
+!!$                     call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,&
+!!$                          &acc_tail)
+!!$                     call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
+!!$                     
+!!$                  else
+!!$                     
+!!$                     call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
+!!$                          &acc_head)
+!!$                     call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
+!!$                          &acc_tail)
+!!$                     call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
+!!$                     
+!!$                  end if
+!!$                  
+!!$               end if
+!!$               
+!!$            end do
+!!$
+!!$            !$END PARALLEL DO
+!!$
+!!$         end do
+
+         !$OMP PARALLEL DO &
+         !$OMP SCHEDULE(dynamic) &
+         !$OMP REDUCTION(+:try_cm,try_stag,acc_cm,acc_head,acc_tail,acc_bd)
+       
          do ip=1,Np
 
             if (ip/=iworm) then
@@ -311,54 +384,52 @@ do iblock=1,Nblock
 
                end do
 
-            else
+            end if
 
-               do iobdm=1,Nobdm
+         end do
+
+         !$OMP END PARALLEL DO
+
+         !Now let's make the worm dance...
+
+         do iobdm=1,Nobdm
                
-                  if (mod(istep,CMFreq)==0) then
+            if (mod(istep,CMFreq)==0) then
 
-                     do j=1,2
-                        try_cm_half = try_cm_half+1
-                        call TranslateHalfChain(j,delta_cm,LogWF,VTable,&
-                                               &dt,ip,Path,xend,&
-                                               &acc_cm_half)
-                     end do
-
-                  end if
-
-                  do istag=1,Nstag
-                     
-                     do j=1,2
-                  
-                        try_stag_half = try_stag_half+1
-                        
-                        call MoveHeadHalfChain(j,LogWF,VTable,dt,Lstag,&
-                                              &ip,Path,xend,&
-                                              &acc_head_half)
-                        call MoveTailHalfChain(j,LogWF,VTable,dt,Lstag,&
-                                              &ip,Path,xend,&
-                                              &acc_tail_half)
-                        call StagingHalfChain(j,LogWF,VTable,dt,Lstag,&
-                                             &ip,Path,xend,acc_bd_half)
-                        
-                     end do
-
-                     if (swapping) then
-                        
-                        try_swap = try_swap+1
-
-                        call Swap(LogWF,VTable,dt,Lstag,ip,Path,xend,&
-                                 &acc_swap)
-
-                     end if
-
-                  end do
-
-                  call OBDM(xend,nrho)
-                  
+               do j=1,2
+                  try_cm_half = try_cm_half+1
+                  call TranslateHalfChain(j,delta_cm,LogWF,VTable,&
+                                         &dt,iworm,Path,xend,&
+                                         &acc_cm_half)
                end do
 
             end if
+
+            do j=1,2
+                  
+               try_stag_half = try_stag_half+1
+                        
+               call MoveHeadHalfChain(j,LogWF,VTable,dt,Lstag,&
+                    &iworm,Path,xend,&
+                                        &acc_head_half)
+               call MoveTailHalfChain(j,LogWF,VTable,dt,Lstag,&
+                    &iworm,Path,xend,&
+                                        &acc_tail_half)
+               call StagingHalfChain(j,LogWF,VTable,dt,Lstag,&
+                    &iworm,Path,xend,acc_bd_half)
+                        
+            end do
+
+            if (swapping) then
+                        
+               try_swap = try_swap+1
+               
+               call Swap(LogWF,VTable,dt,Lstag,iworm,Path,xend,&
+                    &acc_swap)
+                  
+            end if
+               
+            call OBDM(xend,nrho)
             
          end do
 
@@ -368,6 +439,10 @@ do iblock=1,Nblock
          idiag_aux   = idiag_aux+1
          idiag_block = idiag_block+1
       
+         !$OMP PARALLEL DO &
+         !$OMP SCHEDULE(dynamic) &
+         !$OMP REDUCTION(+:try_cm,try_stag,acc_cm,acc_head,acc_tail,acc_bd)
+
          do ip=1,Np
 
             if (mod(istep,CMFreq)==0) then
@@ -399,6 +474,56 @@ do iblock=1,Nblock
             end do
                
          end do
+
+         !$OMP END PARALLEL DO
+
+!!$         !$OMP PARALLEL DO &
+!!$         !$OMP SCHEDULE(dynamic) &
+!!$         !$OMP REDUCTION(+:try_cm,acc_cm)
+!!$
+!!$         do ip=1,Np
+!!$            if (mod(istep,CMFreq)==0) then
+!!$               try_cm = try_cm+1
+!!$               call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,&
+!!$                    &acc_cm)
+!!$            end if
+!!$         end do
+!!$
+!!$         !$END PARALLEL DO
+!!$
+!!$         do istag=1,Nstag
+!!$
+!!$            !$OMP PARALLEL DO &
+!!$            !$OMP SCHEDULE(dynamic) &
+!!$            !$OMP REDUCTION(+:try_stag,acc_head,acc_tail,acc_bd)
+!!$
+!!$            do ip=1,Np
+!!$         
+!!$               try_stag = try_stag+1
+!!$                  
+!!$               if (sampling=="sta") then
+!!$
+!!$                  call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,&
+!!$                       &acc_head)
+!!$                  call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,&
+!!$                       &acc_tail)
+!!$                  call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
+!!$                  
+!!$               else
+!!$                  
+!!$                  call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
+!!$                       &acc_head)
+!!$                  call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
+!!$                       &acc_tail)
+!!$                  call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
+!!$                  
+!!$               end if
+!!$               
+!!$            end do
+!!$
+!!$            !$END PARALLEL DO
+!!$
+!!$         end do
 
          !Energy calculation using mixed estimator
       
@@ -540,7 +665,7 @@ do iblock=1,Nblock
    print 101, '> Swap acc          =',100.d0*real(acc_swap)/real(try_swap),'%'
    print 101, ' '
    print 101, '# Time per block    =',end-begin,'seconds'
-
+   
 end do
 
 close (unit=1)

@@ -38,7 +38,7 @@ staging         # Sampling method (sta=staging, bis=bisection)
 
 # PARAMETERS OF THE SAMPLING PROCESS
 
-100            # Number of blocks
+100             # Number of blocks
 100             # Steps per block
 100             # Points in the grid for g(r) and OBDM
 50              # K points for S(k) evaluation
