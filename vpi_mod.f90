@@ -2133,7 +2133,7 @@ contains
 
           SumDeltaS = 0.d0
 
-          call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ip,Path,&
+          call StagingReconstruction(ii,Ls,dt,LogWF,VTable,ik,Path,&
                & NewChain,SumDeltaS)
 
           !Metropolis question
@@ -2154,7 +2154,7 @@ contains
 
              do j=1,Ls-1
                 do k=1,dim
-                   Path(k,ip,ii+j) = NewChain(k,j)
+                   Path(k,ik,ii+j) = NewChain(k,j)
                 end do
              end do
 

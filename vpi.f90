@@ -292,60 +292,6 @@ do iblock=1,Nblock
 
       if (isopen) then
 
-!!$         !$OMP PARALLEL DO &
-!!$         !$OMP SCHEDULE(dynamic) &
-!!$         !$OMP REDUCTION(+:try_cm,acc_cm)
-!!$
-!!$         do ip=1,Np
-!!$            if (ip/=iworm) then
-!!$               if (mod(istep,CMFreq)==0) then
-!!$                  try_cm = try_cm+1
-!!$                  call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,&
-!!$                                     &acc_cm)
-!!$               end if
-!!$            end if
-!!$         end do
-!!$
-!!$         !$END PARALLEL DO
-!!$
-!!$         do istag=1,Nstag
-!!$
-!!$            !$OMP PARALLEL DO &
-!!$            !$OMP SCHEDULE(dynamic) &
-!!$            !$OMP REDUCTION(+:try_stag,acc_head,acc_tail,acc_bd)
-!!$
-!!$            do ip=1,Np
-!!$         
-!!$               if (ip/=iworm) then
-!!$         
-!!$                  try_stag = try_stag+1
-!!$                  
-!!$                  if (sampling=="sta") then
-!!$
-!!$                     call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,&
-!!$                          &acc_head)
-!!$                     call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,&
-!!$                          &acc_tail)
-!!$                     call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
-!!$                     
-!!$                  else
-!!$                     
-!!$                     call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
-!!$                          &acc_head)
-!!$                     call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
-!!$                          &acc_tail)
-!!$                     call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
-!!$                     
-!!$                  end if
-!!$                  
-!!$               end if
-!!$               
-!!$            end do
-!!$
-!!$            !$END PARALLEL DO
-!!$
-!!$         end do
-
          !$OMP PARALLEL DO &
          !$OMP SCHEDULE(dynamic) &
          !$OMP REDUCTION(+:try_cm,try_stag,acc_cm,acc_head,acc_tail,acc_bd)
@@ -476,54 +422,6 @@ do iblock=1,Nblock
          end do
 
          !$OMP END PARALLEL DO
-
-!!$         !$OMP PARALLEL DO &
-!!$         !$OMP SCHEDULE(dynamic) &
-!!$         !$OMP REDUCTION(+:try_cm,acc_cm)
-!!$
-!!$         do ip=1,Np
-!!$            if (mod(istep,CMFreq)==0) then
-!!$               try_cm = try_cm+1
-!!$               call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,&
-!!$                    &acc_cm)
-!!$            end if
-!!$         end do
-!!$
-!!$         !$END PARALLEL DO
-!!$
-!!$         do istag=1,Nstag
-!!$
-!!$            !$OMP PARALLEL DO &
-!!$            !$OMP SCHEDULE(dynamic) &
-!!$            !$OMP REDUCTION(+:try_stag,acc_head,acc_tail,acc_bd)
-!!$
-!!$            do ip=1,Np
-!!$         
-!!$               try_stag = try_stag+1
-!!$                  
-!!$               if (sampling=="sta") then
-!!$
-!!$                  call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,&
-!!$                       &acc_head)
-!!$                  call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,&
-!!$                       &acc_tail)
-!!$                  call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
-!!$                  
-!!$               else
-!!$                  
-!!$                  call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
-!!$                       &acc_head)
-!!$                  call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
-!!$                       &acc_tail)
-!!$                  call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
-!!$                  
-!!$               end if
-!!$               
-!!$            end do
-!!$
-!!$            !$END PARALLEL DO
-!!$
-!!$         end do
 
          !Energy calculation using mixed estimator
       
