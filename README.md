@@ -1,116 +1,21 @@
-# PATH INTEGRAL GROUND STATE MONTE CARLO
+# Path integral ground state Monte Carlo
 
-Path integral ground state Monte Carlo (PIGS) is a quantum Monte Carlo method intended to the study of quantum many body systems at zero temperature. This method solves the many body Schrödinger equation of the system by propagating an initial (or trial) wave function in imaginary time making that any non ground state contribution present in the initial guess of the wave function vanishes. The imaginary time propagation is implemented by successive application of the quantum propagator of the system. 
+[TOC]
 
-**VPI.F90**
+This is fortran 90 code implementing the path integral ground state (PIGS) Monte Carlo method. PIGS is a numerical method to study the properties of the ground state (T=0) of a quantum system. This method is exact (in the statistical sense) for bosons (particles with integer spin). 
 
-This is the main program that contains the definitions of the variables needed to perform the simulation and the main 
-Monte Carlo loop over blocks and steps. It also calls the routines intended to evaluate the desired observables.
+PIGS method was formulated by Ceperley[^1] and called variational path integral (VPI), a method closely related to the finite temperature path integral Monte Carlo method (PIMC). Later, in 2000 Sarsa et al. [^2] performed a first realization of the method with applications to several test systems (Quantum harmonic oscillator and liquid Helium-4) showing that the PIGS method was a valid alternative to other ground state methods like for example diffusion Monte Carlo (DMC). After this work the method have gathered popularity in the toolbox of the quantum condensed matter physicists and have shown its value as an alternative to other methods due to the feature of being able to evaluate in a pure way (with no variational bias) observables that do not commute with the hamiltonian[^3] and to the fact that it can provide correct results independently of the trial wave function that is used[^4] (if the wave function has the correct bosonic simmetry). 
 
-**GLOBAL_MOD.F90**
+With the introduction of the Worm Algorithm[^5] [^6] (WA) PIGS method was able to evaluate in an exact way, and with the correct normalization, the one body density matrix (OBDM) of a many-body system which gives access to the study of the Bose-Einstein condensation phenomena in this kind of systems. 
 
-Module that contains the definition of some global variables used along many functions of the code.
 
-**VPI_MOD.F90**
 
-This module contains all the routines concerning the Monte Carlo movements used to sample the path integral and all the
-functions needed for the calculation. 
 
-**List of functions**
-  
-    *GreenFunction
-    *OBDMGuess
 
-**List of routines**
-
-  Initialization routines:
-
-    * Jastrow_Table
-    * init
-    * CheckPoint
-  
-  Routines for the movement of the particles of the system
-
-    * TranslateChain
-    * Staging
-    * MoveHead
-    * MoveTail
-    * TranslateHalfChain
-    * StagingHalfChain
-    * MoveHeadHalfChain
-    * MoveTailHalfChain
-
-  Routines for the evaluation of quantities for Metropolis algorithm
-
-    * UpdateAction
-    * UpdateWf
-    * UpdatePot
-
-**SAMPLE_MOD.F90**
-
-This module contains all the functions required for the evaluation of the different observable quantities.
-
-**List of functions**
-    
-    * Var
-
-**List of routines**
-
-  Routines for the evaluation of energies:
-
-    * PotentialEnergy
-    * LocalEnergy
-    * Accumulate
-
-  Routines for the evaluation of structural quantities
-
-    * PairCorrelation
-    * StructureFactor
-    * Normalize
-    * AccumGr
-    * AccumSk
-    * NormAvGr
-    * NormAvSk
-
-  Routines for the evaluation of OBDM
- 
-    * OBDM
-    * Normalize
-    * AccumNr
-    * NormAvNr 
-
-**PBC_MOD.F90**
-
-Module that contains functions to implement the periodic boundary conditions in a cubic box (independent of 
-dimensionality).
-
-**List of routines**
-
-    * BoundaryConditions
-    * MinimumImage
-
-**RANDOM_MOD.F90**
-
-Module that contains the functions and routines used for the generation of random numbers: uniform and gaussian. The 
-Twister Mersenne random number generator is used. 
-
-**INTERPOLATE.F90**
-
-Function that performs linear interpolation to find the value of a tabulated function in a given point.
-
-**R8_GAMMA.F90**
-
-Gamma function needed to evaluate the volume of a spherical shell in an arbitrary dimension.
-
-Those are the generic parts of the code, in addition to this modules there are some system-dependent modules:
-
-**SYSTEM_MOD.F90**
-
-Module that contains the trial (or initial) model wave functions of the system (one and two-body terms) and the
-potential (also one and two-body).
-
-**BESSEL_MOD.F90**
-
-This is a module containing the definition of Bessel functions and Modified Bessel functions of the first and second 
-kind. This is a very specific module needed to build the two-body Jastrow factor of dipoles in two dimensions.
+[^1]: D. Ceperley, Rev. Mod. Phys. 67, 2, (1995)
+[^2]: A. Sarsa, K. E. Schmidt and W. R. Magro, J. Chem. Phys. **113**, 1366 (2000) 
+[^3]: J. E. Cuervo, P-N. Roy and M. Boninsegni, J. Chem. Phys. **122**, 114504 (2005)
+[^4]: M. Rossi, M. Nava, L. Reatto and D. E. Galli, J. Chem. Phys. **131**, 154108 (2009)
+[^5]: M. Boninsegni, N. Prokof'ev and B. Svistunov, Phys. Rev. Lett. **96**, 070601 (2006)
+[^6]: M. Boninsegni, N. Prokof'ev and B. Svistunov, Phys. Rev. E **74**, 036701 (2006)
 
