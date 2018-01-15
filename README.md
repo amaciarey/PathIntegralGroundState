@@ -24,10 +24,6 @@ $ \psi(\tau) = e^{-H\tau}\psi(0)$
 
 In the limit of $\tau \rightarrow \infty$, $\psi(\tau \rightarrow \infty)$ equals the ground state wave function $\phi_0$. The operator $e^{-H\tau}$ is the representation independent Green's function of the system and is, in general, unknown but some suitable short-time approximations can be found[^7] . 
 
-
-
-
-
  ## References
 
 [^1]: D. Ceperley, Rev. Mod. Phys. 67, 2, (1995)
