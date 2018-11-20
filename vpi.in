@@ -1,44 +1,37 @@
-# RESTART PARAMETER
+&system
+ dim      = 3,          ! Dimensions
+ Np       = 64,         ! Number of particles
+ density  = 0.365d0,    ! Density
+ trap     = F           ! T if the system is trapped, F otherwise
+/
+&samp
+ resume   = F           ! Resume previous simulation
+ dt       = 5.00d-3,    ! Time step
+ Nb       = 32,         ! Number of beads
+ seed     = 1982,       ! Seed for the random generator
+ delta_cm = 0.12d0,     ! Step for CM updates
+ CMFreq   = 1,          ! Frequency of CM updates
+ sampling = 'bis',	! Movement type
+ Lstag    = 32,         ! Length of staging
+ Nlev     = 4,          ! Level of bisection
+ Nstag    = 5,          ! Number of repetitions
+ Nblock   = 400,         ! Number of blocks
+ Nstep    = 100,        ! Number of steps
+ Nbin     = 100,        ! Grid for radial observables
+ Nk       = 50          ! Grid for S(k)
+/
+&obdm
+ swapping = T,          ! Use swap to sample permutations
+ CWorm    = 0.5d0,      ! Constant for worm updates
+ Nobdm    = 10,         ! Repetitions of worm updates
+ Npw      = 0           ! Partial waves in OBDM
+/
+&wavefun
+ Nmax     = 10000,      ! Grid for trial wave function
+ wf_table = T,          ! Use a table for wave function
+ v_table  = T           ! Use a table for potential
+/
+&jastrow
+ Rm       = 1.20d0
+/
 
-.false.         # .true. Resume a previous simulation, .false. otherwise
-
-# PHYSICAL DESCRIPTION OF THE SYSTEM
-
-2               # Dimensions
-64              # Number of particles
-256.d0          # Density
-0.6d0           # Polarization angle
-.false.         # .true. if solid, .false. otherwise
-
-# PARAMETERS THAT DESCRIBE THE MONTE CARLO SAMPLING
-
-4.00E-5         # Time step 
-40              # Number of beads 
-1982            # Seed of the random number generator
-0.12d0		# Size of the CM movements (in units of density^(1/dim))
-1               # Frequency of CM updates 
-staging         # Sampling method for the diagonal movements (sta=staging, bis=bisection)
-16              # Length of the Staging movements
-4               # Bisection level, implies that the length of movements is 2**Nlev
-10              # Number of sampling movements per step
-
-# PARAMETERS AFFECTING THE MODEL TRIAL WAVE FUNCTION
-
-10000           # Grid points for the tabulation of the wave function
-0.020d0         # Variational parameter
-.true.          # .true. if tabulate the wave function, .false. otherwise
-.false.         # .true. if tabulate the interaction potential, .false. otherwise
-
-# PARAMETERS FOR THE SAMPLING OF THE OBDM
-
-.true.          # .true. if swap updates will be used, .false. otherwise
-5.d-1           # C0 constant of the WORM algorithm
-10              # Number of evaluation of OBDM per step
-5               # Maximum angular momentum partial wave in OBDM
-
-# PARAMETERS OF THE SAMPLING PROCESS
-
-200             # Number of blocks
-100             # Steps per block
-50              # Points in the grid for g(r) and OBDM
-20              # K points for S(k) evaluation

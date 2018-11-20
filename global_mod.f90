@@ -1,20 +1,16 @@
 module global_mod
 
-use omp_lib
-
 implicit none
 
 logical          :: wf_table,v_table
 real (kind=8)    :: pi
-real (kind=8)    :: V0
-real (kind=8)    :: Rm
 real (kind=8)    :: rbin,dr
 real (kind=8)    :: rcut,rcut2
 real (kind=8)    :: CWorm
 integer (kind=4) :: dim,Np,Nbin,Nb,Nmax,Npw
 
-real (kind=8),dimension (:),allocatable      :: Lbox,LboxHalf,qbin
-integer (kind=4),dimension (:,:),allocatable :: PairList
+real (kind=8),dimension (:),allocatable :: Lbox,LboxHalf,qbin
+!real (kind=8),dimension (:),allocatable :: a_ho
 
 contains
 
@@ -49,6 +45,8 @@ contains
           end if
        end if
 
+       !GreenFunction = dt*Pot
+
     else if (opt==1) then
        
        dVe = Pot
@@ -65,6 +63,8 @@ contains
              GreenFunction = 4.d0*dVc/3.d0
           end if
        end if
+
+       !GreenFunction = Pot
 
     end if
        

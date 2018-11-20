@@ -1,105 +1,184 @@
 module system_mod
 
-use global_mod, only: rcut,dim,V0,Nmax,dr
+use global_mod, only: rcut,dim,Nmax,dr
 use bessel_mod, only: Bessk
 
 implicit none
+
+real (kind=8) :: Rm
+real (kind=8), dimension (:), allocatable :: a_ho
 
 contains
 
 !-----------------------------------------------------------------------
 
+  subroutine ReadSystemParameters(trap)
+    
+    implicit none
+
+    logical :: trap
+
+    namelist /jastrow/ Rm
+    namelist /extpot/ a_ho
+  
+    if (trap) then
+       allocate (a_ho(dim))
+       read (5,nml=extpot)
+       rewind (5)
+    end if
+  
+    read (5,nml=jastrow)
+    rewind (5)
+
+    return
+  end subroutine ReadSystemParameters
+
+!-----------------------------------------------------------------------
+
   function LogPsi(opt,Rm,rij)
 
-    logical,save     :: FirstCall = .True.
-    real (kind=8)    :: Rm
-    real (kind=8)    :: rij,zij
-    real (kind=8)    :: K0,K1
-    real (kind=8)    :: dfdr,d2fdr2
+    real (kind=8)    :: Rm,rij
     real (kind=8)    :: LogPsi
     integer (kind=4) :: opt
     
-    real (kind=8),save :: Lmax,C1,C2,C3
-    
-    if (FirstCall) then
-
-       Lmax = 2.d0*rcut
-
-       C3 = 0.5d0*sqrt(4.d0*Rm)*(Lmax-Rm)**2/(Lmax*(Lmax-2.d0*Rm))*&
-            & Bessk(1,sqrt(4.d0/Rm))/Bessk(0,sqrt(4.d0/Rm))
-       C2 = exp(4.d0*C3/Lmax)
-       C1 = C2*exp(-C3*(1.d0/Rm+1.d0/(Lmax-Rm)))/Bessk(0,sqrt(4.d0/Rm))
-       
-       FirstCall = .False.
-       
-    end if
-
-    zij = sqrt(4.d0/rij)
-    
-    K0 = Bessk(0,zij)
-    K1 = Bessk(1,zij)
-
     if (opt==0) then
-
-       if (rij<=Rm) then
-      
-          LogPsi = log(C1*K0)
-    
-       else
-   
-          LogPsi = log(C2)-C3*(1.d0/rij+1.d0/(Lmax-rij))
-   
-       end if
-
+       
+       LogPsi = -0.5d0*(Rm/rij)**5
+            
     else if (opt==1) then
        
-       if (rij<=Rm) then
-      
-          dfdr   = zij*K1/(2.d0*rij) 
-          LogPsi = dfdr/K0
-
-       else
-
-          LogPsi = C3*(1.d0/rij**2-1.d0/(Lmax-rij)**2)
-      
-       end if
- 
+       LogPsi = 2.5d0*(Rm/rij)**5/rij
+       
     else if (opt==2) then
 
-       if (rij<=Rm) then
-
-          dfdr   = zij*K1/(2.d0*rij)
-          d2fdr2 = K0/rij**3-dfdr/rij
-          LogPsi = (d2fdr2*K0-dfdr*dfdr)/(K0*K0)
-     
-       else
-
-          LogPsi = -2.d0*C3*(1.d0/rij**3+1.d0/(Lmax-rij)**3)
-
-       end if
+       LogPsi = -15.d0*(Rm/rij)**5/rij**2
 
     else 
 
        print *, 'The parameter opt in the function LogPsi crash!!!'
        stop
-
+       
     end if
-    
+
+    !LogPsi = 0.d0
+
     return
   end function LogPsi
 
 !-----------------------------------------------------------------------
 
+!!$  function Potential(xij,rij)
+!!$
+!!$    implicit none
+!!$
+!!$    real (kind=8) :: Potential,V0,rij,rij6
+!!$
+!!$    real (kind=8), dimension(dim) :: xij
+!!$
+!!$    V0   = 22.0228d0
+!!$    rij6 = rij**6
+!!$
+!!$    Potential = V0*(1.d0/rij6-1.d0)/rij6
+!!$
+!!$  end function Potential
+
+!-----------------------------------------------------------------------
+
+!!$  function Potential(xij,rij)
+!!$
+!!$    !Aziz I HFDHE2 Potential
+!!$
+!!$    implicit none
+!!$
+!!$    logical, save :: FirstCall = .true.
+!!$    real (kind=8) :: Potential,Hx,rij
+!!$    real (kind=8) :: dij,dij2,dij4,dij6
+!!$
+!!$    real (kind=8), save            :: A,alpha,C6,C8,C10,D,E_0,V0,rm
+!!$    real (kind=8), dimension (dim) :: xij
+!!$
+!!$    if (FirstCall) then
+!!$
+!!$       !Parameters of the Aziz potential
+!!$
+!!$       E_0   = 10.8d0
+!!$       rm    = 2.9673d0
+!!$       A     = 0.54485046d6
+!!$       alpha = 13.353384d0
+!!$       C6    = 1.3732412d0
+!!$       C8    = 0.4253785d0
+!!$       C10   = 0.1781d0
+!!$       D     = 1.241314d0
+!!$
+!!$       V0    = E_0/1.85505153154686d0
+
+!!$       FirstCall = .false.
+!!$
+!!$    end if
+!!$
+!!$    dij  = rij*2.556d0/rm
+!!$    dij2 = dij*dij
+!!$    dij4 = dij2*dij2
+!!$    dij6 = dij4*dij2
+!!$
+!!$    if (dij<=D) then
+!!$       Hx = exp(-(D/dij-1.d0)**2)
+!!$    else
+!!$       Hx = 1.d0
+!!$    end if
+!!$
+!!$    Potential = V0*(A*exp(-alpha*dij)-(C6+C8/dij2+C10/dij4)*Hx/dij6)
+!!$
+!!$  end function Potential
+
+!-----------------------------------------------------------------------
+
   function Potential(xij,rij)
 
-    implicit none
-    
-    real (kind=8) :: Potential,rij
-    
-    real (kind=8),dimension (dim) :: xij
+    !Aziz II HFD-B(HE) Potential
 
-    Potential = (1.d0-3.d0*V0*(xij(1)/rij)**2)/rij**3
-    
+    implicit none
+
+    logical, save :: FirstCall = .true.
+    real (kind=8) :: Potential,Hx,rij
+    real (kind=8) :: dij,dij2,dij4,dij6
+
+    real (kind=8), save            :: A,alpha,beta,C6,C8,C10,D,E_0,V0,rm
+    real (kind=8), dimension (dim) :: xij
+
+    if (FirstCall) then
+
+       !Parameters of the Aziz potential
+
+       E_0   = 10.948d0
+       rm    = 2.963d0
+       A     = 1.8443101d5
+       alpha = 10.43329537d0
+       beta  = -2.27965105d0
+       C6    = 1.36745214d0
+       C8    = 0.42123807d0
+       C10   = 0.17473318d0
+       D     = 1.4826d0
+
+       V0    = E_0/1.85505153154686d0
+
+       FirstCall = .false.
+
+    end if
+
+    dij  = rij*2.556d0/rm
+    dij2 = dij*dij
+    dij4 = dij2*dij2
+    dij6 = dij4*dij2
+
+    if (dij<=D) then
+       Hx = exp(-(D/dij-1.d0)**2)
+    else
+       Hx = 1.d0
+    end if
+
+    Potential = V0*(A*exp(-alpha*dij+beta*dij2)-(C6+C8/dij2+C10/dij4)*Hx/dij6)
+
   end function Potential
 
 !-----------------------------------------------------------------------  
@@ -107,23 +186,71 @@ contains
   function Force(k,xij,rij)
 
     implicit none 
-    
+
     real (kind=8)    :: rij,Force
-    real (kind=8)    :: costheta
-    real (kind=8)    :: dVdr
     integer (kind=4) :: k
-
-    real (kind=8),dimension (dim) :: xij
     
-    costheta = xij(1)/rij
-    dVdr     = -3.d0/rij**4
-    Force    = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
-
-    if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)/rij 
+    real (kind=8), dimension (dim) :: xij
+    
+!!$    real (kind=8)    :: rij,Force
+!!$    real (kind=8)    :: costheta
+!!$    real (kind=8)    :: dVdr
+!!$    integer (kind=4) :: k
+!!$
+!!$    real (kind=8),dimension (dim) :: xij
+!!$    
+!!$    costheta = xij(1)/rij
+!!$    dVdr     = -3.d0/rij**4
+!!$    Force    = dVdr*(1.d0-5.d0*V0*costheta**2)*xij(k)/rij
+!!$
+!!$    if (k==1) Force = Force+2.d0*V0*dVdr*xij(k)/rij 
 
     return 
   end function Force
 
 !-----------------------------------------------------------------------
+
+   function TrapPsi(opt,a_osc,x)
+
+    implicit none
+
+    real (kind=8)    :: TrapPsi,a_osc,x
+    integer (kind=4) :: opt
+
+    if (opt==0) then
+       TrapPsi = -0.5d0*(x/a_osc)**2
+    else if (opt==1) then
+       TrapPsi = -(x/a_osc**2)
+    else if (opt==2) then
+       TrapPsi = -1.d0/a_osc**2
+    else
+       print *, 'The parameter opt in the function TrapPsi crash!!!'
+       stop
+    end if
+
+    !TrapPsi = 0.d0
+
+    return
+  end function TrapPsi
+
+!-----------------------------------------------------------------------
+
+  function TrapPot(opt,a_osc,x)
+
+    implicit none
+
+    real (kind=8)    :: TrapPot,a_osc,x
+    integer (kind=4) :: opt
+
+    if (opt==0) then
+       TrapPot = 0.5d0*x**2/a_osc**4
+    else if (opt==1) then
+       TrapPot = x/a_osc**4
+    end if
+
+    return
+  end function TrapPot
+
+!-----------------------------------------------------------------------  
 
 end module system_mod

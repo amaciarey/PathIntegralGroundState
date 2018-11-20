@@ -10,8 +10,10 @@ implicit none
 
 logical          :: crystal,resume
 logical          :: isopen,swapping
+logical          :: trap
+real (kind=8)    :: r8_gamma
 real (kind=8)    :: dt,delta_cm
-real (kind=8)    :: density,alpha
+real (kind=8)    :: density
 real (kind=8)    :: E1,E2
 real (kind=8)    :: E,Kin,Pot
 real (kind=8)    :: Et,Kt
@@ -34,8 +36,7 @@ real (kind=8)    :: try_cm,try_cm_half
 integer (kind=4) :: seed
 integer (kind=4) :: Lstag,Nlev
 integer (kind=4) :: k,j
-integer (kind=4) :: ip,jp
-integer (kind=4) :: ipair
+integer (kind=4) :: ip
 integer (kind=4) :: Nstep,istep
 integer (kind=4) :: iblock,Nblock
 integer (kind=4) :: istag,Nstag
@@ -60,81 +61,106 @@ real (kind=8),dimension(:,:,:),allocatable :: Path
 real (kind=8),dimension(:,:),allocatable   :: nrho,AvNr,AvNr2,VarNr
 real (kind=8),dimension(:,:),allocatable   :: Sk,AvSk,AvSk2,VarSk
 real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
+real (kind=8),dimension(:,:),allocatable   :: dens
+
+
+logical                                    :: new_perm_cycle
+logical                                    :: end_perm_cycle
+logical                                    :: swap_accepted
+integer (kind=4)                           :: iperm,ik
+integer (kind=4),dimension(:),allocatable  :: Particles_in_perm_cycle
+integer (kind=4),dimension(:),allocatable  :: Perm_histogram
 
 !Reading input parameters
 
-call ReadParameters(resume,crystal,wf_table,v_table,swapping,sampling,&
-     & density,alpha,dt,delta_cm,Rm,dim,Np,Nb,seed,&
+call ReadParameters(resume,crystal,wf_table,v_table,swapping,trap,&
+     & sampling,density,dt,delta_cm,Rm,dim,Np,Nb,seed,&
      & CMFreq,Lstag,Nlev,Nstag,Nmax,Nobdm,Nblock,Nstep,Nbin,Nk)
 
 pi = acos(-1.d0)
-V0 = sin(alpha)**2
 
-allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
-allocate (PairList(Np*(Np-1)/2,2))
-
-ipair = 1
-
-do ip=1,Np-1
-   do jp=ip+1,Np
-      PairList(ipair,1) = ip
-      PairList(ipair,2) = jp
-      ipair = ipair+1
+if (trap) then
+   
+   rcut = 1.d0
+   
+   do k=1,dim
+      rcut=3.d0*rcut*a_ho(k)
    end do
-end do
 
-if (crystal) then
-
-   open (unit=2,file='config_ini.in',status='old')
-
-   read (2,*) Np
-   read (2,*) (Lbox(k),k=1,dim)
-   read (2,*) density
-
-   close (unit=2)
+   density  = real(Np)/(pi**(0.5d0*dim)*rcut/r8_gamma(0.5d0*dim+1.d0)) 
+   rcut     = rcut**(1.d0/real(dim))
+   rcut     = 10.d0*rcut
+   delta_cm = delta_cm*minval(a_ho)
    
 else
 
+   allocate (Lbox(dim),LboxHalf(dim),qbin(dim))
+
+   if (crystal) then
+
+      open (unit=2,file='config_ini.in',status='old')
+
+      read (2,*) Np
+      read (2,*) (Lbox(k),k=1,dim)
+      read (2,*) density
+
+      close (unit=2)
+   
+   else
+
+      do k=1,dim
+         Lbox(k) = (real(Np)/density)**(1.d0/real(dim))
+      end do
+
+   end if
+
    do k=1,dim
-      Lbox(k) = (real(Np)/density)**(1.d0/real(dim))
+      LboxHalf(k) = 0.5d0*Lbox(k)
+      qbin(k)     = 2.d0*pi/Lbox(k)
    end do
 
-end if  
+   rcut     = minval(LboxHalf)
+   delta_cm = delta_cm/density**(1.d0/real(dim))
 
-do k=1,dim
-   LboxHalf(k) = 0.5d0*Lbox(k)
-   qbin(k)     = 2.d0*pi/Lbox(k)
-end do
+end if
 
-rcut     = minval(LboxHalf)
 rcut2    = rcut*rcut
 rbin     = rcut/real(Nbin)
-delta_cm = delta_cm/density**(1.d0/real(dim))
 isopen   = .false.
 iworm    = 0
 
-!Generate an initial Path and tables for the wave function and the 
-!interaction potential
+!Generate an initial Path
 
 allocate (Path(dim,Np,0:2*Nb))
-allocate (LogWF(0:Nmax+1),VTable(0:Nmax+1))
+!allocate (LogWF(0:Nmax+1),VTable(0:Nmax+1))
 allocate (xend(dim,2))
 
-call init(seed,Path,xend,crystal,resume,isopen,iworm)
-call JastrowTable(rcut,Rm,LogWF)
-call PotentialTable(rcut,VTable)
+if (swapping) then
+   allocate (Particles_in_perm_cycle(Np))
+   allocate (Perm_histogram(Np))
+   Perm_histogram(:) = 0
+end if
 
-!Definition of used formats
+call init(trap,seed,Path,xend,crystal,resume,isopen,iworm)
+
+if (wf_table) then
+   allocate (LogWF(0:Nmax+1))
+   call JastrowTable(rcut,LogWF)
+end if
+if (v_table) then
+   allocate (VTable(0:Nmax+1))
+   call PotentialTable(rcut,VTable)
+end if
+
+!Printing the simulation parameters
 
 103 format (x,a,x,i5)
 104 format (x,a,x,G13.6e2)
 105 format (x,a,x,3G13.6e2)
 
-!Printing the simulation parameters
-
 print *,    ''
 print *,    '=============================================================='
-print *,    '       VPI Monte Carlo for homogeneous 2D dipoles             '
+print *,    '                      VPI Monte Carlo                         '
 print *,    '=============================================================='
 print *,    ''
 print *,    ' '
@@ -155,9 +181,12 @@ print *,    '# Simulation parameters:'
 print *,    ''
 print 103,  '  > Dimensions          :',dim
 print 103,  '  > Number of particles :',Np
-print 104,  '  > Density             :',density
-print 104,  '  > Polarization        :',alpha
-print 105,  '  > Size of the box     :',Lbox
+if (trap) then
+   print 105,  '  > Trapping length     :',a_ho
+else 
+   print 104,  '  > Density             :',density
+   print 105,  '  > Size of the box     :',Lbox
+end if
 print 103,  '  > Number of beads     :',Nb
 print 104,  '  > Time step           :',dt
 print 103,  '  > Number of blocks    :',Nblock
@@ -166,9 +195,8 @@ print *,    ''
 
 !Initializing accumulators
 
-allocate (gr(Nbin),AvGr(Nbin),AvGr2(Nbin),VarGr(Nbin))
-allocate (nrho(0:Npw,Nbin),AvNr(0:Npw,Nbin),AvNr2(0:Npw,Nbin),&
-         &VarNr(0:Npw,Nbin))
+allocate (gr(Nbin),AvGr(Nbin),AvGr2(Nbin),VarGr(Nbin),dens(Nbin,Nbin))
+allocate (nrho(0:Npw,Nbin),AvNr(0:Npw,Nbin),AvNr2(0:Npw,Nbin),VarNr(0:Npw,Nbin))
 allocate (Sk(dim,Nk),AvSk(dim,Nk),AvSk2(dim,Nk),VarSk(dim,Nk))
 
 open (unit=1,file='e_vpi.out')
@@ -209,6 +237,8 @@ idiag_aux = 0
 obdm_bl   = 0
 diag_bl   = 0
 
+dens = 0.d0
+
 !Begin the main Monte Carlo loop
 
 do iblock=1,Nblock
@@ -242,7 +272,7 @@ do iblock=1,Nblock
    try_swap = 0
    acc_swap = 0
 
-   idiag_block   = 0 
+   idiag_block = 0 
 
    ngr = 0
    gr  = 0.d0
@@ -263,28 +293,32 @@ do iblock=1,Nblock
    BlockAvEt2 = 0.d0
    BlockAvKt2 = 0.d0
    BlockAvVt2 = 0.d0
-
+   
    do istep=1,Nstep
 
-      !Open and Close updates to determine if the system is in a 
-      !diagonal or in an off-diagonal configuration.
-      !If the system is in an open configuration we will try to close it
-      !If the system is in a closed configuration we will try to open it
+      !Open and Close updates to determine if the system is in a diagonal
+      !or in an off-diagonal configuration
 
       iupdate = int(grnd()*2)
 
       if (isopen) then
          if (iupdate == 0) then
-            call CloseChain(LogWF,VTable,density,dt,Lstag,iworm,Path,&
-                           &xend,isopen,acc_close)
+            call CloseChain(trap,LogWF,VTable,density,dt,Lstag,iworm,Path,xend,&
+                           &isopen,acc_close,end_perm_cycle)
             try_close = try_close+1
+            call PermutationSampling(new_perm_cycle,end_perm_cycle,iperm,&
+                                    &Particles_in_perm_cycle,Perm_histogram,&
+                                    &isopen,iworm)
          end if
       else
          if (iupdate == 1) then
             iworm = int(grnd()*Np)+1
-            call OpenChain(LogWF,VTable,density,dt,Lstag,iworm,Path,&
-                          &xend,isopen,acc_open)
+            call OpenChain(trap,LogWF,VTable,density,dt,Lstag,iworm,Path,xend,&
+                          &isopen,acc_open,new_perm_cycle)
             try_open = try_open+1
+            call PermutationSampling(new_perm_cycle,end_perm_cycle,iperm,&
+                                    &Particles_in_perm_cycle,Perm_histogram,&
+                                    &isopen,iworm)
          end if
       end if
 
@@ -292,77 +326,63 @@ do iblock=1,Nblock
 
       if (isopen) then
 
-         !$OMP PARALLEL DO &
-         !$OMP SCHEDULE(dynamic) &
-         !$OMP REDUCTION(+:try_cm,try_stag,acc_cm,acc_head,acc_tail,acc_bd)
-       
-         do ip=1,Np
+         if (mod(istep,CMFreq)==0) then
 
-            if (ip/=iworm) then
+            do ip=1,Np
+
+               if (ip/=iworm) then
                
-               if (mod(istep,CMFreq)==0) then               
                   try_cm = try_cm+1
-                  call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,&
-                                     &acc_cm)
+                  call TranslateChain(trap,delta_cm,LogWF,VTable,dt,ip,Path,acc_cm)
+               
                end if
 
-               do istag=1,Nstag
+            end do
+
+         end if
+
+         do istag=1,Nstag
+
+            do ip=1,Np
+
+               if (ip/=iworm) then
                   
                   try_stag = try_stag+1
-                  
+
                   if (sampling=="sta") then
-
-                     call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,&
-                                  &acc_head)
-                     call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,&
-                                  &acc_tail)
-                     call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
-
+                     call MoveHead(trap,LogWF,VTable,dt,Lstag,ip,Path,acc_head)
+                     call MoveTail(trap,LogWF,VTable,dt,Lstag,ip,Path,acc_tail)
+                     call Staging(trap,LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
                   else
-
-                     call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
-                                           &acc_head)
-                     call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
-                                           &acc_tail)
-                     call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
-
+                     call MoveHeadBisection(trap,LogWF,VTable,dt,Nlev,ip,Path,acc_head)
+                     call MoveTailBisection(trap,LogWF,VTable,dt,Nlev,ip,Path,acc_tail)
+                     call Bisection(trap,LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
                   end if
 
-               end do
+               end if
 
-            end if
+            end do
 
          end do
 
-         !$OMP END PARALLEL DO
-
-         !Now let's make the worm dance...
+         ! Worm movements
 
          do iobdm=1,Nobdm
-               
-            if (mod(istep,CMFreq)==0) then
 
-               do j=1,2
-                  try_cm_half = try_cm_half+1
-                  call TranslateHalfChain(j,delta_cm,LogWF,VTable,&
-                                         &dt,iworm,Path,xend,&
-                                         &acc_cm_half)
-               end do
+            ip = iworm
 
-            end if
+            do j=1,2
+               try_cm_half = try_cm_half+1
+               call TranslateHalfChain(trap,j,delta_cm,LogWF,VTable,dt,ip,Path,xend,acc_cm_half)
+            end do
 
             do j=1,2
                   
                try_stag_half = try_stag_half+1
                         
-               call MoveHeadHalfChain(j,LogWF,VTable,dt,Lstag,&
-                    &iworm,Path,xend,&
-                                        &acc_head_half)
-               call MoveTailHalfChain(j,LogWF,VTable,dt,Lstag,&
-                    &iworm,Path,xend,&
-                                        &acc_tail_half)
-               call StagingHalfChain(j,LogWF,VTable,dt,Lstag,&
-                    &iworm,Path,xend,acc_bd_half)
+               call MoveHeadHalfChain(trap,j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_head_half)
+               call MoveTailHalfChain(trap,j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_tail_half)
+               call StagingHalfChain(trap,j,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_bd_half)
                         
             end do
 
@@ -370,13 +390,17 @@ do iblock=1,Nblock
                         
                try_swap = try_swap+1
                
-               call Swap(LogWF,VTable,dt,Lstag,iworm,Path,xend,&
-                    &acc_swap)
-                  
+               call Swap(trap,LogWF,VTable,dt,Lstag,ip,Path,xend,acc_swap,ik,swap_accepted)
+               call PermutationSampling(new_perm_cycle,end_perm_cycle,iperm,&
+                                       &Particles_in_perm_cycle,Perm_histogram,&
+                                       &isopen,iworm,ik,swap_accepted)
+                        
             end if
-               
-            call OBDM(xend,nrho)
-            
+
+            if (trap .eqv. .false.) then
+               call OBDM(xend,nrho)
+            end if
+
          end do
 
       else
@@ -384,55 +408,46 @@ do iblock=1,Nblock
          idiag       = idiag+1
          idiag_aux   = idiag_aux+1
          idiag_block = idiag_block+1
-      
-         !$OMP PARALLEL DO &
-         !$OMP SCHEDULE(dynamic) &
-         !$OMP REDUCTION(+:try_cm,try_stag,acc_cm,acc_head,acc_tail,acc_bd)
 
-         do ip=1,Np
-
-            if (mod(istep,CMFreq)==0) then
+         if (mod(istep,CMFreq)==0) then
+            
+            do ip=1,Np
                try_cm = try_cm+1
-               call TranslateChain(delta_cm,LogWF,VTable,dt,ip,Path,&
-                                  &acc_cm)
-            end if
+               call TranslateChain(trap,delta_cm,LogWF,VTable,dt,ip,Path,acc_cm)
+            end do
 
-            do istag=1,Nstag
-
+         end if
+         
+         do istag=1,Nstag
+            
+            do ip=1,Np
+               
                try_stag = try_stag+1
 
                if (sampling=="sta") then
-                  
-                  call MoveHead(LogWF,VTable,dt,Lstag,ip,Path,acc_head)
-                  call MoveTail(LogWF,VTable,dt,Lstag,ip,Path,acc_tail)
-                  call Staging(LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
-               
+                  call MoveHead(trap,LogWF,VTable,dt,Lstag,ip,Path,acc_head)
+                  call MoveTail(trap,LogWF,VTable,dt,Lstag,ip,Path,acc_tail)
+                  call Staging(trap,LogWF,VTable,dt,Lstag,ip,Path,acc_bd)
                else
-               
-                  call MoveHeadBisection(LogWF,VTable,dt,Nlev,ip,Path,&
-                                        &acc_head)
-                  call MoveTailBisection(LogWF,VTable,dt,Nlev,ip,Path,&
-                                        &acc_tail)
-                  call Bisection(LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
-               
+                  call MoveHeadBisection(trap,LogWF,VTable,dt,Nlev,ip,Path,acc_head)
+                  call MoveTailBisection(trap,LogWF,VTable,dt,Nlev,ip,Path,acc_tail)
+                  call Bisection(trap,LogWF,VTable,dt,Nlev,ip,Path,acc_bd)
                end if
 
             end do
-               
-         end do
 
-         !$OMP END PARALLEL DO
+         end do
 
          !Energy calculation using mixed estimator
       
-         call LocalEnergy(LogWF,VTable,Path(:,:,0),Rm,E1,Kin,Pot)
-         call LocalEnergy(LogWF,VTable,Path(:,:,2*Nb),Rm,E2,Kin,Pot)
+         call LocalEnergy(trap,LogWF,VTable,Path(:,:,0),E1,Kin,Pot)
+         call LocalEnergy(trap,LogWF,VTable,Path(:,:,2*Nb),E2,Kin,Pot)
 
          E = 0.5d0*(E1+E2)
 
          !Energy evaluation using thermodynamic estimator
 
-         call ThermEnergy(VTable,Path,dt,Et,Kt,Pot)
+         call ThermEnergy(trap,VTable,Path,dt,Et,Kt,Pot)
 
          Kin = E-Pot         
             
@@ -441,17 +456,19 @@ do iblock=1,Nblock
          call Accumulate(E,Kin,Pot,BlockAvE,BlockAvK,BlockAvV)
          call Accumulate(Et,Kt,Pot,BlockAvEt,BlockAvKt,BlockAvVt)
 
-         call Accumulate(E**2,Kin**2,Pot**2,BlockAvE2,BlockAvK2,&
-                        &BlockAvV2)
-         call Accumulate(Et**2,Kt**2,Pot**2,BlockAvEt2,BlockAvKt2,&
-                        &BlockAvVt2)
+         call Accumulate(E**2,Kin**2,Pot**2,BlockAvE2,BlockAvK2,BlockAvV2)
+         call Accumulate(Et**2,Kt**2,Pot**2,BlockAvEt2,BlockAvKt2,BlockAvVt2)
 
          !Structural quantities
       
          ngr = ngr+1
       
-         call PairCorrelation(Path(:,:,Nb),gr)
-         call StructureFactor(Nk,Path(:,:,Nb),Sk)
+         if (trap .eqv. .false.) then
+            call PairCorrelation(Path(:,:,Nb),gr)
+            call StructureFactor(Nk,Path(:,:,Nb),Sk)
+         end if
+         
+         !call DensityProfile(Path(:,:,Nb),dens)
          
       end if
 
@@ -461,9 +478,6 @@ do iblock=1,Nblock
 
       !Normalize final results of the block
       
-      call NormalizeGr(density,ngr,gr)
-      call NormalizeSk(Nk,ngr,Sk)
-
       call NormalizeAv(idiag_block,BlockAvE,BlockAvK,BlockAvV)
       call NormalizeAv(idiag_block,BlockAvE2,BlockAvK2,BlockAvV2)
       
@@ -483,22 +497,25 @@ do iblock=1,Nblock
       diag_bl = diag_bl+1
       
       call Accumulate(BlockAvE,BlockAvK,BlockAvV,AvE,AvK,AvV)
-      call Accumulate(BlockAvE**2,BlockAvK**2,BlockAvV**2,&
-                     &AvE2,AvK2,AvV2)
+      call Accumulate(BlockAvE**2,BlockAvK**2,BlockAvV**2,AvE2,AvK2,AvV2)
 
       call Accumulate(BlockAvEt,BlockAvKt,BlockAvVt,AvEt,AvKt,AvVt)
-      call Accumulate(BlockAvEt**2,BlockAvKt**2,BlockAvVt**2,&
-                     &AvEt2,AvKt2,AvVt2)
+      call Accumulate(BlockAvEt**2,BlockAvKt**2,BlockAvVt**2,AvEt2,AvKt2,AvVt2)
       
-      call AccumGr(gr,AvGr,AvGr2)
-      call AccumSk(Nk,Sk,AvSk,AvSk2)      
+      if (trap .eqv. .false.) then
+      
+         call NormalizeGr(density,ngr,gr)
+         call NormalizeSk(Nk,ngr,Sk)
+
+         call AccumGr(gr,AvGr,AvGr2)
+         call AccumSk(Nk,Sk,AvSk,AvSk2)      
+
+      end if
 
       !Outputs of the block
 
-      write (1,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,&
-                              &BlockAvV/Np
-      write (2,'(5g20.10e3)') real(iblock),BlockAvEt/Np,BlockAvKt/Np,&
-                              &BlockAvVt/Np
+      write (1,'(5g20.10e3)') real(iblock),BlockAvE/Np,BlockAvK/Np,BlockAvV/Np
+      write (2,'(5g20.10e3)') real(iblock),BlockAvEt/Np,BlockAvKt/Np,BlockAvVt/Np
 
    end if
 
@@ -507,8 +524,12 @@ do iblock=1,Nblock
       obdm_bl    = obdm_bl+1
       numz_block = real(idiag_aux)
       
-      call NormalizeNr(density,numz_block,Nobdm,nrho)
-      call AccumNr(nrho,AvNr,AvNr2)
+      if (trap .eqv. .false.) then
+
+         call NormalizeNr(density,numz_block,Nobdm,nrho)
+         call AccumNr(nrho,AvNr,AvNr2)
+
+      end if
       
       !Restarting counters
    
@@ -517,15 +538,15 @@ do iblock=1,Nblock
    
    end if
      
-   if (mod(iblock,10)==0) then
+   if (mod(iblock,1)==0) then
 
-      call CheckPoint(Path,xend,isopen,iworm)
+      call CheckPoint(trap,Path,xend,isopen,iworm)
 
    end if
 
    call cpu_time(end)
 
-101 format (x,a,x,f6.2,x,a)
+101 format (x,a,x,f7.2,x,a)
 102 format (a,x,G16.8e2,x,a,x,G16.8e2)
 
    print *,   '-----------------------------------------------------------'
@@ -563,13 +584,22 @@ do iblock=1,Nblock
    print 101, '> Swap acc          =',100.d0*real(acc_swap)/real(try_swap),'%'
    print 101, ' '
    print 101, '# Time per block    =',end-begin,'seconds'
-   
+
+end do
+
+do ip=1,Np
+   write (99,*) ip,Perm_histogram(ip)
 end do
 
 close (unit=1)
 close (unit=2)
 
-deallocate (LogWF)
+if (wf_table) then
+   deallocate (LogWF)
+end if
+if (v_table) then
+   deallocate (VTable)
+end if
 
 !Normalizing global averages and evaluating final variances
 
@@ -603,9 +633,21 @@ print *, ''
 print *, '=============================================================='
 print *, ''
 
-call NormAvGr(diag_bl,AvGr,AvGr2,VarGr)
-call NormAvSk(diag_bl,Nk,AvSk,AvSk2,VarSk)
-call NormAvNr(obdm_bl,AvNr,AvNr2,VarNr)
+if (trap .eqv. .false.) then
+
+   call NormAvGr(diag_bl,AvGr,AvGr2,VarGr)
+   call NormAvSk(diag_bl,Nk,AvSk,AvSk2,VarSk)
+   call NormAvNr(obdm_bl,AvNr,AvNr2,VarNr)
+
+end if
+
+do ip=1,Np
+   write (199,*) ip,Perm_histogram(ip)
+end do
+
+if (swapping) then
+   deallocate (Particles_in_perm_cycle,Perm_histogram)
+end if
 
 deallocate (Path)
 deallocate (nrho,AvNr,AvNr2,VarNr)
