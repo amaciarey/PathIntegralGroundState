@@ -1,4 +1,4 @@
-f90=gfortran -Wall -fno-range-check -O2 
+f90=gfortran -fno-range-check -O2 -fcheck=bounds #-ftree-vectorizer-verbose=1 
 
 vpi: \
 	random_mod.mod\

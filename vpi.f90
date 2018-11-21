@@ -64,8 +64,8 @@ real (kind=8),dimension(:),allocatable     :: gr,AvGr,AvGr2,VarGr
 real (kind=8),dimension(:,:),allocatable   :: dens
 
 
-logical                                    :: new_perm_cycle
-logical                                    :: end_perm_cycle
+logical                                    :: new_perm_cycle=.false.
+logical                                    :: end_perm_cycle=.false.
 logical                                    :: swap_accepted
 integer (kind=4)                           :: iperm,ik
 integer (kind=4),dimension(:),allocatable  :: Particles_in_perm_cycle
@@ -640,10 +640,6 @@ if (trap .eqv. .false.) then
    call NormAvNr(obdm_bl,AvNr,AvNr2,VarNr)
 
 end if
-
-do ip=1,Np
-   write (199,*) ip,Perm_histogram(ip)
-end do
 
 if (swapping) then
    deallocate (Particles_in_perm_cycle,Perm_histogram)
