@@ -2278,6 +2278,7 @@ contains
     real (kind=8)    :: DeltaS,SumDeltaS
     real (kind=8)    :: rij2
     real (kind=8)    :: Sk,Sw
+    real (kind=8)    :: uran,sum
     integer (kind=4) :: iit
     integer (kind=4) :: ip,ib,k,accepted
     integer (kind=4) :: j,ik,iw,ipar
@@ -2326,25 +2327,22 @@ contains
        Sw     = Sw+Pp(ip)
 
     end do
- 
+
     !Selecting a random particle according to the probabilities that
     !we have defined above
 
-    iit = 0
+    uran = grnd()
+    ip   = 0
     
-    do 
-       iit = iit+1
-       ip  = int(Np*grnd())+1
-       if (grnd() <= Pp(ip)/Sw) then
+    do
+       ip  = ip+1
+       sum = sum+Pp(ip)/Sw 
+       if (uran <= sum) then
           ik = ip
           exit
        end if
-       if (iit>10000) then
-          ik = iw
-          exit
-       end if
     end do
-
+       
     !Check if the chosen partner is different from the Worm itself, 
     !otherwise the update is automatically rejected.
 
@@ -2467,7 +2465,6 @@ contains
              swap_accepted = .true.
              ipar = ik
              
-             !stop
           else
              
              do ib=0,2*Nb
