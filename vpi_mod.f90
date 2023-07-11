@@ -2335,19 +2335,14 @@ contains
     ip   = 0
     sum  = 0.d0
 
-    print *, uran,Sw
-    
     do
        ip  = ip+1
        sum = sum+Pp(ip)/Sw 
-       print *, ip,Pp(ip),sum
        if (uran <= sum) then
           ik = ip
           exit
        end if
     end do
-
-    stop
 
     !Check if the chosen partner is different from the Worm itself, 
     !otherwise the update is automatically rejected.
