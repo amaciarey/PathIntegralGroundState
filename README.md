@@ -20,7 +20,7 @@ $$-\frac{\partial \psi}{\partial \tau} = H \psi $$
 
 where H is the hamiltonian of the system. The formal solution of this equation is given by:
 
-$ \psi(\tau) = e^{-H\tau}\psi(0)$
+$$\psi(\tau) = e^{-H\tau}\psi(0)$$
 
 In the limit of $\tau \rightarrow \infty$, $\psi(\tau \rightarrow \infty)$ equals the ground state wave function $\phi_0$. The operator $e^{-H\tau}$ is the representation independent Green's function of the system and is, in general, unknown but some suitable short-time approximations can be found[^7] . 
 
