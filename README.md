@@ -16,7 +16,7 @@ PIGS is an imaginary time propagation (or projector) method, projector methods a
 
 The starting point of all projector methods is the imaginary time dependent Schrödinger equation:
 
-$-\frac{\partial \psi}{\partial \tau} = H \psi $
+$$-\frac{\partial \psi}{\partial \tau} = H \psi $$
 
 where H is the hamiltonian of the system. The formal solution of this equation is given by:
 
