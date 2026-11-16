@@ -1,6 +1,6 @@
 # Path integral ground state Monte Carlo
 
-[TOC]
+Testing markdown equations: $a^2+b^2 = c^2$.
 
 ## Introduction
 
